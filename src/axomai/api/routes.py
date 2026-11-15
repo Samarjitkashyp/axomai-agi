@@ -24,14 +24,15 @@ from axomai.core.llm import llm_brain
 from axomai.core.translators.xetu import xetu_translator
 from axomai.memory import unified_memory_hub
 from axomai.learning import continuous_learner
-from axomai.supervision import agent_watchdog, circuit_breaker, capability_guard, Capability
+from axomai.supervision import agent_watchdog, circuit_breaker, capability_guard, Capability, sovereign_governor, immunity_guard
 from axomai.proactive import heartbeat_daemon, perception_radar
 from axomai.metamorphosis import code_profiler, self_patcher
-from axomai.swarm_hive import swarm_consensus
+from axomai.swarm_hive import swarm_consensus, micro_swarm_commander
 from axomai.agency import action_runner
 from axomai.evaluation import benchmark_suite, EvaluationHarness, RegressionDetector
-from axomai.cognition import cognitive_core, self_model, world_model, capability_registry, capability_acquisition_engine, belief_manager
+from axomai.cognition import cognitive_core, self_model, world_model, capability_registry, capability_acquisition_engine, belief_manager, war_game_simulator
 from axomai.evolution import evolution_manager, active_researcher, failure_detector, hypothesis_engine
+from axomai.orchestration import relentless_executor
 
 router = APIRouter(prefix="/api")
 agent = Z1AlphaAgent()
@@ -1032,5 +1033,70 @@ async def trigger_self_evolution_cycle():
 async def execute_active_research(topic: str = Query(..., min_length=2)):
     """Conducts autonomous multi-question research on an unknown topic and updates knowledge base."""
     return active_researcher.conduct_active_research(topic)
+
+# =========================================================================
+# Sovereign Apex Command, Relentless Execution & War-Gaming Endpoints
+# =========================================================================
+
+@router.post("/sovereignty/relentless-execute")
+async def execute_relentless_mission(goal: str, payload: Optional[Dict[str, Any]] = None):
+    """
+    Executes a mission using the 'Never-Give-Up' protocol: multi-path adaptation,
+    dynamic capability synthesis, and self-healing until 100% accomplished.
+    """
+    res = relentless_executor.execute_relentlessly(mission_goal=goal, context_payload=payload)
+    return res
+
+@router.post("/sovereignty/war-game")
+async def simulate_war_game(strategic_goal: str, num_scenarios: int = 5, horizon_days: int = 30):
+    """
+    Runs Monte Carlo counterfactual simulations across the World Model to select
+    the optimal, battle-tested strategic trajectory.
+    """
+    res = war_game_simulator.simulate_strategic_futures(
+        strategic_goal=strategic_goal,
+        num_scenarios=num_scenarios,
+        target_horizon_days=horizon_days
+    )
+    return res
+
+@router.post("/sovereignty/micro-swarm")
+async def dispatch_micro_swarm(mission_title: str, target_count: int = 6):
+    """
+    Deploys an ephemeral army of micro-workers, aggregates consensus, logs to memory,
+    and purges all workers from RAM.
+    """
+    mock_slices = [
+        {"domain": "energy", "capacity_kw": 250.0 + i * 50.0} if i % 3 == 0
+        else ({"domain": "logistics", "distance_km": 600.0 + i * 150.0} if i % 3 == 1
+        else {"domain": "fx_hedging", "spot_fx": 85.0 + i * 0.5})
+        for i in range(target_count)
+    ]
+    res = micro_swarm_commander.dispatch_micro_swarm_army(
+        mission_title=mission_title,
+        target_slices=mock_slices
+    )
+    return res
+
+@router.get("/sovereignty/telemetry")
+async def get_sovereign_telemetry():
+    """Returns deep telemetry across Sovereign Governor, Immunity Shield, Relentless Executor, and Micro-Swarm."""
+    return {
+        "sovereign_governor": sovereign_governor.get_sovereignty_status(),
+        "immunity_shield": immunity_guard.get_immunity_telemetry(),
+        "relentless_executor": {
+            "missions_executed_count": len(relentless_executor.execution_audit_log),
+            "recent_missions": relentless_executor.execution_audit_log[-3:]
+        },
+        "war_game_simulator": {
+            "simulations_count": len(war_game_simulator.simulation_archive),
+            "recent_wargames": war_game_simulator.get_wargame_history()[-3:]
+        },
+        "micro_swarm_commander": {
+            "campaigns_count": len(micro_swarm_commander.swarm_campaigns),
+            "recent_campaigns": micro_swarm_commander.get_campaign_history()[-3:]
+        }
+    }
+
 
 

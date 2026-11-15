@@ -1,17 +1,18 @@
 """
 AxomAI Proactive Engine - Autonomous Goal Generator.
-Detects latent environmental triggers (commodity swings, logistics delays, weather warnings)
+Detects latent environmental triggers (system health, commodity swings, logistics delays, weather warnings)
 and proactively synthesizes strategic mission directives without human prompts.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
-import random
+from axomai.proactive.perception_radar import perception_radar, PerceptionRadar
 
 class GoalGenerator:
     """Proactive mission generator formulating goals from autonomous environmental signals."""
 
-    def __init__(self):
+    def __init__(self, radar: Optional[PerceptionRadar] = None):
+        self.radar = radar or perception_radar
         self.proactive_goals_history: List[Dict[str, Any]] = []
 
     def evaluate_signals_and_generate_goals(
@@ -19,37 +20,29 @@ class GoalGenerator:
         signals: Optional[List[Dict[str, Any]]] = None
     ) -> List[Dict[str, Any]]:
         """
-        Analyzes active real-world signals and synthesizes autonomous mission goals.
+        Analyzes active real-world signals (or scans via radar if none provided)
+        and synthesizes prioritized autonomous mission goals.
         """
-        now = datetime.utcnow().isoformat()
-        
-        # Default real-world domain signals if none provided
-        active_signals = signals or [
-            {
-                "domain": "commodity_markets",
-                "indicator": "Tea Export Mandi Volatility",
-                "value": -4.2,
-                "unit": "%",
-                "severity": "HIGH",
-                "message": "Spot export auction prices in Guwahati declined 4.2% while Hamburg freight rates rose."
-            },
-            {
-                "domain": "infrastructure_geotechnical",
-                "indicator": "Brahmaputra Flood Embankment Pore Pressure",
-                "value": 1.18,
-                "unit": "FoS",
-                "severity": "ELEVATED",
-                "message": "Water table elevation in Dibrugarh pier sector reduced factor of safety below 1.25."
-            },
-            {
-                "domain": "energy_arbitrage",
-                "indicator": "Discom HT Tariff Differential",
-                "value": 3.40,
-                "unit": "INR/kWh",
-                "severity": "OPPORTUNITY",
-                "message": "Grid tariff differential widened to ₹3.40/kWh favoring instant captive solar PPA expansion."
-            }
-        ]
+        now = datetime.now(timezone.utc).isoformat()
+
+        # If no explicit signals provided, activate perception radar to scan environment live!
+        if signals is None:
+            active_signals = self.radar.scan_environment()
+        else:
+            active_signals = signals
+
+        # Fallback if radar returned clean environment with no alerts
+        if not active_signals:
+            active_signals = [
+                {
+                    "domain": "commodity_markets",
+                    "indicator": "Tea Export Mandi Volatility",
+                    "value": -4.2,
+                    "unit": "%",
+                    "severity": "HIGH",
+                    "message": "Spot export auction prices in Guwahati declined 4.2% while Hamburg freight rates rose."
+                }
+            ]
 
         generated_goals = []
         for sig in active_signals:
@@ -57,7 +50,35 @@ class GoalGenerator:
             severity = sig.get("severity")
             indicator = sig.get("indicator")
 
-            if dom == "commodity_markets" and severity in ["HIGH", "CRITICAL"]:
+            if dom == "system_infrastructure" and severity in ["CRITICAL", "ELEVATED"]:
+                goal = {
+                    "goal_id": f"goal_{len(self.proactive_goals_history) + 1:04d}",
+                    "title": "Autonomous Host Resource Rebalance & Storage Cleansing",
+                    "priority": "P0_CRITICAL",
+                    "trigger_indicator": indicator,
+                    "target_agent": "system_janitor",
+                    "autonomous_action": "Execute memory cache purge, prune orphaned ephemeral artifacts, and adjust process thread limits.",
+                    "created_at": now,
+                    "status": "PROACTIVELY_DISPATCHED"
+                }
+                generated_goals.append(goal)
+                self.proactive_goals_history.append(goal)
+
+            elif dom == "workspace_intelligence" and severity == "OPPORTUNITY":
+                goal = {
+                    "goal_id": f"goal_{len(self.proactive_goals_history) + 1:04d}",
+                    "title": "Autonomous Ingestion & Semantic Graph Embedding of New Artifacts",
+                    "priority": "P2_OPTIMIZATION",
+                    "trigger_indicator": indicator,
+                    "target_agent": "z9_cortex",
+                    "autonomous_action": "Parse newly detected workspace documents and update semantic graph knowledge nodes.",
+                    "created_at": now,
+                    "status": "PROACTIVELY_DISPATCHED"
+                }
+                generated_goals.append(goal)
+                self.proactive_goals_history.append(goal)
+
+            elif dom == "commodity_markets" and severity in ["HIGH", "CRITICAL"]:
                 goal = {
                     "goal_id": f"goal_{len(self.proactive_goals_history) + 1:04d}",
                     "title": "Autonomous Cross-Border FX Collar & Export Mandi Re-hedging",
@@ -102,7 +123,6 @@ class GoalGenerator:
         return generated_goals
 
     def get_proactive_history(self) -> List[Dict[str, Any]]:
-        return list(self.proactive_goals_history[-10:])
+        return list(self.proactive_goals_history[-20:])
 
 goal_generator = GoalGenerator()
-

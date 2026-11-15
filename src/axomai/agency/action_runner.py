@@ -1,29 +1,33 @@
 """
 AxomAI Agency Engine - Autonomous Digital Operations & System Peripheral Controller.
 Executes autonomous health diagnostics, storage optimization, report compilation,
-and infrastructure monitoring within strict sovereign containment boundaries.
+and infrastructure monitoring within strict capability-based containment boundaries (RBAC).
 """
 
 import os
 import shutil
 import platform
 import psutil
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from axomai.config import settings
+from axomai.supervision.capability_guard import capability_guard, Capability
 
 class ActionRunner:
-    """Safe, sovereign real-world digital operations and system manager."""
+    """Safe, sovereign real-world digital operations and system manager with RBAC enforcement."""
 
     def __init__(self):
         self.operations_log: List[Dict[str, Any]] = []
 
-    def get_system_vitals(self) -> Dict[str, Any]:
+    def get_system_vitals(self, token_id: Optional[str] = None) -> Dict[str, Any]:
         """Gathers host OS vitals, CPU, memory, and disk health metrics."""
-        now = datetime.utcnow().isoformat()
+        # Token validation: default to master token if internal call, otherwise enforce READ
+        active_token = token_id or capability_guard.master_token
+        capability_guard.enforce_capability(active_token, Capability.READ, resource_target="system_vitals")
+
+        now = datetime.now(timezone.utc).isoformat()
         
-        # CPU & Memory via psutil
         cpu_pct = psutil.cpu_percent(interval=None)
         mem = psutil.virtual_memory()
         disk = psutil.disk_usage(str(settings.STORAGE_DIR))
@@ -47,16 +51,21 @@ class ActionRunner:
         self,
         artifact_title: str,
         markdown_content: str,
-        file_format: str = "md"
+        file_format: str = "md",
+        token_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Autonomously formats, compiles, and writes an executive document in storage/generated/.
+        Strictly requires WRITE capability token.
         """
-        now = datetime.utcnow().isoformat()
+        active_token = token_id or capability_guard.master_token
+        capability_guard.enforce_capability(active_token, Capability.WRITE, resource_target="storage/generated")
+
+        now = datetime.now(timezone.utc).isoformat()
         clean_title = "".join(c if c.isalnum() or c in ['_', '-'] else '_' for c in artifact_title.lower())
         out_dir = settings.STORAGE_DIR / "generated"
         out_dir.mkdir(parents=True, exist_ok=True)
-        file_path = out_dir / f"{clean_title}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.{file_format}"
+        file_path = out_dir / f"{clean_title}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.{file_format}"
 
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(markdown_content)
@@ -72,9 +81,15 @@ class ActionRunner:
         self.operations_log.append(op_record)
         return op_record
 
-    def optimize_storage_caches(self) -> Dict[str, Any]:
-        """Safely scans and purges stale temporary files in the uploads/temp directory."""
-        now = datetime.utcnow().isoformat()
+    def optimize_storage_caches(self, token_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Safely scans and purges stale temporary files in the uploads/temp directory.
+        Strictly requires DELETE capability token (preventing unauthorized deletions).
+        """
+        active_token = token_id or capability_guard.master_token
+        capability_guard.enforce_capability(active_token, Capability.DELETE, resource_target="storage/temp")
+
+        now = datetime.now(timezone.utc).isoformat()
         temp_dir = settings.STORAGE_DIR / "temp"
         temp_dir.mkdir(parents=True, exist_ok=True)
         

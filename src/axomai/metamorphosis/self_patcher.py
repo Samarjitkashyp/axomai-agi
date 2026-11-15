@@ -1,19 +1,21 @@
 """
 AxomAI Metamorphosis Engine - Autonomous Self-Patcher & Live Hot-Reloader.
 Safely recompiles, sandboxes, benchmarks, and hot-patches runtime Python functions
-with zero server downtime, achieving recursive self-improvement.
+with zero server downtime, achieving recursive self-improvement backed by
+closed-loop regression benchmarking.
 """
 
 import time
 import inspect
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Callable
 
 class SelfPatcher:
-    """Hot-reloads and patches runtime functions with verified self-optimized code."""
+    """Hot-reloads and patches runtime functions with verified self-optimized code and benchmark regression checks."""
 
     def __init__(self):
-        self.applied_patches: Dict[str, Dict[str, Any]] = {}
+        self.applied_patches: Dict[str, Dict[str, Any]] = []
+        self.applied_patches_dict: Dict[str, Dict[str, Any]] = {}
         self.rollback_registry: Dict[str, Callable] = {}
 
     def test_and_apply_hot_patch(
@@ -29,7 +31,7 @@ class SelfPatcher:
         Validates the patch in a sandboxed test runner, compares outputs,
         and hot-swaps the runtime method live.
         """
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         
         # 1. Security scan
         prohibited = ["os.system", "subprocess", "eval(", "rmtree", "socket", "open("]
@@ -113,25 +115,60 @@ class SelfPatcher:
             "applied_at": now,
             "zero_downtime": True
         }
-        self.applied_patches[patch_id] = patch_meta
+        self.applied_patches_dict[patch_id] = patch_meta
         return patch_meta
+
+    def benchmark_and_promote_patch(
+        self,
+        patch_id: str,
+        target_object: Any,
+        target_method_name: str,
+        orchestrator=None
+    ) -> Dict[str, Any]:
+        """
+        Runs comprehensive AGI evaluation harness against the patched system.
+        If any regression or security violation is detected, immediately triggers
+        automated rollback and restores original unpatched state.
+        """
+        from axomai.evaluation import EvaluationHarness, RegressionDetector
+
+        harness = EvaluationHarness()
+        candidate_score = harness.run_benchmark(orchestrator=orchestrator, version_tag=f"patch_{patch_id}")
+        detector = RegressionDetector()
+        verdict = detector.compare_and_decide(candidate_score)
+
+        if not verdict["passed"]:
+            # Automatic instant rollback!
+            self.rollback_patch(patch_id, target_object, target_method_name)
+            return {
+                "patch_id": patch_id,
+                "status": "ROLLED_BACK_DUE_TO_REGRESSION",
+                "verdict": verdict,
+                "candidate_score": candidate_score
+            }
+
+        return {
+            "patch_id": patch_id,
+            "status": "BENCHMARK_PROMOTED_TO_PRODUCTION",
+            "verdict": verdict,
+            "candidate_score": candidate_score
+        }
 
     def rollback_patch(self, patch_id: str, target_object: Any, target_method_name: str) -> bool:
         """Rolls back a hot patch to its original pre-patch state."""
         if patch_id in self.rollback_registry and target_object:
             original = self.rollback_registry[patch_id]
             setattr(target_object, target_method_name, original)
-            if patch_id in self.applied_patches:
-                self.applied_patches[patch_id]["status"] = "ROLLED_BACK"
+            if patch_id in self.applied_patches_dict:
+                self.applied_patches_dict[patch_id]["status"] = "ROLLED_BACK"
             return True
         return False
 
     def get_patch_telemetry(self) -> Dict[str, Any]:
         return {
-            "total_patches_applied": len(self.applied_patches),
-            "active_patches": list(self.applied_patches.values()),
+            "total_patches_applied": len(self.applied_patches_dict),
+            "active_patches": list(self.applied_patches_dict.values()),
             "status": "METAMORPHOSIS_ONLINE"
         }
 
 self_patcher = SelfPatcher()
-

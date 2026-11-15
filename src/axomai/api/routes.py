@@ -24,11 +24,12 @@ from axomai.core.llm import llm_brain
 from axomai.core.translators.xetu import xetu_translator
 from axomai.memory import unified_memory_hub
 from axomai.learning import continuous_learner
-from axomai.supervision import agent_watchdog, circuit_breaker
-from axomai.proactive import heartbeat_daemon
+from axomai.supervision import agent_watchdog, circuit_breaker, capability_guard, Capability
+from axomai.proactive import heartbeat_daemon, perception_radar
 from axomai.metamorphosis import code_profiler, self_patcher
 from axomai.swarm_hive import swarm_consensus
 from axomai.agency import action_runner
+from axomai.evaluation import benchmark_suite, EvaluationHarness, RegressionDetector
 
 router = APIRouter(prefix="/api")
 agent = Z1AlphaAgent()
@@ -907,3 +908,78 @@ async def get_agency_vitals():
     """Returns host system hardware vitals and cache status."""
     vitals = action_runner.get_system_vitals()
     return vitals
+
+# =========================================================================
+# AGI Evaluation Engine & Regression Detection Endpoints
+# =========================================================================
+
+@router.post("/evaluation/run")
+async def run_evaluation_benchmark(version: str = "v3.1.0-candidate"):
+    """
+    Executes standardized AGI benchmark suite across 6 core pillars,
+    evaluates against historical baseline, and returns promotion/rollback verdict.
+    """
+    harness = EvaluationHarness()
+    scorecard = harness.run_benchmark(orchestrator=master_orchestrator, version_tag=version)
+    detector = RegressionDetector()
+    verdict = detector.compare_and_decide(scorecard)
+    return {
+        "scorecard": scorecard,
+        "verdict": verdict
+    }
+
+@router.get("/evaluation/history")
+async def get_evaluation_history():
+    """Returns historical benchmark run records and trajectories."""
+    detector = RegressionDetector()
+    return {
+        "history": detector.load_history(),
+        "latest_baseline": detector.get_latest_baseline()
+    }
+
+# =========================================================================
+# Autonomous Background Heartbeat Daemon Controls
+# =========================================================================
+
+@router.post("/proactive/heartbeat/daemon/start")
+async def start_heartbeat_daemon(interval_seconds: float = 60.0):
+    """Starts the autonomous cognitive pulse background thread."""
+    started = heartbeat_daemon.start_daemon(tick_interval_seconds=interval_seconds)
+    return {
+        "status": "DAEMON_RUNNING" if started else "START_FAILED",
+        "tick_interval_seconds": interval_seconds,
+        "thread_alive": heartbeat_daemon.is_running()
+    }
+
+@router.post("/proactive/heartbeat/daemon/stop")
+async def stop_heartbeat_daemon():
+    """Stops the autonomous cognitive pulse background thread."""
+    stopped = heartbeat_daemon.stop_daemon()
+    return {
+        "status": "DAEMON_STOPPED" if stopped else "STOP_FAILED",
+        "thread_alive": heartbeat_daemon.is_running()
+    }
+
+@router.get("/proactive/radar")
+async def get_perception_radar_scan():
+    """Scans the real local environment and returns high-fidelity signals."""
+    signals = perception_radar.scan_environment()
+    return {
+        "signals_count": len(signals),
+        "signals": signals,
+        "last_observation": perception_radar.last_observation
+    }
+
+# =========================================================================
+# Capability Token & RBAC Supervision Endpoints
+# =========================================================================
+
+@router.get("/supervision/capabilities")
+async def get_capability_supervision_telemetry():
+    """Returns RBAC audit logs and active token status."""
+    return {
+        "audit_log": capability_guard.get_security_audit_log(),
+        "master_token_active": bool(capability_guard.master_token),
+        "janitor_token_active": bool(capability_guard.janitor_token)
+    }
+

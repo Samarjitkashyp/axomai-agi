@@ -503,6 +503,7 @@ def stream_analytics(req: AnalyticsRequest):
     )
 
 @router.post("/master-stream")
+@router.post("/master/stream")
 def stream_master_orchestrator(req: MasterRequest):
     """
     Unified Autonomous Master Orchestrator SSE Streaming Endpoint.

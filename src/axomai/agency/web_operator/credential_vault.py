@@ -136,3 +136,4 @@ class SovereignCredentialVault:
         return list(self.audit_log[-15:])
 
 credential_vault = SovereignCredentialVault()
+

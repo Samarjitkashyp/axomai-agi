@@ -243,3 +243,4 @@ class AutonomousBrowserNavigator:
         }
 
 browser_navigator = AutonomousBrowserNavigator()
+

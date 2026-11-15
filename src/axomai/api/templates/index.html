@@ -774,7 +774,7 @@
           manual_agent: activeAgentMode !== 'master' ? activeAgentMode : null
         };
 
-        const res = await fetch('/api/master/stream', {
+        const res = await fetch('/api/master-stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

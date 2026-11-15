@@ -25,6 +25,10 @@ from axomai.core.translators.xetu import xetu_translator
 from axomai.memory import unified_memory_hub
 from axomai.learning import continuous_learner
 from axomai.supervision import agent_watchdog, circuit_breaker
+from axomai.proactive import heartbeat_daemon
+from axomai.metamorphosis import code_profiler, self_patcher
+from axomai.swarm_hive import swarm_consensus
+from axomai.agency import action_runner
 
 router = APIRouter(prefix="/api")
 agent = Z1AlphaAgent()
@@ -873,3 +877,33 @@ async def trigger_autonomous_learning(topic: Optional[str] = None):
 async def get_watchdog_telemetry():
     """Returns real-time agent watchdog and circuit breaker status."""
     return agent_watchdog.get_telemetry()
+
+@router.get("/proactive/pulse")
+async def get_proactive_pulse():
+    """Returns heartbeat pulse telemetry and active inner monologue stream."""
+    return heartbeat_daemon.get_heartbeat_telemetry()
+
+@router.post("/proactive/pulse")
+async def trigger_proactive_pulse():
+    """Manually triggers a cognitive pulse to evaluate environmental signals."""
+    return heartbeat_daemon.trigger_pulse()
+
+@router.get("/metamorphosis/telemetry")
+async def get_metamorphosis_telemetry():
+    """Returns code profiler and hot patcher telemetry."""
+    return {
+        "profiler": code_profiler.get_profiler_telemetry(),
+        "patcher": self_patcher.get_patch_telemetry()
+    }
+
+@router.post("/swarm/consensus")
+async def execute_swarm_consensus(domains: Optional[List[str]] = None, query: str = "Multi-domain sovereign audit"):
+    """Spawns an ephemeral swarm cluster, computes consensus, and purges clones."""
+    doms = domains or ["energy", "logistics", "fx_hedging"]
+    return swarm_consensus.execute_swarm_mission(doms, query)
+
+@router.get("/agency/vitals")
+async def get_agency_vitals():
+    """Returns host system hardware vitals and cache status."""
+    vitals = action_runner.get_system_vitals()
+    return vitals

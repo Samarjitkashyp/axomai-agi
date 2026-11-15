@@ -514,6 +514,34 @@
                 </button>
                 <div id="learning-live-status" class="hidden mt-2 p-2 rounded bg-black/60 border border-fuchsia-900/60 text-[10px] font-mono text-gray-300"></div>
               </div>
+
+              <!-- Cinematic Autonomous Heartbeat & Inner Monologue Stream -->
+              <div class="p-3.5 rounded-xl bg-gray-900/90 border border-cyan-800/60 shadow-lg mt-3">
+                <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-gray-800">
+                  <span class="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                    <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i> Proactive Cognitive Heartbeat
+                  </span>
+                  <span id="pulse-badge" class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono">Pulse Active</span>
+                </div>
+
+                <!-- Inner Monologue Cinematic Terminal -->
+                <div class="p-2.5 rounded-lg bg-black/80 border border-gray-800/80 font-mono text-[10px] space-y-1 mb-2.5">
+                  <div class="text-[9px] text-gray-500 uppercase tracking-wider flex items-center justify-between">
+                    <span>⚡ AI Inner Monologue (Continuous Consciousness)</span>
+                    <span id="pulse-counter-text" class="text-cyan-400">Pulse #1</span>
+                  </div>
+                  <div id="inner-monologue-line" class="text-cyan-300 leading-relaxed italic">
+                    "Autonomous radar initialized: Monitoring Brahmaputra hydrology and NE logistics corridors."
+                  </div>
+                </div>
+
+                <!-- Proactive Pulse Action Button -->
+                <button onclick="triggerHeartbeatPulseUI()" id="btn-trigger-pulse" class="w-full py-1.5 px-3 rounded-lg bg-gray-950 hover:bg-gray-800 text-cyan-300 border border-cyan-800/70 text-[10px] font-mono font-bold flex items-center justify-center gap-1.5 cursor-pointer transition">
+                  <i data-lucide="zap" class="w-3 h-3 text-cyan-400"></i>
+                  <span>Emit Cognitive Heartbeat Pulse</span>
+                </button>
+              </div>
             </div>
 
           </div>
@@ -542,7 +570,46 @@
       await fetchDocuments();
       initAutonomousWorkspace();
       refreshCognitiveMemoryTelemetry();
+      refreshHeartbeatTelemetry();
       if (window.lucide) lucide.createIcons();
+    }
+
+    async function refreshHeartbeatTelemetry() {
+      try {
+        const res = await fetch('/api/proactive/pulse');
+        if (res.ok) {
+          const data = await res.json();
+          const thoughts = data.inner_monologue_stream || [];
+          const countEl = document.getElementById('pulse-counter-text');
+          const lineEl = document.getElementById('inner-monologue-line');
+          if (countEl) countEl.textContent = `Pulse #${data.pulse_count || 1}`;
+          if (lineEl && thoughts.length > 0) {
+            lineEl.textContent = `"${thoughts[thoughts.length - 1]}"`;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to refresh heartbeat telemetry:", e);
+      }
+    }
+
+    async function triggerHeartbeatPulseUI() {
+      const btn = document.getElementById('btn-trigger-pulse');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch('/api/proactive/pulse', { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          const lineEl = document.getElementById('inner-monologue-line');
+          const countEl = document.getElementById('pulse-counter-text');
+          if (countEl) countEl.textContent = `Pulse #${data.pulse_index}`;
+          if (lineEl) lineEl.textContent = `"${data.inner_monologue}"`;
+        }
+      } catch (err) {
+        console.warn("Pulse error:", err);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (window.lucide) lucide.createIcons();
+      }
     }
 
     async function refreshCognitiveMemoryTelemetry() {

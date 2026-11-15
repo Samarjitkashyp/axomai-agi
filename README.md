@@ -2,14 +2,44 @@
 
 AxomAI is a next-generation Sovereign Artificial General Intelligence (AGI) platform engineered for enterprise autonomy, industrial resilience, high-finance underwriting, and regional sovereign defense.
 
-Operating across **22 autonomous core agents** (Z-Series + Y-Series), **3 multi-agent mega syndicates**, a **4-Tier Cognitive Infinite Memory Engine**, an **Autonomous Continuous Internet Self-Learning Radar**, and a **Sovereign Watchdog Iron-Dome**, AxomAI fuses real mathematical models, geo-spatial intelligence, and zero-trust cybersecurity guardrails into a real-time web interface.
+Operating across **22 autonomous core agents** (Z-Series + Y-Series), **3 multi-agent mega syndicates**, a **4-Tier Cognitive Infinite Memory Engine**, an **Autonomous Continuous Internet Self-Learning Radar**, an **Autonomous Proactive Heartbeat Pulse**, a **Recursive Code Metamorphosis Hot-Patcher**, and a **Sovereign Watchdog Iron-Dome**, AxomAI fuses real mathematical models, geo-spatial intelligence, and zero-trust cybersecurity guardrails into a real-time web interface.
+
+---
+
+## 💓 Proactive Heartbeat & Autonomous Goal Generator
+
+AxomAI does not wait for human prompts to act (`src/axomai/proactive/`):
+- **Autonomous Heartbeat Daemon (`heartbeat_daemon.py`)**: Executes continuous cognitive pulses, analyzing real-time indicators and generating a cinematic Inner Monologue thought stream.
+- **Autonomous Goal Generator (`goal_generator.py`)**: Detects environmental triggers (Mandi commodity drops, flood embankment pore pressure spikes, tariff differentials) and proactively formulates and dispatches strategic P0/P1 missions.
+
+---
+
+## 🧬 Recursive Code Metamorphosis & Zero-Downtime Hot-Patcher
+
+True self-optimizing AGI architecture (`src/axomai/metamorphosis/`):
+- **Code AST Profiler (`code_profiler.py`)**: Parses Python abstract syntax trees (AST), measures cyclomatic complexity, loop nesting, and branch depth, and flags optimization targets.
+- **Autonomous Self-Patcher (`self_patcher.py`)**: Safely recompiles optimized algorithms, verifies regression accuracy in an isolated sandbox, and live hot-swaps active functions in memory with **zero server downtime**.
+
+---
+
+## 👥 Dynamic Ephemeral Swarm Spawner & Consensus
+
+Movie-style swarm cloning capability (`src/axomai/swarm_hive/`):
+- **Agent Spawner (`agent_spawner.py`)**: Creates on-the-fly specialized lightweight sub-agents assigned to discrete analytical slices across massive multi-domain missions.
+- **Swarm Consensus (`swarm_consensus.py`)**: Aggregates parallel specialist findings, calculates weighted consensus confidence, and **purges temporary clones from memory** to guarantee zero RAM bloat.
+
+---
+
+## 🖥️ Digital Agency & Sovereign Hardware Controller
+
+Real-world operational agency (`src/axomai/agency/`):
+- **Action Runner (`action_runner.py`)**: Real-time host CPU, RAM, and disk utilization diagnostics, autonomous cache optimization, and automated executive artifact compilation in `storage/generated/`.
 
 ---
 
 ## 🧠 4-Tier Infinite Cognitive Memory Architecture
 
 AxomAI features an autonomous, multi-tiered persistent memory hub (`src/axomai/memory/`) that enables cross-session learning and prevents mistake repetition:
-
 1. **Tier 1: Working Memory (`working_memory.py`)** — Live conversational buffer, multi-agent scratchpads, rolling context synthesis, and real-time cognitive load tracking.
 2. **Tier 2: Episodic Memory (`episodic_memory.py`)** — Persistent SQLite experience vault recording query outcomes, numerical rewards (0.0 to 1.0), and verbal self-reflections so the AGI never repeats past mistakes.
 3. **Tier 3: Semantic Knowledge Graph (`semantic_graph_memory.py`)** — Ontological entity-relation knowledge graph with subject-predicate-object triples and multi-hop relational pathfinding.
@@ -74,7 +104,6 @@ To guarantee that autonomous agents never go out-of-control (`src/axomai/supervi
 
 ## 🔱 Multi-Agent Mega Syndicates
 
-When complex, cross-domain missions are initiated, the **Master Orchestrator** automatically convenes multi-agent mega syndicates:
 1. **🌾 Commercial Revenue Syndicate (`Y1` + `Z13` + `Z14`)** — Farm-to-Export end-to-end profit pipeline.
 2. **⚡ Sovereign Infrastructure & Energy Shield (`Y2` + `Y4` + `Z10`)** — Industrial clean energy transition & mega EPC dispute defense.
 3. **🏛️ Institutional Wall Street & Sovereign Geopolitics Syndicate (`Z17` + `Y5` + `Z15`)** — Cross-border PE buyout underwriting & sovereign defense.
@@ -84,6 +113,7 @@ When complex, cross-domain missions are initiated, the **Master Orchestrator** a
 ## 💻 Sovereign War Room Studio (Web UI)
 
 The visual interface (`src/axomai/api/templates/index.html`) includes:
+- **Proactive Heartbeat & Inner Monologue Console**: Live cinematic pulse indicator and streaming continuous consciousness monologue.
 - **Cognitive Memory & Evolution Hub**: Real-time 4-tier memory volume gauges, Watchdog security status, and one-click autonomous self-learning triggers.
 - **Interactive Simulation Sliders**:
   - *Solar PPA & Carbon Offset Slider*: Live capacity, Discom savings, and Verra VCS emissions credits.
@@ -120,6 +150,7 @@ Open **[http://127.0.0.1:8080](http://127.0.0.1:8080)** to access the Sovereign 
 ### Run Comprehensive Autonomous AGI Test Suite
 ```powershell
 $env:PYTHONPATH="src"
+python scratch/test_super_agi_engine.py
 python scratch/test_autonomous_agi_core.py
 python scratch/test_all_syndicates.py
 python scratch/test_y_series_agents.py

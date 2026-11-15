@@ -2,7 +2,43 @@
 
 AxomAI is a next-generation Sovereign Artificial General Intelligence (AGI) platform engineered for enterprise autonomy, industrial resilience, high-finance underwriting, and regional sovereign defense.
 
-Operating across **22 autonomous core agents** (Z-Series + Y-Series), **3 multi-agent mega syndicates**, and an **Autonomous Master Orchestrator**, AxomAI fuses real mathematical models, geo-spatial intelligence, and zero-trust cybersecurity guardrails into a real-time web interface.
+Operating across **22 autonomous core agents** (Z-Series + Y-Series), **3 multi-agent mega syndicates**, a **4-Tier Cognitive Infinite Memory Engine**, an **Autonomous Continuous Internet Self-Learning Radar**, and a **Sovereign Watchdog Iron-Dome**, AxomAI fuses real mathematical models, geo-spatial intelligence, and zero-trust cybersecurity guardrails into a real-time web interface.
+
+---
+
+## 🧠 4-Tier Infinite Cognitive Memory Architecture
+
+AxomAI features an autonomous, multi-tiered persistent memory hub (`src/axomai/memory/`) that enables cross-session learning and prevents mistake repetition:
+
+1. **Tier 1: Working Memory (`working_memory.py`)** — Live conversational buffer, multi-agent scratchpads, rolling context synthesis, and real-time cognitive load tracking.
+2. **Tier 2: Episodic Memory (`episodic_memory.py`)** — Persistent SQLite experience vault recording query outcomes, numerical rewards (0.0 to 1.0), and verbal self-reflections so the AGI never repeats past mistakes.
+3. **Tier 3: Semantic Knowledge Graph (`semantic_graph_memory.py`)** — Ontological entity-relation knowledge graph with subject-predicate-object triples and multi-hop relational pathfinding.
+4. **Tier 4: Procedural Memory (`procedural_memory.py`)** — Registry of permanent algorithms, synthesized formulas, and custom analytical tools invented on-the-fly by the fleet.
+
+---
+
+## 🌐 Autonomous Internet Self-Learning & Anti-Poisoning Gate
+
+The platform incorporates an autonomous closed-loop continuous learning radar (`src/axomai/learning/`):
+- **Web Harvester (`web_harvester.py`)**: Autonomously crawls market auctions, regulatory gazettes, infrastructure updates, and research telemetry.
+- **Knowledge Sanitizer (`knowledge_sanitizer.py`)**: Hardened anti-poisoning and prompt injection filter that quarantines malicious exploit attempts before admitting knowledge into memory.
+- **Continuous Learner (`continuous_learner.py`)**: Master coordinator that assimilates sanitized external facts into Semantic Graph & Episodic Memory on automated schedules or single-click UI triggers.
+
+---
+
+## 🛠️ Reflexion & Autonomous Developer (Self-Coding & Sandbox Deployment)
+
+True AGI capability inspired by Frontier AI research (`src/axomai/evolution/`):
+- **Reflexion Engine (`reflexion_engine.py`)**: Verbal reinforcement learning module that self-evaluates outputs against mathematical density, factual alignment, and structural rigor, computing autonomous rewards.
+- **Autonomous Developer (`autonomous_developer.py`)**: Enables AxomAI to identify missing analytical tools, write sandboxed Python code, execute self-generated unit tests, and deploy verified skills permanently into Procedural Memory without human intervention.
+
+---
+
+## 🛡️ Sovereign Watchdog & Circuit Breaker Kill-Switch
+
+To guarantee that autonomous agents never go out-of-control (`src/axomai/supervision/`):
+- **Agent Watchdog (`agent_watchdog.py`)**: Real-time entropy, semantic drift, token velocity, and rogue instruction monitor.
+- **Circuit Breaker Kill-Switch (`circuit_breaker.py`)**: Hardware-grade software quarantine that freezes rogue agents in milliseconds if safety boundaries (> 0.85 anomaly) are breached. Unfreezing strictly requires Master Orchestrator sovereign clearance.
 
 ---
 
@@ -39,26 +75,20 @@ Operating across **22 autonomous core agents** (Z-Series + Y-Series), **3 multi-
 ## 🔱 Multi-Agent Mega Syndicates
 
 When complex, cross-domain missions are initiated, the **Master Orchestrator** automatically convenes multi-agent mega syndicates:
-
-1. **🌾 Commercial Revenue Syndicate (`Y1` + `Z13` + `Z14`)**
-   - Farm-to-Export end-to-end profit pipeline.
-   - Precision tea plucking advisory + Mandi procurement arbitrage + Garman-Kohlhagen zero-cost FX collars.
-2. **⚡ Sovereign Infrastructure & Energy Shield (`Y2` + `Y4` + `Z10`)**
-   - Industrial energy transition & mega EPC dispute defense.
-   - Solar rooftop PPA optimization + FIDIC Clause 20.1 EoT delay litigation defense + Siliguri flood-resilient supply routing.
-3. **🏛️ Institutional Wall Street & Sovereign Geopolitics Syndicate (`Z17` + `Y5` + `Z15`)**
-   - Cross-border PE buyout underwriting & sovereign defense.
-   - Monte Carlo LBO returns + OFAC SDN sanctions screening + MITRE adversary counter-surveillance.
+1. **🌾 Commercial Revenue Syndicate (`Y1` + `Z13` + `Z14`)** — Farm-to-Export end-to-end profit pipeline.
+2. **⚡ Sovereign Infrastructure & Energy Shield (`Y2` + `Y4` + `Z10`)** — Industrial clean energy transition & mega EPC dispute defense.
+3. **🏛️ Institutional Wall Street & Sovereign Geopolitics Syndicate (`Z17` + `Y5` + `Z15`)** — Cross-border PE buyout underwriting & sovereign defense.
 
 ---
 
 ## 💻 Sovereign War Room Studio (Web UI)
 
 The visual interface (`src/axomai/api/templates/index.html`) includes:
+- **Cognitive Memory & Evolution Hub**: Real-time 4-tier memory volume gauges, Watchdog security status, and one-click autonomous self-learning triggers.
 - **Interactive Simulation Sliders**:
   - *Solar PPA & Carbon Offset Slider*: Live capacity, Discom savings, and Verra VCS emissions credits.
   - *Monte Carlo Valuation Slider*: Stochastic enterprise valuation across Bear (5th), Median (50th), and Bull (95th) percentiles.
-- **Dynamic Studio Charts**: Revenue trajectories, regional market share, Watchdog integrity scores, clean energy transition tariffs, and stochastic valuation curves.
+- **Dynamic Studio Charts**: Revenue trajectories, regional market share, clean energy transition tariffs, and stochastic valuation curves.
 - **Voice Intelligence Interface**: Hands-free Indian English voice synthesis and real-time speech recognition.
 - **Deliverable & Report Generator**: One-click PDF export of syndicated board-ready executive memos.
 
@@ -87,12 +117,12 @@ python run_panel.py --port 8080
 ```
 Open **[http://127.0.0.1:8080](http://127.0.0.1:8080)** to access the Sovereign War Room.
 
-### Run End-to-End Verification Suite
+### Run Comprehensive Autonomous AGI Test Suite
 ```powershell
 $env:PYTHONPATH="src"
+python scratch/test_autonomous_agi_core.py
 python scratch/test_all_syndicates.py
 python scratch/test_y_series_agents.py
-python scratch/test_advanced_global_agents.py
 ```
 
 ---

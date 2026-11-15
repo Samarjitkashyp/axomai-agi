@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, Query
 from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -22,6 +22,9 @@ from axomai.agents.z_sentinel import z_sentinel_agent
 from axomai.agents.z3_echo.tools.db_connector import db_connector
 from axomai.core.llm import llm_brain
 from axomai.core.translators.xetu import xetu_translator
+from axomai.memory import unified_memory_hub
+from axomai.learning import continuous_learner
+from axomai.supervision import agent_watchdog, circuit_breaker
 
 router = APIRouter(prefix="/api")
 agent = Z1AlphaAgent()
@@ -848,3 +851,25 @@ def export_intelligence_report(req: ExportReportRequest):
             media_type="text/markdown",
             headers={"Content-Disposition": f"attachment; filename=Z1_Alpha_Report_{uuid.uuid4().hex[:6]}.md"}
         )
+
+@router.get("/memory/telemetry")
+async def get_memory_telemetry():
+    """Returns 4-tier cognitive memory architecture telemetry."""
+    return unified_memory_hub.get_memory_telemetry()
+
+@router.get("/memory/search")
+async def search_memory(query: str = Query(..., min_length=2)):
+    """Searches across episodic experiences and semantic knowledge graph."""
+    brief = unified_memory_hub.synthesize_cognitive_brief(query)
+    return brief
+
+@router.post("/evolution/trigger-learn")
+async def trigger_autonomous_learning(topic: Optional[str] = None):
+    """Triggers an autonomous internet self-learning and memory consolidation cycle."""
+    cycle_res = continuous_learner.run_learning_cycle(custom_topic=topic)
+    return cycle_res
+
+@router.get("/supervision/watchdog")
+async def get_watchdog_telemetry():
+    """Returns real-time agent watchdog and circuit breaker status."""
+    return agent_watchdog.get_telemetry()

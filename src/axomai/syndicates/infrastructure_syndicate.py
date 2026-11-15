@@ -118,3 +118,4 @@ class InfrastructureEnergyShield:
         }
 
 infrastructure_energy_shield = InfrastructureEnergyShield()
+

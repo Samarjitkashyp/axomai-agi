@@ -151,3 +151,4 @@ class CommercialRevenueSyndicate:
         }
 
 commercial_revenue_syndicate = CommercialRevenueSyndicate()
+

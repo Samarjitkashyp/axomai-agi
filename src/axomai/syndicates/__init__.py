@@ -7,3 +7,4 @@ __all__ = [
     "infrastructure_energy_shield", "InfrastructureEnergyShield",
     "institutional_syndicate", "InstitutionalSyndicate"
 ]
+

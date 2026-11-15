@@ -478,6 +478,42 @@
                   </div>
                 </div>
               </div>
+
+              <!-- 4-Tier Cognitive Memory & Autonomous Evolution Hub -->
+              <div class="p-3.5 rounded-xl bg-gray-900/90 border border-fuchsia-800/60 shadow-lg mt-3">
+                <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-gray-800">
+                  <span class="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                    <i data-lucide="brain-circuit" class="w-3.5 h-3.5 text-fuchsia-400"></i> Cognitive Memory & Evolution
+                  </span>
+                  <span id="cog-memory-status" class="text-[9px] px-1.5 py-0.5 rounded bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-800 font-mono">4-Tier Infinite Memory</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-[10px] font-mono mb-3">
+                  <div class="p-2 rounded-lg bg-gray-950/80 border border-gray-800">
+                    <span class="text-gray-400 block text-[9px]">Tier 2: Episodic (Mistakes/Lessons)</span>
+                    <span id="cog-ep-count" class="font-bold text-cyan-300">3 Lessons (Avg 0.98)</span>
+                  </div>
+                  <div class="p-2 rounded-lg bg-gray-950/80 border border-gray-800">
+                    <span class="text-gray-400 block text-[9px]">Tier 3: Semantic Graph Nodes</span>
+                    <span id="cog-sem-count" class="font-bold text-fuchsia-300">6 Entities • 5 Triples</span>
+                  </div>
+                  <div class="p-2 rounded-lg bg-gray-950/80 border border-gray-800">
+                    <span class="text-gray-400 block text-[9px]">Tier 4: Procedural Skills</span>
+                    <span id="cog-proc-count" class="font-bold text-amber-300">2 Verified Tools</span>
+                  </div>
+                  <div class="p-2 rounded-lg bg-gray-950/80 border border-gray-800">
+                    <span class="text-gray-400 block text-[9px]">Watchdog Iron-Dome</span>
+                    <span id="cog-watchdog-status" class="font-bold text-emerald-300">Active • 0 Quarantine</span>
+                  </div>
+                </div>
+
+                <!-- Self-Learning Action Button -->
+                <button onclick="triggerAutonomousLearningUI()" id="btn-trigger-learn" class="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-fuchsia-950 to-indigo-950 hover:from-fuchsia-900 hover:to-indigo-900 text-fuchsia-200 border border-fuchsia-800 text-[11px] font-mono font-bold flex items-center justify-center gap-1.5 cursor-pointer transition shadow-sm">
+                  <i data-lucide="satellite" class="w-3.5 h-3.5 text-fuchsia-400"></i>
+                  <span>Trigger Autonomous Internet Self-Learning Cycle</span>
+                </button>
+                <div id="learning-live-status" class="hidden mt-2 p-2 rounded bg-black/60 border border-fuchsia-900/60 text-[10px] font-mono text-gray-300"></div>
+              </div>
             </div>
 
           </div>
@@ -505,7 +541,55 @@
       if (window.lucide) lucide.createIcons();
       await fetchDocuments();
       initAutonomousWorkspace();
+      refreshCognitiveMemoryTelemetry();
       if (window.lucide) lucide.createIcons();
+    }
+
+    async function refreshCognitiveMemoryTelemetry() {
+      try {
+        const res = await fetch('/api/memory/telemetry');
+        if (res.ok) {
+          const data = await res.json();
+          const ep = data.tiers && data.tiers.episodic_memory;
+          const sem = data.tiers && data.tiers.semantic_graph;
+          const proc = data.tiers && data.tiers.procedural_memory;
+          const epEl = document.getElementById('cog-ep-count');
+          const semEl = document.getElementById('cog-sem-count');
+          const procEl = document.getElementById('cog-proc-count');
+          if (epEl && ep) epEl.textContent = `${ep.total_episodes} Lessons (Avg ${ep.average_reward_score})`;
+          if (semEl && sem) semEl.textContent = `${sem.total_entities} Entities • ${sem.total_triples} Triples`;
+          if (procEl && proc) procEl.textContent = `${proc.total_registered_skills} Verified Tools`;
+        }
+      } catch (e) {
+        console.warn("Failed to refresh memory telemetry:", e);
+      }
+    }
+
+    async function triggerAutonomousLearningUI() {
+      const btn = document.getElementById('btn-trigger-learn');
+      const statusEl = document.getElementById('learning-live-status');
+      if (btn) btn.disabled = true;
+      if (statusEl) {
+        statusEl.classList.remove('hidden');
+        statusEl.innerHTML = '<span class="text-cyan-400">🌐 Radar scanning internet feeds & verifying anti-poisoning gate...</span>';
+      }
+      try {
+        const res = await fetch('/api/evolution/trigger-learn', { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          if (statusEl) {
+            statusEl.innerHTML = `<span class="text-emerald-400 font-bold">✓ Cycle #${data.cycle_index} Complete!</span><br><span class="text-gray-300">Topic: ${data.topic}</span><br><span class="text-fuchsia-300">Assimilated ${data.facts_ingested_count} new facts into semantic graph.</span>`;
+          }
+          await refreshCognitiveMemoryTelemetry();
+        } else {
+          if (statusEl) statusEl.innerHTML = '<span class="text-rose-400">Failed to trigger learning cycle</span>';
+        }
+      } catch (err) {
+        if (statusEl) statusEl.innerHTML = `<span class="text-rose-400">Error: ${err.message}</span>`;
+      } finally {
+        if (btn) btn.disabled = false;
+        if (window.lucide) lucide.createIcons();
+      }
     }
 
     if (document.readyState === "loading") {

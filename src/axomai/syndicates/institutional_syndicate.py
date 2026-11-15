@@ -124,3 +124,4 @@ class InstitutionalSyndicate:
         }
 
 institutional_syndicate = InstitutionalSyndicate()
+

@@ -30,6 +30,8 @@ from axomai.metamorphosis import code_profiler, self_patcher
 from axomai.swarm_hive import swarm_consensus
 from axomai.agency import action_runner
 from axomai.evaluation import benchmark_suite, EvaluationHarness, RegressionDetector
+from axomai.cognition import cognitive_core, self_model, world_model, capability_registry, capability_acquisition_engine, belief_manager
+from axomai.evolution import evolution_manager, active_researcher, failure_detector, hypothesis_engine
 
 router = APIRouter(prefix="/api")
 agent = Z1AlphaAgent()
@@ -982,4 +984,53 @@ async def get_capability_supervision_telemetry():
         "master_token_active": bool(capability_guard.master_token),
         "janitor_token_active": bool(capability_guard.janitor_token)
     }
+
+# =========================================================================
+# Cognitive Core & Introspective Self-Model Endpoints
+# =========================================================================
+
+@router.get("/cognition/state")
+async def get_cognitive_state():
+    """Returns complete state across Self-Model, World-Model, Beliefs, and Capabilities."""
+    return cognitive_core.get_cognitive_status()
+
+@router.post("/cognition/deliberate")
+async def trigger_cognitive_deliberation():
+    """Executes a full cognitive deliberation cycle: observe -> model -> deliberate goals."""
+    return cognitive_core.deliberate_and_act()
+
+@router.post("/cognition/acquire-capability")
+async def acquire_new_capability(
+    name: str,
+    category: str,
+    description: str,
+    code: str,
+    test_input: Dict[str, Any],
+    expected_output: Any
+):
+    """Dynamically compiles, sandboxes, verifies and registers a newly acquired capability."""
+    res = capability_acquisition_engine.acquire_capability(
+        capability_name=name,
+        category=category,
+        description=description,
+        python_code=code,
+        test_inputs=[test_input],
+        expected_outputs=[expected_output]
+    )
+    return res
+
+# =========================================================================
+# Autonomous Evolution & Active Research Endpoints
+# =========================================================================
+
+@router.post("/evolution/run-cycle")
+async def trigger_self_evolution_cycle():
+    """Triggers an autonomous self-evolution cycle with benchmark validation and rollback guard."""
+    return evolution_manager.run_self_evolution_cycle()
+
+@router.post("/evolution/active-research")
+async def execute_active_research(topic: str = Query(..., min_length=2)):
+    """Conducts autonomous multi-question research on an unknown topic and updates knowledge base."""
+    return active_researcher.conduct_active_research(topic)
+
 

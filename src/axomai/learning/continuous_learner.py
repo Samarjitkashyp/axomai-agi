@@ -100,3 +100,4 @@ class ContinuousLearner:
         }
 
 continuous_learner = ContinuousLearner()
+

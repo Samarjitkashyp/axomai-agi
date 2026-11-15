@@ -81,3 +81,4 @@ class CircuitBreaker:
         }
 
 circuit_breaker = CircuitBreaker()
+

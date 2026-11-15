@@ -69,3 +69,4 @@ class WebHarvester:
         return list(self.target_topics)
 
 web_harvester = WebHarvester()
+

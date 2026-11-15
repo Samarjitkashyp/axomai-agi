@@ -70,3 +70,4 @@ class WorkingMemory:
         self.cognitive_load = 0.0
 
 working_memory = WorkingMemory()
+

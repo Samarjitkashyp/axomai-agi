@@ -76,3 +76,4 @@ class ImmunityGuard:
         }
 
 immunity_guard = ImmunityGuard()
+

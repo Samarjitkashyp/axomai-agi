@@ -120,3 +120,4 @@ class WarGameSimulator:
         return list(self.simulation_archive[-10:])
 
 war_game_simulator = WarGameSimulator()
+

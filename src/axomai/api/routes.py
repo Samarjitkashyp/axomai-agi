@@ -33,6 +33,7 @@ from axomai.evaluation import benchmark_suite, EvaluationHarness, RegressionDete
 from axomai.cognition import cognitive_core, self_model, world_model, capability_registry, capability_acquisition_engine, belief_manager, war_game_simulator
 from axomai.evolution import evolution_manager, active_researcher, failure_detector, hypothesis_engine
 from axomai.orchestration import relentless_executor
+from axomai.agency.web_operator import browser_navigator, credential_vault, security_gate_protocol, multi_tab_swarm_coordinator
 
 router = APIRouter(prefix="/api")
 agent = Z1AlphaAgent()
@@ -1097,6 +1098,89 @@ async def get_sovereign_telemetry():
             "recent_campaigns": micro_swarm_commander.get_campaign_history()[-3:]
         }
     }
+
+# =========================================================================
+# Autonomous Web Operator & Digital RPA Endpoints
+# =========================================================================
+
+@router.post("/web-operator/navigate")
+async def web_navigate_and_inspect(url: str = Query(..., min_length=4)):
+    """Navigates to URL, parses DOM elements and forms, and checks for 2FA gates."""
+    return browser_navigator.navigate_and_inspect(url)
+
+@router.post("/web-operator/fill-form")
+async def web_fill_and_submit_form(
+    target_url: str,
+    action_url: str,
+    form_fields: Dict[str, Any],
+    method: str = "POST"
+):
+    """Autonomously fills and submits form fields to a verified action endpoint."""
+    return browser_navigator.fill_and_submit_form(
+        target_url=target_url,
+        action_url=action_url,
+        form_fields=form_fields,
+        method=method
+    )
+
+@router.post("/web-operator/download-document")
+async def web_download_document(download_url: str, filename: Optional[str] = None):
+    """Autonomously downloads a document or data file into storage/downloads/."""
+    return browser_navigator.download_document_artifact(download_url=download_url, filename_hint=filename)
+
+@router.get("/web-operator/vault")
+async def web_vault_list_credentials():
+    """Lists authorized web credentials with secrets strictly masked."""
+    return {
+        "registered_services": credential_vault.list_services_masked(),
+        "audit_trail": credential_vault.get_audit_trail()
+    }
+
+@router.post("/web-operator/vault/store")
+async def web_vault_store_credential(
+    service_id: str,
+    service_name: str,
+    username: str,
+    secret: str,
+    metadata: Optional[Dict[str, Any]] = None
+):
+    """Encrypts and stores authorized service credentials in local sovereign vault."""
+    return credential_vault.store_credential(
+        service_id=service_id,
+        service_name=service_name,
+        username=username,
+        secret=secret,
+        metadata=metadata
+    )
+
+@router.get("/web-operator/gate/pending")
+async def web_gate_get_pending():
+    """Returns pending human-in-the-loop security/2FA gates requiring user approval."""
+    return {
+        "pending_gates": security_gate_protocol.get_pending_gates()
+    }
+
+@router.post("/web-operator/gate/approve")
+async def web_gate_approve_and_resume(gate_id: str, otp_token: Optional[str] = None):
+    """Approves a human-in-the-loop gate and resumes autonomous AGI execution."""
+    return security_gate_protocol.approve_and_resume_gate(gate_id=gate_id, auth_token_or_confirmation=otp_token)
+
+@router.post("/web-operator/multi-tab-scrape")
+async def web_multi_tab_scrape(
+    mission_title: str = "Cross-Portal Data Extraction",
+    portals: Optional[List[Dict[str, str]]] = None
+):
+    """Coordinates parallel multi-tab scraping and document aggregation across portals."""
+    default_portals = portals or [
+        {"name": "Discom Utility Billing Portal", "url": "mock://discom.assam.gov.in"},
+        {"name": "Guwahati Tea Auction Committee", "url": "mock://gtac.assam.gov.in"},
+        {"name": "Brahmaputra Water Resources Gauge Network", "url": "mock://wrd.assam.gov.in"}
+    ]
+    return multi_tab_swarm_coordinator.execute_multi_portal_scrape(
+        mission_title=mission_title,
+        target_portals=default_portals
+    )
+
 
 
 

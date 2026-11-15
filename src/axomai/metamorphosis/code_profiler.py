@@ -64,3 +64,4 @@ class CodeProfiler:
         }
 
 code_profiler = CodeProfiler()
+

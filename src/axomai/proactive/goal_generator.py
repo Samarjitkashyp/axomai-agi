@@ -105,3 +105,4 @@ class GoalGenerator:
         return list(self.proactive_goals_history[-10:])
 
 goal_generator = GoalGenerator()
+

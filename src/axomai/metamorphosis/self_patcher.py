@@ -134,3 +134,4 @@ class SelfPatcher:
         }
 
 self_patcher = SelfPatcher()
+

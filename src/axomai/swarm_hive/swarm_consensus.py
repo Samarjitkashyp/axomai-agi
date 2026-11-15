@@ -49,3 +49,4 @@ class SwarmConsensus:
         }
 
 swarm_consensus = SwarmConsensus()
+

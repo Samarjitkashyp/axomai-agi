@@ -127,6 +127,7 @@ def list_documents(db: Session = Depends(get_db)):
         results.append({
             "id": str(d.id),
             "filename": d.filename,
+            "title": d.filename,
             "file_type": d.file_type,
             "mime_type": d.mime_type,
             "file_size_bytes": d.file_size_bytes,
@@ -514,14 +515,19 @@ def stream_master_orchestrator(req: MasterRequest):
         raise HTTPException(status_code=400, detail="Query cannot be empty")
 
     def event_generator():
-        for event in master_orchestrator.orchestrate_stream(
-            query=req.query,
-            document_id=req.document_id,
-            document_ids=req.document_ids,
-            session_id=req.session_id,
-            manual_agent=req.manual_agent
-        ):
-            yield f"data: {json.dumps(event)}\n\n"
+        try:
+            for event in master_orchestrator.orchestrate_stream(
+                query=req.query,
+                document_id=req.document_id,
+                document_ids=req.document_ids,
+                session_id=req.session_id,
+                manual_agent=req.manual_agent
+            ):
+                yield f"data: {json.dumps(event)}\n\n"
+        except Exception as e:
+            logger.error(f"SSE stream unhandled exception: {e}", exc_info=True)
+            yield f"data: {json.dumps({'type': 'error', 'error': f'Stream resilient recovery: {str(e)}'})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'answer': f'Stream processed with recovery: {str(e)}'})}\n\n"
 
     return StreamingResponse(
         event_generator(),

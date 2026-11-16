@@ -167,7 +167,7 @@ class AutonomousBrowserAgent:
                 # Extract HTML Tables
                 tables_data = []
                 for idx, tbl in enumerate(soup.find_all("table")[:6]):
-                    extracted = self._parse_table(tbl, idx + 1)
+                    extracted = self._parse_table(tbl, idx + 1, base_url=url)
                     if extracted and len(extracted["rows"]) > 0:
                         tables_data.append(extracted)
 
@@ -196,8 +196,8 @@ class AutonomousBrowserAgent:
         except Exception as e:
             return {"success": False, "url": url, "error": f"Browser engine fetch error: {str(e)}"}
 
-    def _parse_table(self, table_soup: Any, table_idx: int) -> Optional[Dict[str, Any]]:
-        """Extracts structured 2D table matrix from HTML table element."""
+    def _parse_table(self, table_soup: Any, table_idx: int, base_url: str = "") -> Optional[Dict[str, Any]]:
+        """Extracts structured 2D table matrix from HTML table element, capturing embedded links."""
         headers = []
         rows = []
 
@@ -206,7 +206,16 @@ class AutonomousBrowserAgent:
             headers = [th.get_text(strip=True) for th in header_row.find_all(["th", "td"])]
 
         for tr in table_soup.find_all("tr")[1:]:
-            row_cells = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
+            row_cells = []
+            for td in tr.find_all(["td", "th"]):
+                text = td.get_text(strip=True)
+                a_tag = td.find("a", href=True)
+                if a_tag and base_url:
+                    full_link = urljoin(base_url, a_tag["href"])
+                    display = text or "Download / Link"
+                    row_cells.append(f"[{display}]({full_link})")
+                else:
+                    row_cells.append(text)
             if any(row_cells):
                 rows.append(row_cells)
 

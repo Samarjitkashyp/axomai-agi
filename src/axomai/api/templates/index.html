@@ -668,15 +668,19 @@
           return;
         }
 
-        list.innerHTML = docs.map(d => `
-          <div class="p-2 rounded bg-black/40 border border-cyan-500/20 hover:border-cyan-400 flex items-center justify-between group cursor-pointer" onclick="attachVaultDoc('${d.id}', '${d.title}')">
+        list.innerHTML = docs.map(d => {
+          const docTitle = d.filename || d.title || 'Document';
+          const safeTitle = docTitle.replace(/'/g, "\\'");
+          return `
+          <div class="p-2 rounded bg-black/40 border border-cyan-500/20 hover:border-cyan-400 flex items-center justify-between group cursor-pointer" onclick="attachVaultDoc('${d.id}', '${safeTitle}')">
             <div class="flex items-center gap-2 truncate">
               <i data-lucide="file-text" class="w-3.5 h-3.5 text-neonCyan shrink-0"></i>
-              <span class="text-gray-200 truncate">${d.title}</span>
+              <span class="text-gray-200 truncate" title="${docTitle}">${docTitle}</span>
             </div>
-            <span class="text-[10px] text-gray-400 uppercase shrink-0">${d.file_type}</span>
+            <span class="text-[10px] text-gray-400 uppercase shrink-0">${d.file_type || 'FILE'}</span>
           </div>
-        `).join('');
+        `;
+        }).join('');
         lucide.createIcons();
       } catch (e) {
         console.warn('Document vault fetch error:', e);

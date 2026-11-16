@@ -719,102 +719,116 @@ class MasterOrchestrator:
             }
             return
 
-        for event in event_stream:
-            event_type = event.get("type")
-            if event_type == "meta":
-                meta_event = event
-                if event.get("sql_query"):
-                    context_snippets.append(f"SQL Query: {event.get('sql_query')}")
-                if event.get("data_table"):
-                    context_snippets.append(f"Data: {json.dumps(event.get('data_table'))}")
-                if event.get("sources"):
-                    for s in event.get("sources", []):
-                        context_snippets.append(f"{s.get('title', '')}: {s.get('snippet', '')}")
-                if event.get("evidence"):
-                    for ev in event.get("evidence", []):
-                        context_snippets.append(f"{ev.get('source', '')}: {ev.get('text', '')}")
-                yield event
-            elif event_type == "token":
-                accumulated_answer += event.get("content", "")
-                yield event
-            elif event_type in ["done", "final"]:
-                final_answer = event.get("answer") or event.get("content") or accumulated_answer
-                context_str = "\n".join(context_snippets)
+        try:
+            for event in event_stream:
+                event_type = event.get("type")
+                if event_type == "meta":
+                    meta_event = event
+                    if event.get("sql_query"):
+                        context_snippets.append(f"SQL Query: {event.get('sql_query')}")
+                    if event.get("data_table"):
+                        context_snippets.append(f"Data: {json.dumps(event.get('data_table'))}")
+                    if event.get("sources"):
+                        for s in event.get("sources", []):
+                            context_snippets.append(f"{s.get('title', '')}: {s.get('snippet', '')}")
+                    if event.get("evidence"):
+                        for ev in event.get("evidence", []):
+                            context_snippets.append(f"{ev.get('source', '')}: {ev.get('text', '')}")
+                    yield event
+                elif event_type == "token":
+                    accumulated_answer += event.get("content", "")
+                    yield event
+                elif event_type in ["done", "final"]:
+                    final_answer = event.get("answer") or event.get("content") or accumulated_answer
+                    context_str = "\n".join(context_snippets)
 
-                # 2. Watchdog Post-Execution Anomaly Audit
-                watch_post = self.watchdog.inspect_agent_action(
-                    agent_id=agent_id,
-                    query=query,
-                    action_or_output=final_answer
-                )
-                if watch_post["status"] == "CIRCUIT_BREAKER_TRIPPED":
+                    # 2. Watchdog Post-Execution Anomaly Audit
+                    watch_post = self.watchdog.inspect_agent_action(
+                        agent_id=agent_id,
+                        query=query,
+                        action_or_output=final_answer
+                    )
+                    if watch_post["status"] == "CIRCUIT_BREAKER_TRIPPED":
+                        yield {
+                            "type": "status",
+                            "stage": "circuit_breaker_quarantine",
+                            "message": f"🚨 Rogue drift neutralized: Agent '{agent_id}' quarantined."
+                        }
+
+                    # 3. Z Sentinel Grounding & PII Audit
+                    sentinel_res = self.sentinel.audit_response(
+                        answer=final_answer,
+                        context_str=context_str,
+                        query=query,
+                        sources=meta_event.get("sources") if meta_event else None
+                    )
+
+                    if sentinel_res.get("pii_masked"):
+                        yield {
+                            "type": "status",
+                            "stage": "sentinel_pii_masked",
+                            "message": "🛡️ Z Sentinel: Output sanitized — sensitive enterprise data masked"
+                        }
+
+                    if sentinel_res.get("self_healed"):
+                        yield {
+                            "type": "status",
+                            "stage": "sentinel_healed",
+                            "message": "🛡️ Z Sentinel: Discrepancy auto-corrected & anchored against ground-truth evidence (Consensus: 100%)"
+                        }
+
+                    # 4. Reflexion & Cognitive Memory Consolidation
+                    ref_res = self.reflexion.evaluate_execution(
+                        query=query,
+                        agent_id=agent_id,
+                        output_text=final_answer
+                    )
+                    self.memory.consolidate_experience(
+                        query=query,
+                        agent_id=agent_id,
+                        outcome_status=ref_res["evaluation_status"],
+                        reward_score=ref_res["reward_score"],
+                        reflection=ref_res["reflection"],
+                        lesson_learned=ref_res["lesson_learned"]
+                    )
+
+                    v_audit = sentinel_res.get("verification_audit")
                     yield {
-                        "type": "status",
-                        "stage": "circuit_breaker_quarantine",
-                        "message": f"🚨 Rogue drift neutralized: Agent '{agent_id}' quarantined."
+                        "type": "sentinel_audit",
+                        "audit": v_audit
                     }
 
-                # 3. Z Sentinel Grounding & PII Audit
-                sentinel_res = self.sentinel.audit_response(
-                    answer=final_answer,
-                    context_str=context_str,
-                    query=query,
-                    sources=meta_event.get("sources") if meta_event else None
-                )
-
-                if sentinel_res.get("pii_masked"):
                     yield {
-                        "type": "status",
-                        "stage": "sentinel_pii_masked",
-                        "message": "🛡️ Z Sentinel: Output sanitized — sensitive enterprise data masked"
-                    }
-
-                if sentinel_res.get("self_healed"):
-                    yield {
-                        "type": "status",
-                        "stage": "sentinel_healed",
-                        "message": "🛡️ Z Sentinel: Discrepancy auto-corrected & anchored against ground-truth evidence (Consensus: 100%)"
-                    }
-
-                # 4. Reflexion & Cognitive Memory Consolidation
-                ref_res = self.reflexion.evaluate_execution(
-                    query=query,
-                    agent_id=agent_id,
-                    output_text=final_answer
-                )
-                self.memory.consolidate_experience(
-                    query=query,
-                    agent_id=agent_id,
-                    outcome_status=ref_res["evaluation_status"],
-                    reward_score=ref_res["reward_score"],
-                    reflection=ref_res["reflection"],
-                    lesson_learned=ref_res["lesson_learned"]
-                )
-
-                v_audit = sentinel_res.get("verification_audit")
-                yield {
-                    "type": "sentinel_audit",
-                    "audit": v_audit
-                }
-
-                yield {
-                    "type": "cognitive_evolution",
-                    "evaluation_status": ref_res["evaluation_status"],
-                    "reward_score": ref_res["reward_score"],
-                    "lesson_learned": ref_res["lesson_learned"]
-                }
-
-                yield {
-                    "type": "done",
-                    "answer": sentinel_res.get("sanitized_answer", final_answer),
-                    "verification_audit": v_audit,
-                    "evolution": {
+                        "type": "cognitive_evolution",
+                        "evaluation_status": ref_res["evaluation_status"],
                         "reward_score": ref_res["reward_score"],
                         "lesson_learned": ref_res["lesson_learned"]
                     }
-                }
-            else:
-                yield event
+
+                    yield {
+                        "type": "done",
+                        "answer": sentinel_res.get("sanitized_answer", final_answer),
+                        "verification_audit": v_audit,
+                        "evolution": {
+                            "reward_score": ref_res["reward_score"],
+                            "lesson_learned": ref_res["lesson_learned"]
+                        }
+                    }
+                else:
+                    yield event
+        except Exception as exc:
+            console.print(f"[bold red]Sentinel Guard intercepted unhandled agent stream exception: {exc}[/bold red]")
+            import traceback
+            traceback.print_exc()
+            err_msg = f"⚠️ Cognitive resilience intercept: Execution stream encountered an issue: {str(exc)}"
+            yield {
+                "type": "token",
+                "content": f"\n\n{err_msg}"
+            }
+            yield {
+                "type": "done",
+                "answer": (accumulated_answer + f"\n\n{err_msg}").strip()
+            }
 
     def orchestrate_stream(
         self,

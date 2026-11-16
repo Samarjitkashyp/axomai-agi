@@ -12,6 +12,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Generator
 from datetime import datetime
+from urllib.parse import urlparse
 
 from rich.console import Console
 from sqlalchemy.orm import Session
@@ -128,17 +129,23 @@ class Z2BravoAgent:
             }
             browser_res = browser_agent.browse_and_extract(target_url, goal=topic)
             if not browser_res.get("success"):
+                violation = browser_res.get("violation")
+                err_detail = violation or browser_res.get("error", "Target portal unreachable")
+                is_sec = bool(violation)
                 meta_event = {
                     "type": "meta",
                     "agent": self.name,
                     "task_type": "AUTONOMOUS_BROWSER_EXTRACTION",
-                    "security_status": browser_res.get("security_status", "BLOCKED"),
-                    "violation": browser_res.get("violation", "Security check failed"),
+                    "security_status": "BLOCKED_BY_Z_SENTINEL" if is_sec else "NETWORK_FETCH_FAILED",
+                    "violation": err_detail,
                     "tools_used": ["browser_agent", "ssrf_sentinel_guard"]
                 }
                 yield meta_event
-                yield {"type": "token", "content": f"### 🛡️ Z Sentinel Security Interception\n\n**Navigation Blocked:** `{browser_res.get('violation')}`\n\nAxomAI Autonomous Browser Agent strictly enforces zero-trust network boundaries and rejected prohibited network traversal."}
-                yield {"type": "done", "answer": browser_res.get("violation", "Blocked")}
+                if is_sec:
+                    yield {"type": "token", "content": f"### 🛡️ Z Sentinel Security Interception\n\n**Navigation Blocked:** `{err_detail}`\n\nAxomAI Autonomous Browser Agent strictly enforces zero-trust network boundaries and rejected prohibited network traversal."}
+                else:
+                    yield {"type": "token", "content": f"### 🌐 Z2 Bravo Portal Notice\n\n**Network Connection Issue:** `{err_detail}`\n\nAxomAI Autonomous Browser Agent could not connect to `{target_url}`. Please verify the URL or network availability."}
+                yield {"type": "done", "answer": err_detail}
                 return
 
             tables = browser_res.get("tables", [])
@@ -179,12 +186,31 @@ class Z2BravoAgent:
             )
 
             full_answer = ""
-            if llm_brain.is_available:
-                for chunk in llm_brain.stream_generate("You are Z2 Bravo Autonomous Browser Agent.", prompt):
-                    full_answer += chunk
-                    yield {"type": "token", "content": chunk}
-            else:
-                full_answer = f"### 🌐 Z2 Bravo Browser Exploration: {target_url}\n\n**Pages Visited:** {browser_res.get('pages_visited_count')} | **Hops:** {browser_res.get('hops_explored')}\n\nExtracted {len(tables)} data table(s) successfully with Z Sentinel zero-trust validation."
+            try:
+                if llm_brain.is_available:
+                    for chunk in llm_brain.stream_generate("You are Z2 Bravo Autonomous Browser Agent.", prompt):
+                        full_answer += chunk
+                        yield {"type": "token", "content": chunk}
+                else:
+                    raise RuntimeError("LLM offline")
+            except Exception:
+                # High-fidelity fallback from extracted data
+                tables_md = ""
+                for tbl in tables[:3]:
+                    headers_line = " | ".join(tbl.get("headers", []))
+                    seps_line = " | ".join(["---"] * max(1, len(tbl.get("headers", []))))
+                    rows_txt = "\n".join([" | ".join(map(str, r)) for r in tbl.get("rows", [])[:8]])
+                    tables_md += f"\n\n**{tbl.get('table_id', 'Extracted Table')}**\n\n| {headers_line} |\n| {seps_line} |\n{rows_txt}\n"
+
+                full_answer = (
+                    f"### 🌐 Z2 Bravo Autonomous Browser Extraction\n\n"
+                    f"**Target Portal:** `{target_url}`\n"
+                    f"**Pages Explored:** {browser_res.get('pages_visited_count')} | **Hops Followed:** {browser_res.get('hops_explored')}\n\n"
+                    f"#### 📑 Discovered Portal Content & Tables\n"
+                    f"{tables_md if tables_md else 'Content successfully retrieved and parsed.'}\n\n"
+                    f"#### 🔗 Explored Pages & Notices:\n"
+                    + "\n".join([f"- [{p.get('title')}]({p.get('url')}): {p.get('summary')}" for p in browser_res.get("pages_summary", [])])
+                )
                 for tok in full_answer.split(" "):
                     yield {"type": "token", "content": tok + " "}
 

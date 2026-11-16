@@ -578,96 +578,108 @@
       const nearStarsMesh = new THREE.Points(nearStarGeo, nearStarMat);
       scene.add(nearStarsMesh);
 
-      // 8. Realistic Orbiting Moon with Procedural Lunar Regolith & Maria
-      function createMoonTexture() {
-        const c = document.createElement('canvas');
-        c.width = 512;
-        c.height = 256;
-        const ctx = c.getContext('2d');
-        // Base regolith grey
-        ctx.fillStyle = '#b5b9bf';
-        ctx.fillRect(0, 0, 512, 256);
-        // Lunar Maria (Dark Basalt Plains)
-        ctx.fillStyle = 'rgba(65, 70, 78, 0.72)';
-        const maria = [
-          { x: 150, y: 100, rx: 65, ry: 45, r: 0.2 },
-          { x: 220, y: 85, rx: 50, ry: 38, r: -0.1 },
-          { x: 280, y: 115, rx: 70, ry: 48, r: 0.15 },
-          { x: 180, y: 155, rx: 42, ry: 32, r: 0 },
-          { x: 370, y: 125, rx: 52, ry: 38, r: -0.2 },
-          { x: 85, y: 135, rx: 38, ry: 28, r: 0.3 }
-        ];
-        maria.forEach(m => {
-          ctx.beginPath();
-          ctx.ellipse(m.x, m.y, m.rx, m.ry, m.r, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        // Impact Craters with bright ejecta rims
-        for (let i = 0; i < 110; i++) {
-          const cx = Math.random() * 512;
-          const cy = Math.random() * 256;
-          const cr = 2 + Math.random() * 8;
-          ctx.beginPath();
-          ctx.arc(cx, cy, cr + 1.2, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(235, 240, 248, 0.6)';
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(cx, cy, cr, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(50, 54, 60, 0.75)';
-          ctx.fill();
-        }
-        return new THREE.CanvasTexture(c);
-      }
-
+      // 8. Photorealistic Orbiting Moon with High-Res NASA Texture & Smooth 64x64 Geometry
       const moonPivot = new THREE.Group();
       moonPivot.rotation.x = 0.25; // 14 degree orbital inclination
       moonPivot.rotation.z = 0.08;
       scene.add(moonPivot);
 
-      const moonRadius = 32;
+      const moonRadius = 33;
       const moonOrbitRadius = 245;
-      const moonGeo = new THREE.SphereGeometry(moonRadius, 36, 36);
+      const moonTex = textureLoader.load('/static/textures/moon_1024.jpg');
+      const moonGeo = new THREE.SphereGeometry(moonRadius, 64, 64);
       const moonMat = new THREE.MeshStandardMaterial({
-        map: createMoonTexture(),
-        roughness: 0.92,
+        map: moonTex,
+        bumpMap: moonTex,
+        bumpScale: 0.90,
+        roughness: 0.88,
         metalness: 0.04
       });
       const moonMesh = new THREE.Mesh(moonGeo, moonMat);
       moonMesh.position.set(moonOrbitRadius, 0, 0);
       moonPivot.add(moonMesh);
 
-      // Subtle Orbital Ellipse Guide Ring
+      // Smooth Orbital Ellipse Guide Ring
       const orbitCurve = new THREE.EllipseCurve(0, 0, moonOrbitRadius, moonOrbitRadius, 0, 2 * Math.PI, false, 0);
       const orbitPts = orbitCurve.getPoints(128).map(p => new THREE.Vector3(p.x, 0, p.y));
       const orbitLine = new THREE.Line(
         new THREE.BufferGeometry().setFromPoints(orbitPts),
-        new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.16 })
+        new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.18 })
       );
       moonPivot.add(orbitLine);
 
-      // 9. Periodic Shooting Asteroids / Meteors Streaking Past Earth
+      // 9. Highly Visible Close-Approach Asteroids Streaking Right Past Earth
+      const asteroidPaths = [
+        // 1. Skimming just above Earth's northern atmospheric horizon
+        { start: new THREE.Vector3(-310, 185, 85), end: new THREE.Vector3(310, -75, -45) },
+        // 2. Skimming across front-facing ocean/continents between camera and Earth
+        { start: new THREE.Vector3(-290, 135, 155), end: new THREE.Vector3(280, -125, 95) },
+        // 3. Skimming past southern atmospheric rim
+        { start: new THREE.Vector3(-320, -85, 75), end: new THREE.Vector3(300, 165, -65) },
+        // 4. Reverse diagonal transit past Earth
+        { start: new THREE.Vector3(310, 175, 80), end: new THREE.Vector3(-310, -85, -50) }
+      ];
+
       const asteroids = [];
       for (let i = 0; i < 2; i++) {
         const aGroup = new THREE.Group();
-        // Rocky Asteroid Body
-        const rockGeo = new THREE.DodecahedronGeometry(2.6, 1);
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.85 });
+
+        // Visible Tumbling Stony Meteorite Body (Radius 6.2)
+        const rockGeo = new THREE.DodecahedronGeometry(6.2, 1);
+        const rockMat = new THREE.MeshStandardMaterial({
+          color: 0x9ca3af,
+          roughness: 0.82,
+          metalness: 0.2
+        });
         const rock = new THREE.Mesh(rockGeo, rockMat);
         aGroup.add(rock);
 
-        // Blazing Head Beacon
-        const glow = new THREE.Mesh(
-          new THREE.SphereGeometry(1.6, 8, 8),
-          new THREE.MeshBasicMaterial({ color: 0x7dd3fc })
+        // Radiant White-Hot Meteor Core
+        const coreGlow = new THREE.Mesh(
+          new THREE.SphereGeometry(3.8, 12, 12),
+          new THREE.MeshBasicMaterial({ color: 0xffffff })
         );
-        aGroup.add(glow);
+        aGroup.add(coreGlow);
 
-        // Trailing Meteor Ion Tail Line
-        const tailPts = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -45)];
-        const tailGeo = new THREE.BufferGeometry().setFromPoints(tailPts);
-        const tailMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 });
-        const tail = new THREE.Line(tailGeo, tailMat);
-        aGroup.add(tail);
+        // Volumetric Burning Plasma Coma (Cyan-White Flare)
+        const comaGlow = new THREE.Mesh(
+          new THREE.SphereGeometry(9.2, 16, 16),
+          new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.60,
+            blending: THREE.AdditiveBlending
+          })
+        );
+        aGroup.add(comaGlow);
+
+        // 110-Unit Volumetric Shooting Meteor Tail (Outer Cyan Flare)
+        const outerTailGeo = new THREE.CylinderGeometry(0.5, 6.8, 110, 12, 1, true);
+        outerTailGeo.rotateX(Math.PI / 2);
+        outerTailGeo.translate(0, 0, -55);
+        const outerTailMat = new THREE.MeshBasicMaterial({
+          color: 0x38bdf8,
+          transparent: true,
+          opacity: 0.65,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide
+        });
+        const outerTail = new THREE.Mesh(outerTailGeo, outerTailMat);
+        aGroup.add(outerTail);
+
+        // Inner Burning White Core Tail Stream
+        const innerTailGeo = new THREE.CylinderGeometry(0.2, 2.8, 85, 8, 1, true);
+        innerTailGeo.rotateX(Math.PI / 2);
+        innerTailGeo.translate(0, 0, -42);
+        const innerTailMat = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.82,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide
+        });
+        const innerTail = new THREE.Mesh(innerTailGeo, innerTailMat);
+        aGroup.add(innerTail);
 
         aGroup.visible = false;
         scene.add(aGroup);
@@ -675,12 +687,11 @@
         asteroids.push({
           group: aGroup,
           rock: rock,
-          tail: tail,
-          tailGeo: tailGeo,
           active: false,
           progress: 0,
-          speed: 0.012,
-          timer: (i + 1) * 120 + Math.random() * 150, // initial stagger
+          speed: 0.0075,
+          pathIndex: i % asteroidPaths.length,
+          timer: (i + 1) * 100 + Math.random() * 80, // initial stagger
           start: new THREE.Vector3(),
           end: new THREE.Vector3()
         });
@@ -709,9 +720,9 @@
         // Atmospheric clouds drift independently over continents
         cloudsMesh.rotation.y += 0.00045;
 
-        // Orbit Moon around Earth + Moon axial rotation
-        moonPivot.rotation.y += 0.0028;
-        moonMesh.rotation.y += 0.0028;
+        // Silky smooth Moon orbital rotation around Earth + synchronous axial spin
+        moonPivot.rotation.y += 0.0022;
+        moonMesh.rotation.y += 0.0022;
 
         // Realistic deep space cosmic drift & multi-layer twinkling
         starsMesh.rotation.y += 0.00008;
@@ -745,17 +756,18 @@
           b.mesh.position.copy(pt);
         });
 
-        // Animate shooting asteroids / meteors
+        // Animate highly visible shooting asteroids passing right past Earth
         asteroids.forEach(ast => {
           if (!ast.active) {
             ast.timer--;
             if (ast.timer <= 0) {
-              // Spawn diagonal asteroid flyby across space past Earth
-              const side = Math.random() > 0.5 ? 1 : -1;
-              ast.start.set(side * (-420 - Math.random() * 120), 180 + Math.random() * 120, 80 + Math.random() * 100);
-              ast.end.set(side * (420 + Math.random() * 120), -180 - Math.random() * 120, -80 - Math.random() * 100);
+              // Pick close-approach trajectory that skims right past Earth
+              const path = asteroidPaths[ast.pathIndex % asteroidPaths.length];
+              ast.pathIndex++;
+              ast.start.copy(path.start);
+              ast.end.copy(path.end);
               ast.progress = 0;
-              ast.speed = 0.011 + Math.random() * 0.007;
+              ast.speed = 0.0072 + Math.random() * 0.0025; // Smooth 2.5-second flyby
               ast.active = true;
               ast.group.visible = true;
             }
@@ -763,18 +775,20 @@
             ast.progress += ast.speed;
             const curPos = new THREE.Vector3().lerpVectors(ast.start, ast.end, ast.progress);
             ast.group.position.copy(curPos);
-            
-            // Orient along velocity vector
+
+            // Orient tail directly along opposite of motion direction
             const dir = new THREE.Vector3().subVectors(ast.end, ast.start).normalize();
             ast.group.lookAt(curPos.clone().add(dir));
-            ast.rock.rotation.x += 0.08;
-            ast.rock.rotation.y += 0.12;
+
+            // Fast tumbling space rock rotation
+            ast.rock.rotation.x += 0.07;
+            ast.rock.rotation.y += 0.10;
 
             if (ast.progress >= 1.0) {
               ast.active = false;
               ast.group.visible = false;
-              // Random cooldown before next asteroid passes (3 to 7 seconds)
-              ast.timer = 180 + Math.random() * 240;
+              // Next asteroid spawns in 3 to 5.5 seconds
+              ast.timer = 150 + Math.random() * 160;
             }
           }
         });

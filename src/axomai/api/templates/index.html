@@ -491,61 +491,6 @@
       }
       animate();
     }
-        const y = (Math.random() - 0.5) * 1200;
-        const z = (Math.random() - 0.5) * 800 - 100;
-        starPositions.push(x, y, z);
-      }
-      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
-      const starMat = new THREE.PointsMaterial({ color: 0x94a3b8, size: 1.2, transparent: true, opacity: 0.35 });
-      scene.add(new THREE.Points(starGeo, starMat));
-
-      // 8. Soft Atmosphere Glow Outer Shell
-      const atmoGeo = new THREE.SphereGeometry(radius * 1.07, 48, 48);
-      const atmoMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.05, side: THREE.BackSide });
-      globeGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
-
-      // Initial Cinematic Tilt
-      globeGroup.rotation.x = 0.22;
-      globeGroup.rotation.y = 1.2;
-
-      // Handle Resize
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
-      // 60FPS Animation Loop
-      function animate() {
-        requestAnimationFrame(animate);
-
-        // Slow smooth cinematic rotation
-        globeGroup.rotation.y += 0.0012;
-
-        // Animate country pulse rings
-        pulseRings.forEach(p => {
-          p.scale += 0.012;
-          p.opacity -= 0.008;
-          if (p.scale > 2.2) {
-            p.scale = 1.0;
-            p.opacity = 0.7;
-          }
-          p.mesh.scale.set(p.scale, p.scale, p.scale);
-          p.mesh.material.opacity = Math.max(0, p.opacity);
-        });
-
-        // Animate travelling light pulses across country arcs
-        arcLightBeads.forEach(b => {
-          b.t += b.speed;
-          if (b.t > 1.0) b.t = 0.0;
-          const pt = b.curve.getPointAt(b.t);
-          b.mesh.position.copy(pt);
-        });
-
-        renderer.render(scene, camera);
-      }
-      animate();
-    }
 
     // =========================================================================
     // CHAT & FILE ATTACHMENT APPLICATION LOGIC

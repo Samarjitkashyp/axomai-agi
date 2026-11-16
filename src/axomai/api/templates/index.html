@@ -672,31 +672,53 @@
         flatShading: true // Stark faceted boulder and cliff relief matching real space photos
       });
 
+      // 8 Diverse Trajectories Across Earth & Outer Space
       const asteroidPaths = [
-        // 1. Skimming just above Earth's northern atmospheric horizon
-        { start: new THREE.Vector3(-310, 185, 85), end: new THREE.Vector3(310, -75, -45) },
-        // 2. Skimming across front-facing ocean/continents between camera and Earth
-        { start: new THREE.Vector3(-290, 135, 155), end: new THREE.Vector3(280, -125, 95) },
-        // 3. Skimming past southern atmospheric rim
-        { start: new THREE.Vector3(-320, -85, 75), end: new THREE.Vector3(300, 165, -65) },
-        // 4. Reverse diagonal transit past Earth
-        { start: new THREE.Vector3(310, 175, 80), end: new THREE.Vector3(-310, -85, -50) }
+        // 1. Skimming northern atmospheric horizon of Earth
+        { start: new THREE.Vector3(-340, 190, 85), end: new THREE.Vector3(340, -80, -45) },
+        // 2. Front-facing transit across Earth's visible oceans/continents
+        { start: new THREE.Vector3(-310, 135, 160), end: new THREE.Vector3(300, -125, 100) },
+        // 3. Skimming southern polar rim of Earth
+        { start: new THREE.Vector3(-330, -95, 75), end: new THREE.Vector3(320, 165, -65) },
+        // 4. Reverse high-altitude diagonal transit
+        { start: new THREE.Vector3(330, 180, 70), end: new THREE.Vector3(-330, -90, -50) },
+        // 5. Eastern equatorial flyby
+        { start: new THREE.Vector3(140, 220, 110), end: new THREE.Vector3(260, -210, -30) },
+        // 6. Western horizon flyby
+        { start: new THREE.Vector3(-270, 210, -40), end: new THREE.Vector3(-140, -220, 120) },
+        // 7. Midground deep space transit behind Earth
+        { start: new THREE.Vector3(-350, 60, -110), end: new THREE.Vector3(350, -40, -90) },
+        // 8. Low diagonal crossing across viewport
+        { start: new THREE.Vector3(-300, -160, 110), end: new THREE.Vector3(310, 140, 60) }
       ];
 
+      // Reusable base geometries for diverse sizes (Large, Medium, Small)
+      const geoLarge = createRealisticAsteroidGeometry(11.0);
+      const geoMedium = createRealisticAsteroidGeometry(7.5);
+      const geoSmall = createRealisticAsteroidGeometry(5.2);
+      const baseGeos = [geoLarge, geoMedium, geoSmall];
+
       const asteroids = [];
-      for (let i = 0; i < 2; i++) {
+      const asteroidCount = 8;
+
+      for (let i = 0; i < asteroidCount; i++) {
         const aGroup = new THREE.Group();
 
-        // Authentic Craggy Asteroid Mesh (Radius 10.5)
-        const rockGeo = createRealisticAsteroidGeometry(10.5);
-        const rock = new THREE.Mesh(rockGeo, asteroidMat);
+        // Authentic Craggy Asteroid Mesh
+        const chosenGeo = baseGeos[i % baseGeos.length];
+        const rock = new THREE.Mesh(chosenGeo, asteroidMat);
+        // Unique slight scale variation per asteroid
+        const sx = 0.88 + Math.random() * 0.35;
+        const sy = 0.88 + Math.random() * 0.35;
+        const sz = 0.88 + Math.random() * 0.35;
+        rock.scale.set(sx, sy, sz);
         aGroup.add(rock);
 
-        // Subtle Escort of 16 Micro Regolith Pebble Fragments
+        // Subtle Escort of 12 Micro Regolith Pebble Fragments
         const debrisGeo = new THREE.BufferGeometry();
         const debrisPos = [];
-        for (let j = 0; j < 16; j++) {
-          const r = 12 + Math.random() * 8;
+        for (let j = 0; j < 12; j++) {
+          const r = 10 + Math.random() * 8;
           const theta = Math.random() * Math.PI * 2;
           const phi = Math.acos((Math.random() * 2) - 1);
           debrisPos.push(
@@ -707,32 +729,32 @@
         }
         debrisGeo.setAttribute('position', new THREE.Float32BufferAttribute(debrisPos, 3));
         const debrisMat = new THREE.PointsMaterial({
-          size: 1.6,
+          size: 1.5,
           color: 0x9ca3af,
           transparent: true,
-          opacity: 0.65
+          opacity: 0.60
         });
         const debrisMesh = new THREE.Points(debrisGeo, debrisMat);
         aGroup.add(debrisMesh);
 
-        aGroup.visible = false;
         scene.add(aGroup);
+
+        const pathIdx = i % asteroidPaths.length;
+        const path = asteroidPaths[pathIdx];
 
         asteroids.push({
           group: aGroup,
           rock: rock,
           debris: debrisMesh,
-          active: false,
-          progress: 0,
-          speed: 0.0075,
-          pathIndex: i % asteroidPaths.length,
-          timer: (i + 1) * 90 + Math.random() * 70, // initial stagger
-          start: new THREE.Vector3(),
-          end: new THREE.Vector3(),
+          progress: (i / asteroidCount), // Staggered initial positions so multiple asteroids are visible immediately
+          speed: 0.00065 + (i % 4) * 0.00018, // Slow, majestic cinematic drift (~16-24s flyby)
+          pathIndex: pathIdx,
+          start: path.start.clone(),
+          end: path.end.clone(),
           rotSpeed: {
-            x: 0.010 + (i % 3) * 0.004,
-            y: 0.016 + (i % 2) * 0.005,
-            z: 0.008 + (i % 4) * 0.003
+            x: 0.0035 + (i % 3) * 0.0015,
+            y: 0.0055 + (i % 2) * 0.0020,
+            z: 0.0025 + (i % 4) * 0.0010
           }
         });
       }
@@ -796,41 +818,29 @@
           b.mesh.position.copy(pt);
         });
 
-        // Animate authentic photorealistic asteroids passing right past Earth
+        // Animate multiple photorealistic asteroids drifting slowly and majestically past Earth
         asteroids.forEach(ast => {
-          if (!ast.active) {
-            ast.timer--;
-            if (ast.timer <= 0) {
-              // Pick close-approach trajectory that skims right past Earth
-              const path = asteroidPaths[ast.pathIndex % asteroidPaths.length];
-              ast.pathIndex++;
-              ast.start.copy(path.start);
-              ast.end.copy(path.end);
-              ast.progress = 0;
-              ast.speed = 0.0068 + Math.random() * 0.0022; // Smooth ~2.8s flyby
-              ast.active = true;
-              ast.group.visible = true;
-            }
-          } else {
-            ast.progress += ast.speed;
-            const curPos = new THREE.Vector3().lerpVectors(ast.start, ast.end, ast.progress);
-            ast.group.position.copy(curPos);
-
-            // Chaotic multi-axis tumble rotation (authentic space asteroid tumble)
-            ast.rock.rotation.x += ast.rotSpeed.x;
-            ast.rock.rotation.y += ast.rotSpeed.y;
-            ast.rock.rotation.z += ast.rotSpeed.z;
-
-            ast.debris.rotation.x += ast.rotSpeed.x * 0.8;
-            ast.debris.rotation.y += ast.rotSpeed.y * 0.8;
-
-            if (ast.progress >= 1.0) {
-              ast.active = false;
-              ast.group.visible = false;
-              // Next asteroid spawns in 3 to 5.5 seconds
-              ast.timer = 150 + Math.random() * 160;
-            }
+          ast.progress += ast.speed;
+          if (ast.progress >= 1.0) {
+            ast.progress = 0.0;
+            // Seamlessly cycle to next diverse trajectory
+            ast.pathIndex = (ast.pathIndex + 1) % asteroidPaths.length;
+            const nextPath = asteroidPaths[ast.pathIndex];
+            ast.start.copy(nextPath.start);
+            ast.end.copy(nextPath.end);
+            ast.speed = 0.00065 + Math.random() * 0.00055;
           }
+
+          const curPos = new THREE.Vector3().lerpVectors(ast.start, ast.end, ast.progress);
+          ast.group.position.copy(curPos);
+
+          // Slow, graceful chaotic multi-axis space tumble
+          ast.rock.rotation.x += ast.rotSpeed.x;
+          ast.rock.rotation.y += ast.rotSpeed.y;
+          ast.rock.rotation.z += ast.rotSpeed.z;
+
+          ast.debris.rotation.x += ast.rotSpeed.x * 0.7;
+          ast.debris.rotation.y += ast.rotSpeed.y * 0.7;
         });
 
         renderer.render(scene, camera);

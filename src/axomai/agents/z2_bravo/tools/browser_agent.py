@@ -243,8 +243,24 @@ class AutonomousBrowserAgent:
         # Autonomous File Actuation / Direct File Download (with 50MB Safety Guard)
         downloaded_doc = None
         if goal and any(k in goal.lower() for k in ["download", "fetch", "save", "tender", "nit", "pdf"]):
-            tender_candidates = [f for f in unique_files if any(k in f["title"].lower() or k in f["url"].lower() for k in ["tender", "quotation", "nit", "notice"])]
-            target_file = tender_candidates[0] if tender_candidates else (unique_files[0] if unique_files else None)
+            doc_tenders = [
+                f for f in unique_files 
+                if (f["url"].lower().endswith((".pdf", ".doc", ".docx", ".zip")) or "/storage/" in f["url"].lower())
+                and any(k in f["title"].lower() or k in f["url"].lower() for k in ["tender", "quotation", "nit", "bid", "procurement"])
+            ]
+            if not doc_tenders:
+                doc_tenders = [
+                    f for f in unique_files 
+                    if (f["url"].lower().endswith((".pdf", ".doc", ".docx", ".zip")) or "/storage/" in f["url"].lower())
+                    and any(k in f["title"].lower() or k in f["url"].lower() for k in ["notice", "notification", "circular"])
+                ]
+            if not doc_tenders:
+                doc_tenders = [
+                    f for f in unique_files 
+                    if f["url"].lower().endswith((".pdf", ".doc", ".docx", ".zip")) or "/storage/" in f["url"].lower()
+                ]
+
+            target_file = doc_tenders[0] if doc_tenders else (unique_files[0] if unique_files else None)
             if target_file:
                 downloaded_doc = self._download_and_register_file(target_file["url"], target_file["title"])
 
@@ -308,6 +324,26 @@ class AutonomousBrowserAgent:
                     except Exception:
                         pass
 
+                    # Extract Content or Run Vision OCR if scanned PDF
+                    content_summary = ""
+                    try:
+                        if ext == ".pdf":
+                            import fitz
+                            doc_pdf = fitz.open(dest_path)
+                            raw_txt = "".join(p.get_text() for p in doc_pdf).strip()
+                            if len(raw_txt) > 40:
+                                content_summary = raw_txt[:2000]
+                            else:
+                                from axomai.core.vision import VisionEngine
+                                ve = VisionEngine()
+                                if ve.is_available and len(doc_pdf) > 0:
+                                    pix = doc_pdf[0].get_pixmap()
+                                    ocr_res = ve.analyze(pix.tobytes("png"), question="Extract and summarize what is written in this notice: issuing authority, work scope, deadlines, and requirements.")
+                                    if ocr_res.get("success"):
+                                        content_summary = ocr_res.get("analysis", "")[:2500]
+                    except Exception:
+                        pass
+
                     return {
                         "filename": unique_filename,
                         "title": title or clean_base,
@@ -316,7 +352,8 @@ class AutonomousBrowserAgent:
                         "file_size_kb": round(len(resp.content) / 1024, 1),
                         "direct_url": file_url,
                         "document_id": doc_id,
-                        "vault_saved": True
+                        "vault_saved": True,
+                        "content_summary": content_summary
                     }
         except Exception:
             pass
@@ -358,6 +395,13 @@ class AutonomousBrowserAgent:
                     text = a_tag.get_text(strip=True)
                     if not text:
                         text = a_tag.get("title", "") or (a_tag.find("img") and a_tag.find("img").get("alt", "")) or ""
+
+                    # Contextual expansion if text is generic like "Click Here", "Download", "View"
+                    clean_check = text.lower().strip()
+                    if clean_check in ("", "click here", "download", "view", "pdf", "click", "here", "view details", "link", "view all"):
+                        parent_text = a_tag.parent.get_text(strip=True) if a_tag.parent else ""
+                        if len(parent_text) > len(text) and len(parent_text) < 250:
+                            text = parent_text
 
                     if full_url in seen_urls:
                         continue

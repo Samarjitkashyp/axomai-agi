@@ -177,9 +177,13 @@ class Z2BravoAgent:
                 "market_matrix": market_matrix,
                 "downloaded_doc": downloaded_doc,
                 "downloadable_files": downloadable_files[:15],
-                "tools_used": ["browser_agent", "ssrf_sentinel_guard", "html_dom_parser", "auto_vault_downloader"]
+                "strategy_pivots": browser_res.get("strategy_pivots", []),
+                "tools_used": ["browser_agent", "ssrf_sentinel_guard", "html_dom_parser", "auto_vault_downloader", "relentless_hunter"]
             }
             yield meta_event
+
+            pivots = browser_res.get("strategy_pivots", [])
+            pivot_note = f"\n- **Autonomous Strategy Pivots Activated:** `{', '.join(pivots)}`" if pivots else ""
 
             files_summary_text = ""
             if downloaded_doc:
@@ -188,15 +192,16 @@ class Z2BravoAgent:
                     f"- **Document Title:** `{downloaded_doc['title']}`\n"
                     f"- **Direct Source Link:** [{downloaded_doc['title']}]({downloaded_doc['direct_url']})\n"
                     f"- **Local Vault Filename:** `{downloaded_doc['filename']}` ({downloaded_doc['file_size_kb']} KB)\n"
-                    f"- **Vault Registration:** Successfully indexed in AxomAI Document Vault\n"
+                    f"- **Vault Registration:** Successfully indexed in AxomAI Document Vault{pivot_note}\n"
                 )
             if downloadable_files:
                 files_summary_text += "\n\n### 📑 Discovered Portal Tenders & Official Attachments:\n" + "\n".join([f"- [{f['title']}]({f['url']}) `({f['type']})`" for f in downloadable_files[:10]])
 
             prompt = (
-                f"You are Z2 Bravo Autonomous Browser Agent. The user instructed: '{topic}'.\n"
+                f"You are Z2 Bravo Autonomous Browser Agent with Relentless Execution. The user instructed: '{topic}'.\n"
                 f"Target Portal: {target_url}\n"
                 f"Pages Explored: {browser_res.get('pages_visited_count')} | Hops: {browser_res.get('hops_explored')}\n"
+                f"Autonomous Fallback Pivots: {', '.join(pivots) if pivots else 'Direct Portal Link Match'}\n"
                 f"Extracted Tables Count: {len(tables)}\n"
                 f"Summaries:\n" + "\n".join([f"- {p['title']} ({p['url']}): {p['summary']}" for p in browser_res.get("pages_summary", [])]) + "\n"
                 f"{files_summary_text}\n\n"

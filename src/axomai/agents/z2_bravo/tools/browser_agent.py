@@ -151,7 +151,96 @@ class AutonomousBrowserAgent:
                 seen_f_urls.add(f["url"])
                 unique_files.append(f)
 
-        # Autonomous File Actuation / Direct File Download
+        has_target_tender = any(any(k in f["title"].lower() or k in f["url"].lower() for k in ["tender", "quotation", "nit"]) for f in unique_files)
+        strategy_pivots = []
+
+        # Vector 2: Proactive Directory & Institutional Tender Endpoints Probe
+        if not has_target_tender:
+            strategy_pivots.append("PROBED_INSTITUTIONAL_ENDPOINTS")
+            parsed_start = urlparse(start_url)
+            base_origin = f"{parsed_start.scheme}://{parsed_start.netloc}"
+            candidate_endpoints = [
+                "/notification/tender", "/tenders", "/tender", "/notices", "/notifications",
+                "/tender-notice", "/procurement", "/bids", "/information/download", "/downloads"
+            ]
+            visited_urls = {p.get("url") for p in visited_pages}
+            for endpoint in candidate_endpoints:
+                probe_url = f"{base_origin}{endpoint}"
+                if probe_url in visited_urls or len(visited_pages) >= 6:
+                    continue
+                sec = ZSentinelSsrfGuard.validate_url(probe_url)
+                if not sec["safe"]:
+                    continue
+
+                sub_data = self._fetch_and_parse(probe_url)
+                if sub_data.get("success"):
+                    visited_pages.append(sub_data)
+                    visited_urls.add(probe_url)
+                    discovered_tables.extend(sub_data.get("tables", []))
+                    for f in sub_data.get("downloadable_files", []):
+                        if f["url"] not in seen_f_urls:
+                            seen_f_urls.add(f["url"])
+                            unique_files.append(f)
+                    hops_taken += 1
+                    if any(any(k in f["title"].lower() or k in f["url"].lower() for k in ["tender", "quotation", "nit"]) for f in sub_data.get("downloadable_files", [])):
+                        has_target_tender = True
+                        break
+
+        # Vector 3: Autonomous Search Engine Dorking Pivot
+        if not has_target_tender:
+            try:
+                from axomai.agents.z2_bravo.tools.web_search import web_search_engine
+                parsed_root = urlparse(start_url)
+                clean_domain = parsed_root.netloc.replace("www.", "")
+                strategy_pivots.append("SEARCH_ENGINE_DORKING")
+
+                dork_q = f"site:{clean_domain} tender OR quotation OR nit filetype:pdf"
+                dork_hits = web_search_engine.search(dork_q, max_results=5)
+                if not dork_hits:
+                    dork_q = f"site:{clean_domain} tender OR notices"
+                    dork_hits = web_search_engine.search(dork_q, max_results=5)
+
+                if dork_hits:
+                    for dh in dork_hits:
+                        d_url = dh.get("url", "")
+                        d_title = dh.get("title", "Search Dork Result")
+                        if d_url.startswith(("http://", "https://")) and d_url not in seen_f_urls:
+                            seen_f_urls.add(d_url)
+                            unique_files.append({
+                                "title": d_title,
+                                "url": d_url,
+                                "type": "PDF" if ".pdf" in d_url.lower() else "PORTAL"
+                            })
+                            has_target_tender = True
+            except Exception:
+                pass
+
+        # Vector 4: Broader Regional Procurement Database Pivot (GeM / eProcure / Assam Govt)
+        if not has_target_tender:
+            try:
+                from axomai.agents.z2_bravo.tools.web_search import web_search_engine
+                parsed_root = urlparse(start_url)
+                domain_parts = parsed_root.netloc.split(".")
+                org_name = domain_parts[-3] if len(domain_parts) >= 3 else domain_parts[0]
+                org_clean = re.sub(r'[^a-zA-Z0-9]', ' ', org_name).strip()
+                if org_clean and len(org_clean) > 3:
+                    strategy_pivots.append("REGIONAL_PROCUREMENT_INDEX")
+                    proc_query = f"{org_clean} tender notification Assam download pdf"
+                    proc_hits = web_search_engine.search(proc_query, max_results=4)
+                    for ph in proc_hits:
+                        p_url = ph.get("url", "")
+                        p_title = ph.get("title", f"{org_clean} Tender Notice")
+                        if p_url.startswith(("http://", "https://")) and p_url not in seen_f_urls:
+                            seen_f_urls.add(p_url)
+                            unique_files.append({
+                                "title": p_title,
+                                "url": p_url,
+                                "type": "PDF" if ".pdf" in p_url.lower() else "PORTAL"
+                            })
+            except Exception:
+                pass
+
+        # Autonomous File Actuation / Direct File Download (with 50MB Safety Guard)
         downloaded_doc = None
         if goal and any(k in goal.lower() for k in ["download", "fetch", "save", "tender", "nit", "pdf"]):
             tender_candidates = [f for f in unique_files if any(k in f["title"].lower() or k in f["url"].lower() for k in ["tender", "quotation", "nit", "notice"])]
@@ -168,8 +257,9 @@ class AutonomousBrowserAgent:
             "hops_explored": hops_taken,
             "extracted_tables_count": len(discovered_tables),
             "tables": discovered_tables[:5],  # Top 5 structured tables
-            "downloadable_files": unique_files[:20],
+            "downloadable_files": unique_files[:25],
             "downloaded_doc": downloaded_doc,
+            "strategy_pivots": strategy_pivots,
             "pages_summary": [
                 {
                     "title": p.get("title"),
@@ -298,8 +388,8 @@ class AutonomousBrowserAgent:
                     "title": title,
                     "text_snippet": clean_text[:2500],
                     "tables": tables_data,
-                    "downloadable_files": downloadable_files[:25],
-                    "links": found_links[:250]
+                    "downloadable_files": downloadable_files[:50],
+                    "links": found_links[:1000]
                 }
         except Exception as e:
             return {"success": False, "url": url, "error": f"Browser engine fetch error: {str(e)}"}

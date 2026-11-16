@@ -268,7 +268,7 @@
     });
 
     // =========================================================================
-    // CINEMATIC 3D ROTATING EARTH GLOBE WITH COUNTRY ARCS & PULSES
+    // PHOTOREALISTIC 3D ROTATING REAL EARTH WITH COUNTRY ARCS & PULSES
     // =========================================================================
     function initCinematicGlobe() {
       const canvas = document.getElementById('globe-canvas');
@@ -276,83 +276,73 @@
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
-      camera.position.z = 380;
+      camera.position.z = 370;
 
       const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+      // Realistic Space Lighting (Sun + Ambient)
+      const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+      sunLight.position.set(350, 160, 220);
+      scene.add(sunLight);
+
+      const ambientLight = new THREE.AmbientLight(0x1e293b, 0.75);
+      scene.add(ambientLight);
+
       const globeGroup = new THREE.Group();
       scene.add(globeGroup);
 
-      const radius = 130;
+      const radius = 125;
+      const textureLoader = new THREE.TextureLoader();
 
-      // 1. Dark Base Sphere
-      const coreGeo = new THREE.SphereGeometry(radius * 0.98, 48, 48);
-      const coreMat = new THREE.MeshBasicMaterial({ color: 0x070c17 });
-      const coreSphere = new THREE.Mesh(coreGeo, coreMat);
-      globeGroup.add(coreSphere);
+      // 1. Real Satellite Earth Texture (Blue Marble)
+      const earthTex = textureLoader.load('/static/textures/earth_blue_marble.jpg');
+      const earthGeo = new THREE.SphereGeometry(radius, 64, 64);
+      const earthMat = new THREE.MeshStandardMaterial({
+        map: earthTex,
+        roughness: 0.6,
+        metalness: 0.15
+      });
+      const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+      globeGroup.add(earthMesh);
 
-      // 2. Latitude & Longitude Rings
-      const gridMat = new THREE.LineBasicMaterial({ color: 0x1e3a5f, transparent: true, opacity: 0.22 });
-      for (let lat = -60; lat <= 60; lat += 20) {
-        const r = radius * Math.cos(lat * Math.PI / 180);
-        const y = radius * Math.sin(lat * Math.PI / 180);
-        const ringGeo = new THREE.BufferGeometry();
-        const pts = [];
-        for (let i = 0; i <= 64; i++) {
-          const theta = (i / 64) * Math.PI * 2;
-          pts.push(new THREE.Vector3(r * Math.cos(theta), y, r * Math.sin(theta)));
-        }
-        ringGeo.setFromPoints(pts);
-        globeGroup.add(new THREE.Line(ringGeo, gridMat));
-      }
-      for (let lng = 0; lng < 180; lng += 30) {
-        const ringGeo = new THREE.BufferGeometry();
-        const pts = [];
-        const rad = lng * Math.PI / 180;
-        for (let i = 0; i <= 64; i++) {
-          const theta = (i / 64) * Math.PI * 2;
-          const x = radius * Math.sin(theta) * Math.cos(rad);
-          const y = radius * Math.cos(theta);
-          const z = radius * Math.sin(theta) * Math.sin(rad);
-          pts.push(new THREE.Vector3(x, y, z));
-        }
-        ringGeo.setFromPoints(pts);
-        globeGroup.add(new THREE.Line(ringGeo, gridMat));
-      }
+      // 2. Realistic Swirling Cloud Layer
+      const cloudsTex = textureLoader.load('/static/textures/earth_clouds.png');
+      const cloudsGeo = new THREE.SphereGeometry(radius * 1.015, 64, 64);
+      const cloudsMat = new THREE.MeshStandardMaterial({
+        map: cloudsTex,
+        transparent: true,
+        opacity: 0.55,
+        blending: THREE.AdditiveBlending
+      });
+      const cloudsMesh = new THREE.Mesh(cloudsGeo, cloudsMat);
+      globeGroup.add(cloudsMesh);
 
-      // 3. Dot Matrix Points across Continents
-      const dotCount = 1400;
-      const dotGeo = new THREE.BufferGeometry();
-      const dotPositions = [];
-      for (let i = 0; i < dotCount; i++) {
-        const phi = Math.acos(-1 + (2 * i) / dotCount);
-        const theta = Math.sqrt(dotCount * Math.PI) * phi;
-        const lat = 90 - (phi * 180 / Math.PI);
-        const lng = (theta * 180 / Math.PI) % 360 - 180;
+      // 3. Atmospheric Outer Rim Glow (Fresnel Shader)
+      const atmoGeo = new THREE.SphereGeometry(radius * 1.07, 64, 64);
+      const atmoMat = new THREE.ShaderMaterial({
+        vertexShader: `
+          varying vec3 vNormal;
+          void main() {
+            vNormal = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vNormal;
+          void main() {
+            float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.2);
+            gl_FragColor = vec4(0.22, 0.65, 1.0, 1.0) * intensity * 0.95;
+          }
+        `,
+        blending: THREE.AdditiveBlending,
+        side: THREE.BackSide,
+        transparent: true
+      });
+      globeGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
 
-        // Approximate real continents distribution
-        const isLand = (
-          (lat > 5 && lat < 70 && lng > -10 && lng < 150) ||   // Eurasia
-          (lat > -35 && lat < 38 && lng > -20 && lng < 55) ||  // Africa
-          (lat > 15 && lat < 72 && lng > -165 && lng < -50) || // North America
-          (lat > -55 && lat < 12 && lng > -85 && lng < -35) || // South America
-          (lat > -45 && lat < -10 && lng > 110 && lng < 155)   // Australia
-        );
-
-        if (isLand || Math.random() < 0.12) {
-          const x = -radius * Math.sin(phi) * Math.cos(theta);
-          const y = radius * Math.cos(phi);
-          const z = radius * Math.sin(phi) * Math.sin(theta);
-          dotPositions.push(x, y, z);
-        }
-      }
-      dotGeo.setAttribute('position', new THREE.Float32BufferAttribute(dotPositions, 3));
-      const dotMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 1.5, transparent: true, opacity: 0.5 });
-      globeGroup.add(new THREE.Points(dotGeo, dotMat));
-
-      // 4. Coordinates Converter
+      // 4. Latitude & Longitude to 3D Cartesian Coordinates Converter
       function latLngToVec3(lat, lng, r) {
         const phi = (90 - lat) * (Math.PI / 180);
         const theta = (lng + 180) * (Math.PI / 180);
@@ -362,7 +352,7 @@
         return new THREE.Vector3(x, y, z);
       }
 
-      // 5. Strategic Global Country Nodes
+      // 5. Real Geographic City Coordinates
       const cities = [
         { name: 'Guwahati, India', lat: 26.14, lng: 91.73 },
         { name: 'New Delhi, India', lat: 28.61, lng: 77.20 },
@@ -382,12 +372,12 @@
       cities.forEach(c => {
         const pos = latLngToVec3(c.lat, c.lng, radius * 1.002);
         
-        // City Dot
+        // City Dot Pin
         const pin = new THREE.Mesh(new THREE.SphereGeometry(1.6, 8, 8), cityMat);
         pin.position.copy(pos);
         globeGroup.add(pin);
 
-        // Expanding Pulsing Ring
+        // Expanding Pulse Ring
         const ringGeo = new THREE.RingGeometry(1.8, 2.8, 16);
         const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
         const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -411,7 +401,7 @@
         [2, 9]  // Singapore -> Sydney
       ];
 
-      const arcMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35 });
+      const arcMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.4 });
       const beadMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
       const arcLightBeads = [];
 
@@ -422,7 +412,7 @@
         const dist = p1.distanceTo(p2);
         const mid = p1.clone().add(p2).multiplyScalar(0.5);
         if (mid.length() > 0.001) {
-          mid.normalize().multiplyScalar(radius + Math.min(dist * 0.38, 45));
+          mid.normalize().multiplyScalar(radius + Math.min(dist * 0.38, 48));
         }
 
         const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
@@ -442,12 +432,65 @@
         });
       });
 
-      // 7. Ambient Twinkling Stars in Background
-      const starCount = 300;
+      // 7. Ambient Twinkling Stars in Deep Space
+      const starCount = 350;
       const starGeo = new THREE.BufferGeometry();
       const starPositions = [];
       for (let i = 0; i < starCount; i++) {
         const x = (Math.random() - 0.5) * 1200;
+        const y = (Math.random() - 0.5) * 1200;
+        const z = (Math.random() - 0.5) * 800 - 100;
+        starPositions.push(x, y, z);
+      }
+      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
+      const starMat = new THREE.PointsMaterial({ color: 0x94a3b8, size: 1.2, transparent: true, opacity: 0.4 });
+      scene.add(new THREE.Points(starGeo, starMat));
+
+      // Initial Tilt
+      globeGroup.rotation.x = 0.24;
+      globeGroup.rotation.y = 1.35;
+
+      // Handle Resize
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // 60FPS Animation Loop
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Slow smooth cinematic rotation
+        globeGroup.rotation.y += 0.0012;
+
+        // Clouds rotate slightly faster to mimic real atmospheric drift
+        cloudsMesh.rotation.y += 0.0004;
+
+        // Animate country pulse rings
+        pulseRings.forEach(p => {
+          p.scale += 0.012;
+          p.opacity -= 0.008;
+          if (p.scale > 2.2) {
+            p.scale = 1.0;
+            p.opacity = 0.7;
+          }
+          p.mesh.scale.set(p.scale, p.scale, p.scale);
+          p.mesh.material.opacity = Math.max(0, p.opacity);
+        });
+
+        // Animate travelling light pulses across country arcs
+        arcLightBeads.forEach(b => {
+          b.t += b.speed;
+          if (b.t > 1.0) b.t = 0.0;
+          const pt = b.curve.getPointAt(b.t);
+          b.mesh.position.copy(pt);
+        });
+
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
         const y = (Math.random() - 0.5) * 1200;
         const z = (Math.random() - 0.5) * 800 - 100;
         starPositions.push(x, y, z);

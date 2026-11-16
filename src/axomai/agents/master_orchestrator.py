@@ -553,17 +553,36 @@ class MasterOrchestrator:
                 "confidence": 0.98
             }
 
-        # Check for Z4 Nexus Intent (Code, Python, Debug, AST, API Client)
+        # Check for Z4 Nexus Intent (Polyglot Software Engineering, Any Programming Language, Debugging, Algorithms, Architecture)
         z4_explicit_keywords = [
-            "python", "write code", "run code", "execute code", "debug", "syntax error",
-            "traceback", "api client", "webhook", "calculate with python", "ast parser", "fix code"
+            # Actions & Core
+            "write code", "run code", "execute code", "debug", "debugging", "syntax error",
+            "traceback", "fix code", "bug in", "code for", "program to", "script to", "develop",
+            "refactor", "code review", "algorithm", "data structure", "leetcode",
+            "software architecture", "api design", "rest api", "graphql", "crud",
+            # Languages & Frameworks
+            "python", "javascript", "typescript", "react", "nextjs", "next.js", "nodejs", "node.js",
+            "vue", "angular", "html", "css", "tailwind", "c++", "cpp", "c#", "csharp",
+            "java", "golang", "rust", "kotlin", "swift", "php", "ruby", "bash", "powershell",
+            "shell script", "docker", "dockerfile", "docker-compose", "kubernetes", "k8s",
+            "fastapi", "flask", "django", "express", "spring boot", "sql query", "postgres",
+            "mongodb", "redis", "prisma", "sqlalchemy", "jwt auth", "oauth",
+            # Concepts
+            "recursion", "binary search", "sorting", "dynamic programming", "linked list",
+            "stack", "queue", "tree", "graph", "hash map", "time complexity", "big o",
+            "unit test", "pytest", "jest", "git command"
         ]
-        if any(k in q for k in z4_explicit_keywords):
+        coding_patterns = [
+            r'\b(code|coding|programmer|developer|software|syntax|function|variable|class|method|loop|array|pointer|compiler|runtime)\b',
+            r'\b(how to (code|program|build an app|implement|develop|create an api))\b',
+            r'```[a-zA-Z0-9_-]*\n'
+        ]
+        if any(bool(re.search(r'\b' + re.escape(k) + r'\b', q)) if len(k) <= 4 else (k in q) for k in z4_explicit_keywords) or any(re.search(p, q) for p in coding_patterns):
             return {
                 "agent": "z4",
-                "name": "Z4 Nexus",
-                "reason": "Autonomous Python execution, AST debugging, or API architecture detected",
-                "confidence": 0.96
+                "name": "Z4 Nexus (Polyglot Code Engine)",
+                "reason": "Autonomous polyglot software engineering, code generation, debugging, or system architecture detected",
+                "confidence": 0.98
             }
 
         # Check for Z3 Echo Intent (Relational SQL, Forecasting, What-If, Root Cause, Anomaly, Mutations)
@@ -627,13 +646,14 @@ class MasterOrchestrator:
             try:
                 classify_prompt = (
                     "You are the AxomAI Master Routing Engine. Classify this user query into exactly one agent:\n"
-                    "- 'assistant': General conversation, greetings, casual chat, Q&A, general knowledge, explanations, science, history, coding assistance, creative writing, advice.\n"
+                    "- 'assistant': General conversation, greetings, casual chat, Q&A, general knowledge, explanations, science, history, creative writing, advice.\n"
+                    "- 'z4': Software engineering, writing code in ANY programming language (Python, JavaScript, TypeScript, React, Next.js, C++, Java, Rust, Go, SQL, HTML/CSS, etc.), debugging, algorithms, architecture.\n"
                     "- 'z1': Analyzing uploaded documents, PDFs, Excel sheets, images, OCR, visual extraction.\n"
                     "- 'z2': Live web search, news, competitor market share, real-time current events.\n"
                     "- 'z3': Database SQL queries, sales tables, revenue forecasting, what-if sensitivity simulations, anomalies.\n"
                     "- 'swarm': Compound queries comparing internal company data with external web/market trends.\n\n"
                     f"User Query: \"{query}\"\n\n"
-                    "Output JSON only: {\"agent\": \"assistant\"|\"z1\"|\"z2\"|\"z3\"|\"swarm\", \"reason\": \"short reason\"}"
+                    "Output JSON only: {\"agent\": \"assistant\"|\"z4\"|\"z1\"|\"z2\"|\"z3\"|\"swarm\", \"reason\": \"short reason\"}"
                 )
                 res = llm_brain.generate(classify_prompt, "Classify query", temperature=0.0)
                 clean_json = res.strip()
@@ -645,6 +665,7 @@ class MasterOrchestrator:
                 target_agent = parsed.get("agent", "assistant").lower()
                 agent_names = {
                     "assistant": "AxomAI Assistant",
+                    "z4": "Z4 Nexus (Polyglot Code Engine)",
                     "z1": "Z1 Alpha",
                     "z2": "Z2 Bravo",
                     "z3": "Z3 Echo",

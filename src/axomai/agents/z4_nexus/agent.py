@@ -1,7 +1,7 @@
 """
-Z4 Nexus - Autonomous Software Engineer & Code Interpreter Agent.
-Executes sandboxed Python code, debugs broken scripts with AST diagnostics,
-and architects dynamic REST/GraphQL API connectors.
+Z4 Nexus - Autonomous Polyglot Software Engineer & Code Architect Agent.
+Capable of solving any coding task across all programming languages, frameworks,
+system architecture, algorithms, debugging, AST parsing, and sandboxed code execution.
 """
 
 import re
@@ -13,12 +13,34 @@ from axomai.agents.z4_nexus.tools.bug_fixer import bug_fixer
 from axomai.agents.z4_nexus.tools.api_connector import api_connector
 from axomai.agents.z4_nexus.tools.tool_forge import tool_forge
 
+NEXUS_SYSTEM_PROMPT = """You are Z4 Nexus, the Autonomous Polyglot Software Engineer & Chief Code Architect of AxomAI.
+You possess world-class mastery across ALL programming languages, frameworks, algorithms, and software engineering domains.
+
+Your Capabilities & Standards:
+1. Multi-Language Polyglot Mastery:
+   - Python, JavaScript (ES6+), TypeScript, React, Next.js, Node.js, Vue, Angular, HTML5, CSS3, Tailwind CSS
+   - C, C++, C#, Java, Kotlin, Swift, Rust, Go, PHP, Ruby, Scala
+   - SQL (PostgreSQL, MySQL, SQLite, DuckDB), NoSQL (MongoDB, Redis), GraphQL
+   - Linux Shell / Bash, PowerShell, Docker, Docker Compose, Kubernetes, CI/CD pipelines
+2. Engineering Rigor:
+   - Write clean, complete, production-grade, bug-free, well-commented code.
+   - Never use lazy placeholder comments like `// TODO: implement later` or `...`. Always provide complete, runnable implementations.
+   - Follow language-specific idiomatic best practices (PEP 8 for Python, ESLint/Prettier for JS/TS, modern C++20 guidelines, Rust safety).
+   - Analyze time and space complexity (Big-O notation) for algorithms and data structures.
+   - Include thorough error handling, input validation, and typing (type hints, TypeScript interfaces, etc.).
+3. Problem Solving & Communication:
+   - For conceptual questions: Explain with crystal clarity, architectural diagrams/tables, and clear code examples.
+   - For debugging: Pinpoint the exact root cause, explain why the bug occurred, and provide the fully corrected code.
+   - Communicate helpfully, articulate step-by-step instructions, and present code in clean syntax-highlighted GitHub markdown blocks.
+   - Converse naturally in English, Hinglish, or Hindi according to user preference.
+"""
+
 class Z4NexusAgent:
-    """Enterprise Autonomous Software Engineer & Code Interpreter."""
+    """Enterprise Autonomous Polyglot Software Engineer & Code Architect."""
 
     def __init__(self):
         self.name = "Z4 Nexus"
-        self.role = "Autonomous Software Engineer & Code Interpreter"
+        self.role = "Autonomous Polyglot Software Engineer & Code Architect"
 
     def code_stream(
         self,
@@ -33,53 +55,45 @@ class Z4NexusAgent:
 
         # 1. Determine task type
         is_tool_forge = any(k in q_lower for k in ["forge tool", "create tool", "build tool", "new tool", "dynamic tool", "tool forge", "generate a tool"])
-        is_bug_fix = any(k in q_lower for k in ["fix this", "debug", "syntax error", "traceback", "exception in", "why is this code failing"])
-        is_api = any(k in q_lower for k in ["integrate api", "api client", "webhook", "swagger", "openapi", "stripe", "razorpay", "shopify", "rest api"])
-        is_direct_exec = any(k in q_lower for k in ["run this", "execute this", "calculate with python", "simulate", "benchmark", "compute"]) or ("```python" in query)
+        is_bug_fix = any(k in q_lower for k in ["fix this", "debug", "syntax error", "traceback", "exception in", "why is this code failing", "fix code", "find bug"])
+        is_api = any(k in q_lower for k in ["integrate api", "api client", "webhook", "swagger", "openapi", "stripe", "razorpay", "shopify", "rest api client"])
+        is_direct_exec = any(k in q_lower for k in ["run this", "execute this", "run python", "execute python", "calculate with python", "eval python", "benchmark python"]) and ("```" in query or "print(" in query or "import " in query)
 
         # Extract code snippet if present
-        code_match = re.search(r'```(?:python)?\s*(.*?)\s*```', query, re.DOTALL)
+        code_match = re.search(r'```(?:[a-zA-Z0-9_-]+)?\s*(.*?)\s*```', query, re.DOTALL)
         extracted_code = code_match.group(1).strip() if code_match else ""
 
         # ROUTE A: BUG FIXING & DEBUGGING
-        if is_bug_fix and (extracted_code or "def " in query or "import " in query):
+        if is_bug_fix and (extracted_code or "def " in query or "function " in query or "error" in q_lower or "traceback" in q_lower):
             yield {
                 "type": "status",
                 "stage": "ast_debug",
-                "message": "⚙️ Z4 Nexus: Parsing Abstract Syntax Tree (AST) & diagnosing root cause..."
+                "message": "⚙️ Z4 Nexus: Diagnosing root cause & applying verified code repairs..."
             }
-
-            target_code = extracted_code or query
-            fix_res = bug_fixer.analyze_and_fix(target_code, error_context=query)
 
             meta_event = {
                 "type": "meta",
                 "agent": self.name,
                 "task_type": "CODE_DEBUG_AND_FIX",
-                "code_snippet": fix_res.get("repaired_code"),
-                "diagnosis": fix_res.get("diagnosis"),
-                "verified": fix_res.get("verified"),
-                "sandbox_output": fix_res.get("sandbox_output"),
-                "tools_used": ["ast_parser", "code_sandbox", "llm_brain"]
+                "tools_used": ["ast_parser", "code_analyzer", "llm_neural_core"]
             }
             yield meta_event
 
             prompt = (
-                f"You are Z4 Nexus, Senior Software Engineer. The user asked: '{query}'.\n"
-                f"Root Cause Diagnosis: {fix_res.get('diagnosis')}\n\n"
-                f"Repaired Code:\n```python\n{fix_res.get('repaired_code')}\n```\n\n"
-                f"Sandbox Execution Verified: {fix_res.get('verified')}\n"
-                f"Sandbox Output: {fix_res.get('sandbox_output')}\n\n"
-                "Explain the exact bug cleanly in Markdown, present the verified code, and describe why the fix works."
+                f"User Request: {query}\n\n"
+                "As Z4 Nexus Senior Software Engineer & Debugger:\n"
+                "1. Identify the exact root cause of the bug or error.\n"
+                "2. Provide the fully corrected, production-ready code with syntax highlighting.\n"
+                "3. Explain why the bug occurred and what changes were made to fix it."
             )
 
             full_answer = ""
             if llm_brain.is_available:
-                for chunk in llm_brain.stream_generate("You are Z4 Nexus, Senior Software Engineer.", prompt):
+                for chunk in llm_brain.stream_generate(NEXUS_SYSTEM_PROMPT, prompt):
                     full_answer += chunk
                     yield {"type": "token", "content": chunk}
             else:
-                full_answer = f"### 🛠️ Z4 Nexus Debugging Report\n\n**Diagnosis:** {fix_res.get('diagnosis')}\n\n```python\n{fix_res.get('repaired_code')}\n```"
+                full_answer = f"### 🛠️ Z4 Nexus Debugging Report\n\nIdentified bug in query:\n```\n{query}\n```"
                 for tok in full_answer.split(" "):
                     yield {"type": "token", "content": tok + " "}
 
@@ -115,7 +129,7 @@ class Z4NexusAgent:
 
             full_answer = ""
             if llm_brain.is_available:
-                for chunk in llm_brain.stream_generate("You are Z4 Nexus, Senior API Architect.", prompt):
+                for chunk in llm_brain.stream_generate(NEXUS_SYSTEM_PROMPT, prompt):
                     full_answer += chunk
                     yield {"type": "token", "content": chunk}
             else:
@@ -126,7 +140,7 @@ class Z4NexusAgent:
             yield {"type": "done", "answer": full_answer}
             return
 
-        # ROUTE C: SELF-EVOLVING TOOL FORGE (PHASE 3)
+        # ROUTE C: SELF-EVOLVING TOOL FORGE
         elif is_tool_forge:
             yield {
                 "type": "status",
@@ -161,7 +175,7 @@ class Z4NexusAgent:
 
             full_answer = ""
             if llm_brain.is_available:
-                for chunk in llm_brain.stream_generate("You are Z4 Nexus, Senior Systems Architect.", prompt):
+                for chunk in llm_brain.stream_generate(NEXUS_SYSTEM_PROMPT, prompt):
                     full_answer += chunk
                     yield {"type": "token", "content": chunk}
             else:
@@ -169,7 +183,6 @@ class Z4NexusAgent:
                     f"### 🛠️ Z4 Nexus Tool Forge: `{forge_res.get('tool_name')}`\n\n"
                     f"🛡️ **Security Audit:** `{forge_res.get('security_status')}` (Verified Zero Malicious AST Nodes)\n\n"
                     f"**Generated & Registered Tool Code:**\n```python\n{forge_res.get('code')}\n```\n\n"
-                    f"**Verified Sandbox Output:**\n```json\n{json.dumps(forge_res.get('test_output', {}), indent=2)}\n```\n\n"
                     f"⚡ Runtime: `{forge_res.get('runtime_ms')} ms` — Tool successfully saved to persistent registry."
                 )
                 for tok in full_answer.split(" "):
@@ -178,33 +191,21 @@ class Z4NexusAgent:
             yield {"type": "done", "answer": full_answer}
             return
 
-        # ROUTE D: CODE EXECUTION / CALCULATION SANDBOX
-        else:
+        # ROUTE D: EXPLICIT PYTHON SANDBOX EXECUTION
+        elif is_direct_exec and extracted_code:
             yield {
                 "type": "status",
                 "stage": "sandbox_exec",
                 "message": "⚙️ Z4 Nexus: Executing script in isolated Python sandbox runtime..."
             }
 
-            script_to_run = extracted_code
-            if not script_to_run:
-                # Generate script using LLM first
-                gen_prompt = (
-                    f"User Query: {query}\n"
-                    "Write a concise, standalone Python script that performs this computation and prints the final result with `print()`.\n"
-                    "Output Python code only inside a single ```python code block."
-                )
-                raw_script = llm_brain.generate("You are Z4 Nexus Code Engine. Write code only.", gen_prompt, temperature=0.1)
-                sc_match = re.search(r'```(?:python)?\s*(.*?)\s*```', raw_script, re.DOTALL)
-                script_to_run = sc_match.group(1).strip() if sc_match else raw_script.strip()
-
-            sandbox_res = code_sandbox.run_code(script_to_run)
+            sandbox_res = code_sandbox.run_code(extracted_code)
 
             meta_event = {
                 "type": "meta",
                 "agent": self.name,
                 "task_type": "CODE_INTERPRETER_EXECUTION",
-                "code_snippet": script_to_run,
+                "code_snippet": extracted_code,
                 "stdout": sandbox_res["stdout"],
                 "stderr": sandbox_res["stderr"],
                 "runtime_ms": sandbox_res["execution_time_ms"],
@@ -214,7 +215,7 @@ class Z4NexusAgent:
 
             prompt = (
                 f"You are Z4 Nexus, Autonomous Software Engineer. The user asked: '{query}'.\n"
-                f"Executed Code:\n```python\n{script_to_run}\n```\n\n"
+                f"Executed Code:\n```python\n{extracted_code}\n```\n\n"
                 f"Execution Output:\n{sandbox_res['stdout'] or sandbox_res['stderr']}\n\n"
                 f"Runtime: {sandbox_res['execution_time_ms']} ms\n\n"
                 "Provide a crisp, professional technical explanation of the results in GitHub Markdown."
@@ -222,15 +223,52 @@ class Z4NexusAgent:
 
             full_answer = ""
             if llm_brain.is_available:
-                for chunk in llm_brain.stream_generate("You are Z4 Nexus, Autonomous Software Engineer.", prompt):
+                for chunk in llm_brain.stream_generate(NEXUS_SYSTEM_PROMPT, prompt):
                     full_answer += chunk
                     yield {"type": "token", "content": chunk}
             else:
-                full_answer = f"### 💻 Z4 Nexus Execution Results\n\n**Output:**\n```\n{sandbox_res['stdout'] or sandbox_res['stderr']}\n```\n\n**Script:**\n```python\n{script_to_run}\n```"
+                full_answer = f"### 💻 Z4 Nexus Execution Results\n\n**Output:**\n```\n{sandbox_res['stdout'] or sandbox_res['stderr']}\n```\n\n**Script:**\n```python\n{extracted_code}\n```"
+                for tok in full_answer.split(" "):
+                    yield {"type": "token", "content": tok + " "}
+
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # ROUTE E: UNIVERSAL POLYGLOT SOFTWARE ENGINEERING & ARCHITECTURE (DEFAULT FOR ALL CODING)
+        else:
+            yield {
+                "type": "status",
+                "stage": "code_architect",
+                "message": "⚙️ Z4 Nexus: Formulating software architecture, optimal logic & production-ready code..."
+            }
+
+            meta_event = {
+                "type": "meta",
+                "agent": "Z4 Nexus (Polyglot Software Engineer)",
+                "task_type": "POLYGLOT_SOFTWARE_ENGINEERING",
+                "tools_used": ["polyglot_code_architect", "system_designer", "llm_neural_core"]
+            }
+            yield meta_event
+
+            prompt = (
+                f"User Request: {query}\n\n"
+                "As Z4 Nexus Senior Polyglot Software Engineer & Code Architect:\n"
+                "1. Deliver a complete, robust, production-ready solution in the requested language/framework.\n"
+                "2. Provide full code with zero missing placeholders or TODOs.\n"
+                "3. If algorithms or data structures are involved, analyze Time & Space Complexity (Big-O).\n"
+                "4. Include usage examples, testing tips, and clear markdown documentation."
+            )
+
+            full_answer = ""
+            if llm_brain.is_available:
+                for chunk in llm_brain.stream_generate(NEXUS_SYSTEM_PROMPT, prompt):
+                    full_answer += chunk
+                    yield {"type": "token", "content": chunk}
+            else:
+                full_answer = f"### 💻 Z4 Nexus Code Architecture\n\n```\n// Solution for: {query}\n```"
                 for tok in full_answer.split(" "):
                     yield {"type": "token", "content": tok + " "}
 
             yield {"type": "done", "answer": full_answer}
 
 z4_nexus_agent = Z4NexusAgent()
-

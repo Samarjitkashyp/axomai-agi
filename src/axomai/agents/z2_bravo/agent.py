@@ -185,13 +185,51 @@ class Z2BravoAgent:
             pivots = browser_res.get("strategy_pivots", [])
             pivot_note = f"\n- **Autonomous Strategy Pivots Activated:** `{', '.join(pivots)}`" if pivots else ""
 
+            # Autonomous AI PDF Synthesis from Downloaded Content
+            ai_pdf_res = None
+            if downloaded_doc and downloaded_doc.get("content_summary"):
+                try:
+                    from axomai.agents.z2_bravo.tools.dossier_generator import dossier_generator_engine
+                    ai_pdf_res = dossier_generator_engine.generate_dossier_pdf(
+                        topic=f"Executive Brief — {downloaded_doc['title']}",
+                        summary=f"Autonomous extraction, OCR transcription, and executive synthesis of official document from {target_url}.",
+                        detailed_findings=downloaded_doc.get("content_summary", ""),
+                        sources=[{
+                            "title": downloaded_doc["title"],
+                            "url": downloaded_doc["direct_url"],
+                            "domain": urlparse(target_url).netloc
+                        }]
+                    )
+                    # Register newly generated AI summary PDF into Vault DB
+                    if ai_pdf_res and ai_pdf_res.get("saved_filename"):
+                        try:
+                            from axomai.agents.z1_alpha import z1_alpha_agent
+                            from axomai.config import settings
+                            gen_path = settings.STORAGE_DIR / "generated" / ai_pdf_res["saved_filename"]
+                            if gen_path.exists():
+                                z1_alpha_agent.process_file(gen_path)
+                        except Exception:
+                            pass
+                except Exception as e:
+                    logger.warning(f"Could not synthesize AI PDF: {e}")
+
             verified_download_card = ""
             if downloaded_doc:
+                vault_download_link = f"/api/download/vault/{downloaded_doc['filename']}"
                 verified_download_card = (
-                    f"### 📥 Verified Official Tender Download\n\n"
-                    f"* 🔗 **Direct Download Link:** [{downloaded_doc['title']}]({downloaded_doc['direct_url']})\n"
-                    f"* 📁 **Document Vault Saved As:** `{downloaded_doc['filename']}` ({downloaded_doc['file_size_kb']} KB)\n"
-                    f"* 🛡️ **Zero-Trust Verification:** Z Sentinel Checked & Passed Safe{pivot_note}\n\n"
+                    f"### 📥 Verified Official Tender & Downloadable Documents\n\n"
+                    f"| Document Asset | File Size | Direct Download Action |\n"
+                    f"| :--- | :--- | :--- |\n"
+                    f"| 🌐 **Official Portal Original Document** | `{downloaded_doc['file_size_kb']} KB` | [⬇️ Download from Official Portal]({downloaded_doc['direct_url']}) |\n"
+                    f"| 📁 **Local Document Vault Copy** | `{downloaded_doc['file_size_kb']} KB` | [⬇️ Download Saved PDF from Vault]({vault_download_link}) |\n"
+                )
+                if ai_pdf_res and ai_pdf_res.get("success"):
+                    verified_download_card += (
+                        f"| 📑 **AI-Synthesized Executive Summary Report** | `{ai_pdf_res['file_size_kb']} KB` | [⬇️ Download AI Summary PDF]({ai_pdf_res['download_url']}) |\n"
+                    )
+                verified_download_card += (
+                    f"\n* 🛡️ **Zero-Trust Verification:** Z Sentinel Checked & Passed Safe{pivot_note}\n"
+                    f"* 💡 *Click any download link in the table above to download the file directly to your device.*\n\n"
                 )
                 if downloaded_doc.get("content_summary"):
                     verified_download_card += (

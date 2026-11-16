@@ -2,6 +2,7 @@ import os
 import shutil
 import uuid
 import json
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -630,10 +631,16 @@ def audit_document(document_id: str, db: Session = Depends(get_db)):
 @router.get("/download/generated/{filename}")
 def download_generated_file(filename: str):
     """Serve a newly generated file as an attachment download"""
-    safe_filename = Path(filename).name
+    unquoted = urllib.parse.unquote(filename)
+    safe_filename = Path(unquoted).name
     file_path = GENERATED_DIR / safe_filename
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Generated file not found")
+        matches = list(GENERATED_DIR.glob(f"*{safe_filename}"))
+        if matches:
+            file_path = matches[0]
+            safe_filename = file_path.name
+        else:
+            raise HTTPException(status_code=404, detail="Generated file not found")
     
     if safe_filename.endswith('.xlsx'):
         media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -645,6 +652,50 @@ def download_generated_file(filename: str):
         media_type = "application/pdf"
     else:
         media_type = "text/csv"
+    return FileResponse(
+        file_path,
+        media_type=media_type,
+        filename=safe_filename,
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'}
+    )
+
+@router.get("/download/vault/{filename}")
+def download_vault_file(filename: str, db: Session = Depends(get_db)):
+    """Serve an uploaded or autonomously saved vault file as an attachment download"""
+    unquoted = urllib.parse.unquote(filename)
+    safe_filename = Path(unquoted).name
+    file_path = UPLOAD_DIR / safe_filename
+
+    if not file_path.exists():
+        # Check database by filename or title
+        doc = db.query(Document).filter(
+            (Document.filename == safe_filename) | (Document.title == safe_filename)
+        ).first()
+        if doc and Path(doc.file_path).exists():
+            file_path = Path(doc.file_path)
+            safe_filename = file_path.name
+        else:
+            matches = list(UPLOAD_DIR.glob(f"*{safe_filename}"))
+            if matches:
+                file_path = matches[0]
+                safe_filename = file_path.name
+            else:
+                raise HTTPException(status_code=404, detail=f"Vault document '{safe_filename}' not found")
+
+    ext = file_path.suffix.lower()
+    mime_map = {
+        ".pdf": "application/pdf",
+        ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ".xls": "application/vnd.ms-excel",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".doc": "application/msword",
+        ".csv": "text/csv",
+        ".txt": "text/plain",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg"
+    }
+    media_type = mime_map.get(ext, "application/octet-stream")
     return FileResponse(
         file_path,
         media_type=media_type,

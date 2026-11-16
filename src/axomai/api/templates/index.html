@@ -150,6 +150,17 @@
     }
 
     /* Markdown Styling */
+    .markdown-body a {
+      color: #00f2fe;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .markdown-body a:hover {
+      color: #38bdf8;
+      text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+    }
     .markdown-body p { margin-bottom: 0.75rem; line-height: 1.65; }
     .markdown-body h1, .markdown-body h2, .markdown-body h3 {
       font-family: 'Orbitron', monospace;
@@ -671,13 +682,22 @@
         list.innerHTML = docs.map(d => {
           const docTitle = d.filename || d.title || 'Document';
           const safeTitle = docTitle.replace(/'/g, "\\'");
+          const isGenerated = d.file_path && d.file_path.includes('generated');
+          const downloadEndpoint = isGenerated 
+            ? `/api/download/generated/${encodeURIComponent(d.filename || docTitle)}` 
+            : `/api/download/vault/${encodeURIComponent(d.filename || docTitle)}`;
           return `
           <div class="p-2 rounded bg-black/40 border border-cyan-500/20 hover:border-cyan-400 flex items-center justify-between group cursor-pointer" onclick="attachVaultDoc('${d.id}', '${safeTitle}')">
-            <div class="flex items-center gap-2 truncate">
+            <div class="flex items-center gap-2 truncate flex-1 min-w-0">
               <i data-lucide="file-text" class="w-3.5 h-3.5 text-neonCyan shrink-0"></i>
-              <span class="text-gray-200 truncate" title="${docTitle}">${docTitle}</span>
+              <span class="text-gray-200 truncate text-xs" title="${docTitle}">${docTitle}</span>
             </div>
-            <span class="text-[10px] text-gray-400 uppercase shrink-0">${d.file_type || 'FILE'}</span>
+            <div class="flex items-center gap-1.5 shrink-0 ml-2">
+              <span class="text-[9px] text-gray-400 uppercase font-code px-1 py-0.5 rounded bg-black/30 border border-cyan-500/10">${d.file_type || 'FILE'}</span>
+              <a href="${downloadEndpoint}" download="${safeTitle}" onclick="event.stopPropagation()" title="Direct Download File" class="p-1 rounded hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-200 transition-colors">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              </a>
+            </div>
           </div>
         `;
         }).join('');
@@ -872,8 +892,18 @@
       const body = document.getElementById(`${id}-body`);
       if (body) {
         body.innerHTML = marked.parse(text);
+        body.querySelectorAll('a').forEach(a => {
+          const href = a.getAttribute('href') || '';
+          if (href.startsWith('http') || href.startsWith('/api/download/')) {
+            a.setAttribute('target', '_blank');
+            if (href.includes('/download/')) {
+              a.setAttribute('download', '');
+            }
+          }
+        });
         const container = document.getElementById('chat-messages-container');
         container.scrollTop = container.scrollHeight;
+        lucide.createIcons();
       }
     }
 

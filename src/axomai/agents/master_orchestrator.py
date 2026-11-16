@@ -746,7 +746,7 @@ class MasterOrchestrator:
                     if event.get("downloaded_doc"):
                         doc_info = event.get("downloaded_doc")
                         summary = doc_info.get("content_summary") or ""
-                        context_snippets.append(f"Downloaded Document '{doc_info.get('title')}': Direct URL: {doc_info.get('direct_url')}\n{summary}")
+                        context_snippets.append(f"Downloaded Document '{doc_info.get('title')}': Direct URL: {doc_info.get('direct_url')}\nVault File: {doc_info.get('filename')}\n{summary}")
                     if event.get("browser_intelligence"):
                         b_intel = event.get("browser_intelligence")
                         if isinstance(b_intel, dict) and b_intel.get("extracted_content"):

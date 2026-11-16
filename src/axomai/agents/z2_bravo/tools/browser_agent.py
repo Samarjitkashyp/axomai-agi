@@ -7,10 +7,18 @@ link exploration, and portal crawling with zero-trust network safety.
 import ipaddress
 import re
 import socket
+import os
+import uuid
+import hashlib
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse, urljoin
 import httpx
 from bs4 import BeautifulSoup
+
+from axomai.config import settings
+from axomai.db.session import SyncSessionLocal
+from axomai.db.models import Document
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -80,7 +88,7 @@ class AutonomousBrowserAgent:
 
     def browse_and_extract(self, start_url: str, goal: Optional[str] = None) -> Dict[str, Any]:
         """
-        Navigates to the given URL, extracts text, tables, and follows relevant downstream links.
+        Navigates to the given URL, extracts text, tables, downloadable files, and follows relevant downstream links.
         """
         # 1. Z Sentinel SSRF Pre-flight Check
         sec_check = ZSentinelSsrfGuard.validate_url(start_url)
@@ -102,6 +110,7 @@ class AutonomousBrowserAgent:
         # 3. Autonomous link discovery & multi-hop crawling
         visited_pages = [page_data]
         discovered_tables = list(page_data.get("tables", []))
+        discovered_files = list(page_data.get("downloadable_files", []))
 
         # Filter downstream links matching the goal or keywords
         target_keywords = self._extract_keywords(goal or "report tender price data schedule analysis")
@@ -109,11 +118,17 @@ class AutonomousBrowserAgent:
 
         scored_links = []
         for l in candidate_links:
-            text_match = sum(1 for kw in target_keywords if kw in l["text"].lower() or kw in l["url"].lower())
+            text_lower = l["text"].lower()
+            url_lower = l["url"].lower()
+            text_match = sum(1 for kw in target_keywords if kw in text_lower or kw in url_lower)
+            if any(k in text_lower or k in url_lower for k in ["tender", "quotation", "nit", "procurement", "bid"]):
+                text_match += 5
+            if any(k in text_lower or k in url_lower for k in ["notice", "notification", "circular", "announcement"]):
+                text_match += 3
             if text_match > 0:
                 scored_links.append((text_match, l["url"], l["text"]))
 
-        # Sort highest relevance first and explore top hop
+        # Sort highest relevance first and explore top hops
         scored_links.sort(reverse=True, key=lambda x: x[0])
         hops_taken = 0
         for score, link_url, link_text in scored_links[:self.max_hops]:
@@ -125,7 +140,24 @@ class AutonomousBrowserAgent:
             if sub_data["success"]:
                 visited_pages.append(sub_data)
                 discovered_tables.extend(sub_data.get("tables", []))
+                discovered_files.extend(sub_data.get("downloadable_files", []))
                 hops_taken += 1
+
+        # Deduplicate discovered files
+        unique_files = []
+        seen_f_urls = set()
+        for f in discovered_files:
+            if f["url"] not in seen_f_urls:
+                seen_f_urls.add(f["url"])
+                unique_files.append(f)
+
+        # Autonomous File Actuation / Direct File Download
+        downloaded_doc = None
+        if goal and any(k in goal.lower() for k in ["download", "fetch", "save", "tender", "nit", "pdf"]):
+            tender_candidates = [f for f in unique_files if any(k in f["title"].lower() or k in f["url"].lower() for k in ["tender", "quotation", "nit", "notice"])]
+            target_file = tender_candidates[0] if tender_candidates else (unique_files[0] if unique_files else None)
+            if target_file:
+                downloaded_doc = self._download_and_register_file(target_file["url"], target_file["title"])
 
         return {
             "success": True,
@@ -136,6 +168,8 @@ class AutonomousBrowserAgent:
             "hops_explored": hops_taken,
             "extracted_tables_count": len(discovered_tables),
             "tables": discovered_tables[:5],  # Top 5 structured tables
+            "downloadable_files": unique_files[:20],
+            "downloaded_doc": downloaded_doc,
             "pages_summary": [
                 {
                     "title": p.get("title"),
@@ -146,8 +180,60 @@ class AutonomousBrowserAgent:
             ]
         }
 
+    def _download_and_register_file(self, file_url: str, title: str) -> Optional[Dict[str, Any]]:
+        """Autonomously downloads target document/tender, saves to upload vault, and indexes into DB."""
+        try:
+            sec = ZSentinelSsrfGuard.validate_url(file_url)
+            if not sec["safe"]:
+                return None
+
+            upload_dir = settings.STORAGE_DIR / "uploads"
+            upload_dir.mkdir(parents=True, exist_ok=True)
+
+            parsed = urlparse(file_url)
+            ext = os.path.splitext(parsed.path)[1].lower() or ".pdf"
+            raw_base = os.path.basename(parsed.path)
+            clean_base = re.sub(r'[^a-zA-Z0-9_\-.]', '_', raw_base)
+            if not clean_base or clean_base == ext:
+                clean_title = re.sub(r'[^a-zA-Z0-9_\-]', '_', title)[:30]
+                clean_base = f"{clean_title}{ext}"
+            unique_filename = f"{uuid.uuid4().hex[:8]}_{clean_base}"
+            dest_path = upload_dir / unique_filename
+
+            with httpx.Client(timeout=15.0, follow_redirects=True, headers=self.headers) as client:
+                resp = client.get(file_url)
+                if resp.status_code == 200 and len(resp.content) > 50:
+                    with open(dest_path, "wb") as f:
+                        f.write(resp.content)
+
+                    # Try registering into PostgreSQL Document Vault
+                    doc_id = None
+                    try:
+                        from axomai.agents.z1_alpha.agent import z1_alpha_agent
+                        udm = z1_alpha_agent.process_file(dest_path)
+                        with SyncSessionLocal() as db:
+                            doc_rec = db.query(Document).filter(Document.file_hash == udm.file.file_hash).first()
+                            if doc_rec:
+                                doc_id = str(doc_rec.id)
+                    except Exception:
+                        pass
+
+                    return {
+                        "filename": unique_filename,
+                        "title": title or clean_base,
+                        "file_path": str(dest_path),
+                        "file_size_bytes": len(resp.content),
+                        "file_size_kb": round(len(resp.content) / 1024, 1),
+                        "direct_url": file_url,
+                        "document_id": doc_id,
+                        "vault_saved": True
+                    }
+        except Exception:
+            pass
+        return None
+
     def _fetch_and_parse(self, url: str) -> Dict[str, Any]:
-        """Fetches a single page and parses HTML tables and semantics."""
+        """Fetches a single page and parses HTML tables, document links, and semantics."""
         try:
             with httpx.Client(timeout=self.timeout, follow_redirects=True, headers=self.headers) as client:
                 resp = client.get(url)
@@ -171,14 +257,35 @@ class AutonomousBrowserAgent:
                     if extracted and len(extracted["rows"]) > 0:
                         tables_data.append(extracted)
 
-                # Extract Links
+                # Extract Links & Downloadable Documents
                 found_links = []
+                downloadable_files = []
+                seen_urls = set()
+
                 for a_tag in soup.find_all("a", href=True):
                     href = a_tag["href"]
                     full_url = urljoin(url, href)
                     text = a_tag.get_text(strip=True)
-                    if text and full_url.startswith(("http://", "https://")):
+                    if not text:
+                        text = a_tag.get("title", "") or (a_tag.find("img") and a_tag.find("img").get("alt", "")) or ""
+
+                    if full_url in seen_urls:
+                        continue
+                    seen_urls.add(full_url)
+
+                    if full_url.startswith(("http://", "https://")):
                         found_links.append({"text": text, "url": full_url})
+
+                        lower_url = full_url.lower()
+                        lower_text = text.lower()
+                        is_file = lower_url.endswith((".pdf", ".doc", ".docx", ".zip", ".xlsx", ".csv", ".jpeg", ".jpg", ".png")) or "/storage/" in lower_url
+                        is_tender_or_notice = any(k in lower_text or k in lower_url for k in ["tender", "quotation", "nit", "notice", "notification", "circular", "merit", "bid", "procurement", "download"])
+                        if is_file or (is_tender_or_notice and ("storage" in lower_url or "pdf" in lower_url or "download" in lower_url or "notification" in lower_url)):
+                            downloadable_files.append({
+                                "title": text or "Document / Tender Attachment",
+                                "url": full_url,
+                                "type": "PDF" if ".pdf" in lower_url else "FILE"
+                            })
 
                 # Extract cleaned text
                 for tag in soup(["script", "style", "nav", "footer", "aside"]):
@@ -189,9 +296,10 @@ class AutonomousBrowserAgent:
                     "success": True,
                     "url": url,
                     "title": title,
-                    "text_snippet": clean_text[:2000],
+                    "text_snippet": clean_text[:2500],
                     "tables": tables_data,
-                    "links": found_links[:30]
+                    "downloadable_files": downloadable_files[:25],
+                    "links": found_links[:250]
                 }
         except Exception as e:
             return {"success": False, "url": url, "error": f"Browser engine fetch error: {str(e)}"}
@@ -234,9 +342,12 @@ class AutonomousBrowserAgent:
         }
 
     def _extract_keywords(self, text: str) -> List[str]:
-        words = re.findall(r'\b[a-zA-Z]{4,}\b', text.lower())
-        stop_words = {"this", "that", "with", "from", "have", "what", "which", "will"}
-        return [w for w in words if w not in stop_words]
+        words = re.findall(r'\b[a-zA-Z]{3,}\b', text.lower())
+        stop_words = {"this", "that", "with", "from", "have", "what", "which", "will", "site", "karke", "latest", "give", "karo"}
+        kws = [w for w in words if w not in stop_words]
+        if any(t in text.lower() for t in ["tender", "notices", "quotation", "nit", "bid"]):
+            kws.extend(["tender", "notices", "quotation", "nit", "procurement", "bid"])
+        return list(dict.fromkeys(kws))
 
 
 browser_agent = AutonomousBrowserAgent()

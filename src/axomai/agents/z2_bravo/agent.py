@@ -149,6 +149,9 @@ class Z2BravoAgent:
                 return
 
             tables = browser_res.get("tables", [])
+            downloaded_doc = browser_res.get("downloaded_doc")
+            downloadable_files = browser_res.get("downloadable_files", [])
+
             market_matrix = None
             if tables:
                 first_tbl = tables[0]
@@ -172,17 +175,33 @@ class Z2BravoAgent:
                 "hops_explored": browser_res.get("hops_explored", 0),
                 "sources": sources,
                 "market_matrix": market_matrix,
-                "tools_used": ["browser_agent", "ssrf_sentinel_guard", "html_dom_parser"]
+                "downloaded_doc": downloaded_doc,
+                "downloadable_files": downloadable_files[:15],
+                "tools_used": ["browser_agent", "ssrf_sentinel_guard", "html_dom_parser", "auto_vault_downloader"]
             }
             yield meta_event
+
+            files_summary_text = ""
+            if downloaded_doc:
+                files_summary_text += (
+                    f"\n\n### 📥 Autonomous Download & Vault Storage Status:\n"
+                    f"- **Document Title:** `{downloaded_doc['title']}`\n"
+                    f"- **Direct Source Link:** [{downloaded_doc['title']}]({downloaded_doc['direct_url']})\n"
+                    f"- **Local Vault Filename:** `{downloaded_doc['filename']}` ({downloaded_doc['file_size_kb']} KB)\n"
+                    f"- **Vault Registration:** Successfully indexed in AxomAI Document Vault\n"
+                )
+            if downloadable_files:
+                files_summary_text += "\n\n### 📑 Discovered Portal Tenders & Official Attachments:\n" + "\n".join([f"- [{f['title']}]({f['url']}) `({f['type']})`" for f in downloadable_files[:10]])
 
             prompt = (
                 f"You are Z2 Bravo Autonomous Browser Agent. The user instructed: '{topic}'.\n"
                 f"Target Portal: {target_url}\n"
                 f"Pages Explored: {browser_res.get('pages_visited_count')} | Hops: {browser_res.get('hops_explored')}\n"
                 f"Extracted Tables Count: {len(tables)}\n"
-                f"Summaries:\n" + "\n".join([f"- {p['title']} ({p['url']}): {p['summary']}" for p in browser_res.get("pages_summary", [])]) + "\n\n"
-                "Synthesize a crisp, highly structured executive briefing of what was found on the portal, including the extracted tables and relevant next steps."
+                f"Summaries:\n" + "\n".join([f"- {p['title']} ({p['url']}): {p['summary']}" for p in browser_res.get("pages_summary", [])]) + "\n"
+                f"{files_summary_text}\n\n"
+                "Synthesize a crisp, highly structured executive briefing of what was found on the portal. "
+                "Explicitly highlight any tender documents found or downloaded, provide their direct clickable markdown links, and give clear actionable next steps."
             )
 
             full_answer = ""
@@ -206,6 +225,7 @@ class Z2BravoAgent:
                     f"### 🌐 Z2 Bravo Autonomous Browser Extraction\n\n"
                     f"**Target Portal:** `{target_url}`\n"
                     f"**Pages Explored:** {browser_res.get('pages_visited_count')} | **Hops Followed:** {browser_res.get('hops_explored')}\n\n"
+                    f"{files_summary_text}\n\n"
                     f"#### 📑 Discovered Portal Content & Tables\n"
                     f"{tables_md if tables_md else 'Content successfully retrieved and parsed.'}\n\n"
                     f"#### 🔗 Explored Pages & Notices:\n"

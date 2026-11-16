@@ -161,9 +161,9 @@
 </head>
 <body class="h-screen w-screen flex flex-col bg-appDark text-slate-100 antialiased select-none relative overflow-hidden">
 
-  <!-- CINEMATIC 3D ROTATING EARTH GLOBE BACKGROUND -->
+  <!-- CINEMATIC 3D ROTATING REAL EARTH GLOBE BACKGROUND -->
   <canvas id="globe-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
-  <div class="fixed inset-0 bg-gradient-to-b from-[#0b0f19]/80 via-[#0b0f19]/55 to-[#0b0f19]/90 pointer-events-none z-0"></div>
+  <div class="fixed inset-0 bg-gradient-to-b from-[#0b0f19]/70 via-transparent to-[#0b0f19]/85 pointer-events-none z-0"></div>
 
   <!-- MINIMALIST PROFESSIONAL HEADER -->
   <header class="h-14 border-b border-slate-800/80 bg-surfaceDark/80 backdrop-blur-md px-5 flex items-center justify-between shrink-0 z-30 relative">
@@ -275,19 +275,19 @@
       if (!canvas || typeof THREE === 'undefined') return;
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 3000);
       camera.position.z = 370;
 
       const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-      // Realistic Space Lighting (Sun + Ambient)
-      const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
-      sunLight.position.set(350, 160, 220);
+      // Realistic Space Lighting (Sun + Deep Ambient)
+      const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
+      sunLight.position.set(380, 160, 240);
       scene.add(sunLight);
 
-      const ambientLight = new THREE.AmbientLight(0x1e293b, 0.75);
+      const ambientLight = new THREE.AmbientLight(0x0f172a, 0.65);
       scene.add(ambientLight);
 
       const globeGroup = new THREE.Group();
@@ -296,31 +296,35 @@
       const radius = 125;
       const textureLoader = new THREE.TextureLoader();
 
-      // 1. Real Satellite Earth Texture (Blue Marble)
+      // 1. Real Satellite Earth Texture with Night City Lights
       const earthTex = textureLoader.load('/static/textures/earth_blue_marble.jpg');
+      const nightTex = textureLoader.load('/static/textures/earth_night.jpg');
       const earthGeo = new THREE.SphereGeometry(radius, 64, 64);
       const earthMat = new THREE.MeshStandardMaterial({
         map: earthTex,
-        roughness: 0.6,
-        metalness: 0.15
+        emissiveMap: nightTex,
+        emissive: new THREE.Color(0xffe8c8),
+        emissiveIntensity: 0.85,
+        roughness: 0.55,
+        metalness: 0.1
       });
       const earthMesh = new THREE.Mesh(earthGeo, earthMat);
       globeGroup.add(earthMesh);
 
-      // 2. Realistic Swirling Cloud Layer
+      // 2. Realistic Swirling Atmospheric Cloud Layer
       const cloudsTex = textureLoader.load('/static/textures/earth_clouds.png');
-      const cloudsGeo = new THREE.SphereGeometry(radius * 1.015, 64, 64);
+      const cloudsGeo = new THREE.SphereGeometry(radius * 1.018, 64, 64);
       const cloudsMat = new THREE.MeshStandardMaterial({
         map: cloudsTex,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.65,
         blending: THREE.AdditiveBlending
       });
       const cloudsMesh = new THREE.Mesh(cloudsGeo, cloudsMat);
       globeGroup.add(cloudsMesh);
 
-      // 3. Atmospheric Outer Rim Glow (Fresnel Shader)
-      const atmoGeo = new THREE.SphereGeometry(radius * 1.07, 64, 64);
+      // 3. Atmospheric Outer Rim Glow (Rayleigh Halo)
+      const atmoGeo = new THREE.SphereGeometry(radius * 1.08, 64, 64);
       const atmoMat = new THREE.ShaderMaterial({
         vertexShader: `
           varying vec3 vNormal;
@@ -332,8 +336,8 @@
         fragmentShader: `
           varying vec3 vNormal;
           void main() {
-            float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.2);
-            gl_FragColor = vec4(0.22, 0.65, 1.0, 1.0) * intensity * 0.95;
+            float intensity = pow(0.68 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+            gl_FragColor = vec4(0.28, 0.72, 1.0, 1.0) * intensity * 1.1;
           }
         `,
         blending: THREE.AdditiveBlending,
@@ -352,25 +356,45 @@
         return new THREE.Vector3(x, y, z);
       }
 
-      // 5. Real Geographic City Coordinates
+      // 5. 24 Global City & Country Hubs
       const cities = [
-        { name: 'Guwahati, India', lat: 26.14, lng: 91.73 },
+        // India (High Priority Hubs)
+        { name: 'Guwahati, Assam', lat: 26.14, lng: 91.73 },
         { name: 'New Delhi, India', lat: 28.61, lng: 77.20 },
+        { name: 'Mumbai, India', lat: 19.07, lng: 72.87 },
+        { name: 'Bengaluru, India', lat: 12.97, lng: 77.59 },
+        { name: 'Kolkata, India', lat: 22.57, lng: 88.36 },
+        // Asia & Middle East
         { name: 'Singapore', lat: 1.35, lng: 103.82 },
         { name: 'Tokyo, Japan', lat: 35.67, lng: 139.65 },
         { name: 'Dubai, UAE', lat: 25.20, lng: 55.27 },
+        { name: 'Seoul, South Korea', lat: 37.56, lng: 126.97 },
+        { name: 'Shanghai, China', lat: 31.23, lng: 121.47 },
+        // Europe
         { name: 'London, UK', lat: 51.50, lng: -0.12 },
         { name: 'Frankfurt, Germany', lat: 50.11, lng: 8.68 },
+        { name: 'Paris, France', lat: 48.85, lng: 2.35 },
+        { name: 'Zurich, Switzerland', lat: 47.37, lng: 8.54 },
+        // Americas
         { name: 'New York, USA', lat: 40.71, lng: -74.00 },
         { name: 'San Francisco, USA', lat: 37.77, lng: -122.41 },
-        { name: 'Sydney, Australia', lat: -33.86, lng: 151.20 }
+        { name: 'Chicago, USA', lat: 41.87, lng: -87.62 },
+        { name: 'Toronto, Canada', lat: 43.65, lng: -79.38 },
+        { name: 'Sao Paulo, Brazil', lat: -23.55, lng: -46.63 },
+        // Australia & Oceania
+        { name: 'Sydney, Australia', lat: -33.86, lng: 151.20 },
+        { name: 'Melbourne, Australia', lat: -37.81, lng: 144.96 },
+        // Africa
+        { name: 'Cairo, Egypt', lat: 30.04, lng: 31.23 },
+        { name: 'Cape Town, South Africa', lat: -33.92, lng: 18.42 },
+        { name: 'Nairobi, Kenya', lat: -1.29, lng: 36.82 }
       ];
 
       const cityMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
       const pulseRings = [];
 
       cities.forEach(c => {
-        const pos = latLngToVec3(c.lat, c.lng, radius * 1.002);
+        const pos = latLngToVec3(c.lat, c.lng, radius * 1.003);
         
         // City Dot Pin
         const pin = new THREE.Mesh(new THREE.SphereGeometry(1.6, 8, 8), cityMat);
@@ -378,30 +402,42 @@
         globeGroup.add(pin);
 
         // Expanding Pulse Ring
-        const ringGeo = new THREE.RingGeometry(1.8, 2.8, 16);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+        const ringGeo = new THREE.RingGeometry(1.8, 3.2, 16);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.position.copy(pos);
         ring.lookAt(pos.clone().multiplyScalar(2));
         globeGroup.add(ring);
-        pulseRings.push({ mesh: ring, scale: 1.0, opacity: 0.7 });
+        pulseRings.push({ mesh: ring, scale: 1.0, opacity: 0.75 });
       });
 
-      // 6. 3D Flight Arcs Connecting Countries
+      // 6. Cross-Continental Flight Arcs (18 Global Routes)
       const connections = [
-        [0, 1], // Guwahati -> Delhi
-        [0, 2], // Guwahati -> Singapore
-        [1, 4], // Delhi -> Dubai
-        [4, 6], // Dubai -> Frankfurt
-        [6, 5], // Frankfurt -> London
-        [5, 7], // London -> New York
-        [7, 8], // New York -> San Francisco
-        [8, 3], // San Francisco -> Tokyo
-        [3, 2], // Tokyo -> Singapore
-        [2, 9]  // Singapore -> Sydney
+        [0, 1],  // Guwahati -> Delhi
+        [0, 4],  // Guwahati -> Kolkata
+        [1, 2],  // Delhi -> Mumbai
+        [2, 3],  // Mumbai -> Bengaluru
+        [0, 5],  // Guwahati -> Singapore
+        [3, 5],  // Bengaluru -> Singapore
+        [1, 7],  // Delhi -> Dubai
+        [7, 11], // Dubai -> Frankfurt
+        [11, 10],// Frankfurt -> London
+        [10, 12],// London -> Paris
+        [10, 14],// London -> New York
+        [14, 16],// New York -> Chicago
+        [16, 15],// Chicago -> San Francisco
+        [15, 6], // San Francisco -> Tokyo
+        [6, 8],  // Tokyo -> Seoul
+        [8, 9],  // Seoul -> Shanghai
+        [9, 5],  // Shanghai -> Singapore
+        [5, 19], // Singapore -> Sydney
+        [14, 18],// New York -> Sao Paulo
+        [7, 21], // Dubai -> Cairo
+        [21, 23],// Cairo -> Nairobi
+        [23, 22] // Nairobi -> Cape Town
       ];
 
-      const arcMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.4 });
+      const arcMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 });
       const beadMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
       const arcLightBeads = [];
 
@@ -416,37 +452,60 @@
         }
 
         const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
-        const curvePoints = curve.getPoints(40);
+        const curvePoints = curve.getPoints(45);
         const curveGeo = new THREE.BufferGeometry().setFromPoints(curvePoints);
         const line = new THREE.Line(curveGeo, arcMat);
         globeGroup.add(line);
 
         // Animated Travelling Pulse Photon along Arc
-        const bead = new THREE.Mesh(new THREE.SphereGeometry(1.5, 8, 8), beadMat);
+        const bead = new THREE.Mesh(new THREE.SphereGeometry(1.6, 8, 8), beadMat);
         globeGroup.add(bead);
         arcLightBeads.push({
           mesh: bead,
           curve: curve,
-          speed: 0.0035 + (idx % 3) * 0.0012,
-          t: (idx * 0.11) % 1.0
+          speed: 0.003 + (idx % 4) * 0.001,
+          t: (idx * 0.09) % 1.0
         });
       });
 
-      // 7. Ambient Twinkling Stars in Deep Space
-      const starCount = 350;
+      // 7. Realistic Cosmos: 1,800 Multi-Depth Twinkling Universe Stars & Nebula Dust
+      const starCount = 1800;
       const starGeo = new THREE.BufferGeometry();
       const starPositions = [];
-      for (let i = 0; i < starCount; i++) {
-        const x = (Math.random() - 0.5) * 1200;
-        const y = (Math.random() - 0.5) * 1200;
-        const z = (Math.random() - 0.5) * 800 - 100;
-        starPositions.push(x, y, z);
-      }
-      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
-      const starMat = new THREE.PointsMaterial({ color: 0x94a3b8, size: 1.2, transparent: true, opacity: 0.4 });
-      scene.add(new THREE.Points(starGeo, starMat));
+      const starColors = [];
 
-      // Initial Tilt
+      for (let i = 0; i < starCount; i++) {
+        const x = (Math.random() - 0.5) * 2200;
+        const y = (Math.random() - 0.5) * 2200;
+        const z = (Math.random() - 0.5) * 1600 - 150;
+        starPositions.push(x, y, z);
+
+        // Variety of star colors: crisp white, icy cyan, golden amber, deep violet nebula
+        const rand = Math.random();
+        if (rand < 0.6) {
+          starColors.push(1.0, 1.0, 1.0); // White
+        } else if (rand < 0.8) {
+          starColors.push(0.65, 0.85, 1.0); // Icy blue/cyan
+        } else if (rand < 0.93) {
+          starColors.push(1.0, 0.88, 0.65); // Warm gold
+        } else {
+          starColors.push(0.75, 0.45, 1.0); // Soft nebula violet
+        }
+      }
+
+      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
+      starGeo.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
+
+      const starMat = new THREE.PointsMaterial({
+        size: 1.5,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.75
+      });
+      const starsMesh = new THREE.Points(starGeo, starMat);
+      scene.add(starsMesh);
+
+      // Initial Cinematic Tilt
       globeGroup.rotation.x = 0.24;
       globeGroup.rotation.y = 1.35;
 
@@ -458,14 +517,20 @@
       });
 
       // 60FPS Animation Loop
+      let clock = 0;
       function animate() {
         requestAnimationFrame(animate);
+        clock += 0.015;
 
         // Slow smooth cinematic rotation
         globeGroup.rotation.y += 0.0012;
 
-        // Clouds rotate slightly faster to mimic real atmospheric drift
-        cloudsMesh.rotation.y += 0.0004;
+        // Atmospheric clouds drift independently over continents
+        cloudsMesh.rotation.y += 0.00045;
+
+        // Twinkling stars effect
+        starsMesh.rotation.y += 0.0001;
+        starMat.opacity = 0.7 + Math.sin(clock * 1.5) * 0.15;
 
         // Animate country pulse rings
         pulseRings.forEach(p => {
@@ -473,7 +538,7 @@
           p.opacity -= 0.008;
           if (p.scale > 2.2) {
             p.scale = 1.0;
-            p.opacity = 0.7;
+            p.opacity = 0.75;
           }
           p.mesh.scale.set(p.scale, p.scale, p.scale);
           p.mesh.material.opacity = Math.max(0, p.opacity);

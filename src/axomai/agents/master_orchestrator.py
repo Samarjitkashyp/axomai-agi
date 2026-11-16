@@ -115,6 +115,19 @@ class MasterOrchestrator:
         """
         q = query.lower().strip()
 
+        # Check for Conversational Greeting & General AI Assistant Intent
+        greeting_patterns = [
+            r'^(hi|hello|hey|hola|namaste|namaskar|pranam|kem cho|vanakkam|satsriakal|kya haal|kya haal hai|kaise ho|kaisa hai|how are you|whats up|what\'s up|sup|good morning|good afternoon|good evening|good day)\b',
+            r'\b(who are you|what are you|what can you do|introduce yourself|tell me about yourself|aap kaun ho|kya kar sakte ho|help me|apna intro do)\b'
+        ]
+        if any(re.search(p, q) for p in greeting_patterns):
+            return {
+                "agent": "assistant",
+                "name": "AxomAI Assistant",
+                "reason": "Natural language greeting and conversational introduction",
+                "confidence": 0.99
+            }
+
         # Check for Direct Web URL / Live Portal Navigation Intent
         if re.search(r'https?://[^\s]+', query) or any(k in q for k in ["browse ", "navigate to ", "visit ", "crawl ", "extract tables from ", "website se ", "site se ", "portal se "]):
             return {
@@ -443,13 +456,13 @@ class MasterOrchestrator:
 
         # Check for Z16 Omni Intent (Geospatial, Satellite, Remote Sensing, Ports, NDVI, Landsat, SAR, AIS, ESI)
         z16_explicit_keywords = [
-            "geospatial", "satellite", "remote sensing", "sentinel", "ndvi", "ndwi",
+            "geospatial", "satellite", "remote sensing", "ndvi", "ndwi",
             "maritime port", "port of singapore", "rotterdam", "jebel ali", "chokepoint", "shipping lane",
             "sentinel-1", "sar radar", "synthetic aperture radar", "radar backscatter",
             "container count", "oil tank fill", "shadow trigonometry", "maritime ais", "vessel telemetry",
-            "evaporative stress index", "esi", "pre-drought"
+            "evaporative stress index", "pre-drought"
         ]
-        if any(k in q for k in z16_explicit_keywords):
+        if any(k in q for k in z16_explicit_keywords) or bool(re.search(r'\b(esi|sar|ais)\b', q)):
             return {
                 "agent": "z16",
                 "name": "Z16 Omni",
@@ -614,12 +627,13 @@ class MasterOrchestrator:
             try:
                 classify_prompt = (
                     "You are the AxomAI Master Routing Engine. Classify this user query into exactly one agent:\n"
+                    "- 'assistant': General conversation, greetings, casual chat, Q&A, general knowledge, explanations, science, history, coding assistance, creative writing, advice.\n"
                     "- 'z1': Analyzing uploaded documents, PDFs, Excel sheets, images, OCR, visual extraction.\n"
                     "- 'z2': Live web search, news, competitor market share, real-time current events.\n"
                     "- 'z3': Database SQL queries, sales tables, revenue forecasting, what-if sensitivity simulations, anomalies.\n"
                     "- 'swarm': Compound queries comparing internal company data with external web/market trends.\n\n"
                     f"User Query: \"{query}\"\n\n"
-                    "Output JSON only: {\"agent\": \"z1\"|\"z2\"|\"z3\"|\"swarm\", \"reason\": \"short reason\"}"
+                    "Output JSON only: {\"agent\": \"assistant\"|\"z1\"|\"z2\"|\"z3\"|\"swarm\", \"reason\": \"short reason\"}"
                 )
                 res = llm_brain.generate(classify_prompt, "Classify query", temperature=0.0)
                 clean_json = res.strip()
@@ -628,18 +642,19 @@ class MasterOrchestrator:
                 elif "```" in clean_json:
                     clean_json = clean_json.split("```")[1].split("```")[0].strip()
                 parsed = json.loads(clean_json)
-                target_agent = parsed.get("agent", "z3").lower()
+                target_agent = parsed.get("agent", "assistant").lower()
                 agent_names = {
+                    "assistant": "AxomAI Assistant",
                     "z1": "Z1 Alpha",
                     "z2": "Z2 Bravo",
                     "z3": "Z3 Echo",
                     "swarm": "Tri-Agent Swarm Symphony"
                 }
                 return {
-                    "agent": target_agent if target_agent in agent_names else "z3",
-                    "name": agent_names.get(target_agent, "Z3 Echo"),
+                    "agent": target_agent if target_agent in agent_names else "assistant",
+                    "name": agent_names.get(target_agent, "AxomAI Assistant"),
                     "reason": parsed.get("reason", "Intelligent context routing"),
-                    "confidence": 0.92
+                    "confidence": 0.95
                 }
             except Exception as e:
                 console.print(f"[dim yellow][Master Router LLM Skip][/dim yellow] {e}")
@@ -647,7 +662,7 @@ class MasterOrchestrator:
         # Default fallback
         if has_active_file:
             return {"agent": "z1", "name": "Z1 Alpha", "reason": "Default file grounded context", "confidence": 0.8}
-        return {"agent": "z3", "name": "Z3 Echo", "reason": "Enterprise data & analytics default", "confidence": 0.8}
+        return {"agent": "assistant", "name": "AxomAI Assistant", "reason": "General conversational intelligence & reasoning", "confidence": 0.85}
 
     def _stream_sentinel_report(self, query: str) -> Generator[Dict[str, Any], None, None]:
         yield {
@@ -944,6 +959,9 @@ class MasterOrchestrator:
         else:
             chosen_agent = manual_agent.lower()
             name_map = {
+                "assistant": "AxomAI Assistant",
+                "conversational": "AxomAI Assistant",
+                "general": "AxomAI Assistant",
                 "z1": "Z1 Alpha",
                 "z2": "Z2 Bravo",
                 "z3": "Z3 Echo",
@@ -970,7 +988,16 @@ class MasterOrchestrator:
         }
 
         # 2. Execution Delegation guarded by Z Sentinel
-        if chosen_agent == "sentinel":
+        if chosen_agent in ["assistant", "conversational", "general"]:
+            # Delegate to AxomAI Conversational General Intelligence Assistant
+            yield from self._execute_with_sentinel_guard(
+                self._stream_conversational(query=query, session_id=session_id),
+                query=query,
+                is_auto=is_auto,
+                routing_reason=routing_reason
+            )
+
+        elif chosen_agent == "sentinel":
             yield from self._stream_sentinel_report(query)
 
         elif chosen_agent == "swarm":
@@ -1300,22 +1327,72 @@ class MasterOrchestrator:
             else:
                 yield {
                     "type": "status",
-                    "stage": "pivot",
-                    "message": "No document is currently uploaded. Engaging Z3 Echo for enterprise database analysis..."
+                    "stage": "conversational_reasoning",
+                    "message": "AxomAI Assistant processing response..."
                 }
-                def _z3_fallback():
-                    for event in self.z3.analytics_stream(query=query, session_id=session_id, doc_id=None):
-                        if event.get("type") == "meta":
-                            event["auto_routed"] = True
-                            event["routing_reason"] = "Pivoted from Z1 to Z3 (No file uploaded in workspace)"
-                        yield event
-
                 yield from self._execute_with_sentinel_guard(
-                    _z3_fallback(),
+                    self._stream_conversational(query=query, session_id=session_id),
                     query=query,
                     is_auto=is_auto,
-                    routing_reason=routing_reason
+                    routing_reason="Direct conversational response"
                 )
+
+    def _stream_conversational(
+        self,
+        query: str,
+        session_id: str
+    ) -> Generator[Dict[str, Any], None, None]:
+        """
+        Stream natural language conversation, greetings, and general intelligence Q&A.
+        """
+        yield {
+            "type": "status",
+            "stage": "conversational_reasoning",
+            "message": "AxomAI Assistant formulating response..."
+        }
+
+        meta_event = {
+            "type": "meta",
+            "agent": "AxomAI Assistant",
+            "task_type": "CONVERSATIONAL_ASSISTANT",
+            "auto_routed": True,
+            "routing_reason": "Natural language conversation & general intelligence assistance",
+            "tools_used": ["llm_neural_core"]
+        }
+        yield meta_event
+
+        system_prompt = (
+            "You are AxomAI, a sovereign enterprise visual intelligence and autonomous multi-agent AI assistant.\n"
+            "You communicate warmly, intelligently, clearly, and helpfully in English, Hinglish, Assamese, or Hindi according to user preference.\n\n"
+            "Key Behaviors:\n"
+            "1. For greetings (e.g. 'hello', 'hi', 'kaise ho', 'namaste'): Respond warmly and politely, acknowledge the greeting, and offer ready assistance.\n"
+            "2. For general questions (e.g. science, math, explanations, coding, general knowledge): Give thorough, accurate, beautifully formatted markdown answers.\n"
+            "3. For questions about your capabilities: Explain that you are AxomAI and can:\n"
+            "   - Analyze and extract data from documents, PDFs, Excel sheets, and images (with OCR & visual grounding).\n"
+            "   - Perform live autonomous web research, portal crawling, and market intelligence.\n"
+            "   - Query enterprise databases, forecast trends, and simulate business scenarios.\n"
+            "   - Assist with coding, writing, brainstorming, and any general inquiry.\n"
+            "Always provide clean, accurate, and beautifully structured responses with GitHub markdown."
+        )
+
+        full_answer = ""
+        if llm_brain.is_available:
+            for chunk in llm_brain.stream_generate(system_prompt, query):
+                full_answer += chunk
+                yield {"type": "token", "content": chunk}
+        else:
+            q_lower = query.lower().strip()
+            if any(g in q_lower for g in ["hi", "hello", "hey", "namaste", "pranam"]):
+                full_answer = "Hello! I am AxomAI, your autonomous AI assistant. How can I help you today? You can ask me any question, attach documents or spreadsheets for analysis, or request live web research."
+            else:
+                full_answer = f"I received your question: \"{query}\". How can I assist you further?"
+            for token in full_answer.split(" "):
+                yield {"type": "token", "content": token + " "}
+
+        yield {
+            "type": "done",
+            "answer": full_answer
+        }
 
     def _stream_swarm_symphony(
         self,

@@ -608,7 +608,70 @@
       );
       moonPivot.add(orbitLine);
 
-      // 9. Highly Visible Close-Approach Asteroids Streaking Right Past Earth
+      // 9. Photorealistic Deep Space Asteroids (Scientific Craggy Chondrite Rock like Bennu/Ryugu)
+      function createRealisticAsteroidGeometry(radius) {
+        const geo = new THREE.IcosahedronGeometry(radius, 4);
+        const pos = geo.attributes.position;
+        const v = new THREE.Vector3();
+
+        // 6 distinct impact craters carved across the asteroid surface
+        const craters = [
+          { dir: new THREE.Vector3(0.55, 0.65, 0.35).normalize(), r: radius * 0.48, depth: radius * 0.22 },
+          { dir: new THREE.Vector3(-0.60, 0.25, -0.55).normalize(), r: radius * 0.52, depth: radius * 0.25 },
+          { dir: new THREE.Vector3(0.20, -0.75, 0.40).normalize(), r: radius * 0.42, depth: radius * 0.20 },
+          { dir: new THREE.Vector3(-0.70, -0.35, 0.30).normalize(), r: radius * 0.46, depth: radius * 0.24 },
+          { dir: new THREE.Vector3(0.10, 0.35, -0.85).normalize(), r: radius * 0.44, depth: radius * 0.22 },
+          { dir: new THREE.Vector3(0.80, -0.20, -0.30).normalize(), r: radius * 0.38, depth: radius * 0.18 }
+        ];
+
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i);
+
+          // 1. Asymmetrical oblong elongation (like Bennu / Ryugu photo)
+          v.x *= 1.22;
+          v.y *= 0.90;
+          v.z *= 0.80;
+
+          // 2. High-frequency rocky surface roughness (boulders, cliffs, ridges)
+          const nx = Math.sin(v.x * 0.75) * Math.cos(v.y * 0.75);
+          const ny = Math.sin(v.y * 1.35) * Math.cos(v.z * 1.35);
+          const nz = Math.sin(v.z * 2.15) * Math.cos(v.x * 2.15);
+          const rockNoise = (nx + ny + nz) * (radius * 0.085);
+
+          // 3. Crater indentations with raised impact rims
+          const dir = v.clone().normalize();
+          let craterOffset = 0;
+          craters.forEach(c => {
+            const angle = dir.angleTo(c.dir);
+            const dist = angle * radius;
+            if (dist < c.r) {
+              const factor = 1 - (dist / c.r);
+              craterOffset -= Math.sin(factor * Math.PI * 0.5) * c.depth;
+            } else if (dist < c.r * 1.25) {
+              const rimFactor = 1 - ((dist - c.r) / (c.r * 0.25));
+              craterOffset += rimFactor * (c.depth * 0.18);
+            }
+          });
+
+          v.addScaledVector(dir, rockNoise + craterOffset);
+          pos.setXYZ(i, v.x, v.y, v.z);
+        }
+
+        geo.computeVertexNormals();
+        return geo;
+      }
+
+      const asteroidTex = textureLoader.load('/static/textures/asteroid_rock.jpg');
+      const asteroidBump = textureLoader.load('/static/textures/asteroid_bump.jpg');
+      const asteroidMat = new THREE.MeshStandardMaterial({
+        map: asteroidTex,
+        bumpMap: asteroidBump,
+        bumpScale: 2.2,
+        roughness: 0.92,
+        metalness: 0.14,
+        flatShading: true // Stark faceted boulder and cliff relief matching real space photos
+      });
+
       const asteroidPaths = [
         // 1. Skimming just above Earth's northern atmospheric horizon
         { start: new THREE.Vector3(-310, 185, 85), end: new THREE.Vector3(310, -75, -45) },
@@ -624,62 +687,33 @@
       for (let i = 0; i < 2; i++) {
         const aGroup = new THREE.Group();
 
-        // Visible Tumbling Stony Meteorite Body (Radius 6.2)
-        const rockGeo = new THREE.DodecahedronGeometry(6.2, 1);
-        const rockMat = new THREE.MeshStandardMaterial({
-          color: 0x9ca3af,
-          roughness: 0.82,
-          metalness: 0.2
-        });
-        const rock = new THREE.Mesh(rockGeo, rockMat);
+        // Authentic Craggy Asteroid Mesh (Radius 10.5)
+        const rockGeo = createRealisticAsteroidGeometry(10.5);
+        const rock = new THREE.Mesh(rockGeo, asteroidMat);
         aGroup.add(rock);
 
-        // Radiant White-Hot Meteor Core
-        const coreGlow = new THREE.Mesh(
-          new THREE.SphereGeometry(3.8, 12, 12),
-          new THREE.MeshBasicMaterial({ color: 0xffffff })
-        );
-        aGroup.add(coreGlow);
-
-        // Volumetric Burning Plasma Coma (Cyan-White Flare)
-        const comaGlow = new THREE.Mesh(
-          new THREE.SphereGeometry(9.2, 16, 16),
-          new THREE.MeshBasicMaterial({
-            color: 0x38bdf8,
-            transparent: true,
-            opacity: 0.60,
-            blending: THREE.AdditiveBlending
-          })
-        );
-        aGroup.add(comaGlow);
-
-        // 110-Unit Volumetric Shooting Meteor Tail (Outer Cyan Flare)
-        const outerTailGeo = new THREE.CylinderGeometry(0.5, 6.8, 110, 12, 1, true);
-        outerTailGeo.rotateX(Math.PI / 2);
-        outerTailGeo.translate(0, 0, -55);
-        const outerTailMat = new THREE.MeshBasicMaterial({
-          color: 0x38bdf8,
+        // Subtle Escort of 16 Micro Regolith Pebble Fragments
+        const debrisGeo = new THREE.BufferGeometry();
+        const debrisPos = [];
+        for (let j = 0; j < 16; j++) {
+          const r = 12 + Math.random() * 8;
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos((Math.random() * 2) - 1);
+          debrisPos.push(
+            r * Math.sin(phi) * Math.cos(theta),
+            r * Math.sin(phi) * Math.sin(theta),
+            r * Math.cos(phi)
+          );
+        }
+        debrisGeo.setAttribute('position', new THREE.Float32BufferAttribute(debrisPos, 3));
+        const debrisMat = new THREE.PointsMaterial({
+          size: 1.6,
+          color: 0x9ca3af,
           transparent: true,
-          opacity: 0.65,
-          blending: THREE.AdditiveBlending,
-          side: THREE.DoubleSide
+          opacity: 0.65
         });
-        const outerTail = new THREE.Mesh(outerTailGeo, outerTailMat);
-        aGroup.add(outerTail);
-
-        // Inner Burning White Core Tail Stream
-        const innerTailGeo = new THREE.CylinderGeometry(0.2, 2.8, 85, 8, 1, true);
-        innerTailGeo.rotateX(Math.PI / 2);
-        innerTailGeo.translate(0, 0, -42);
-        const innerTailMat = new THREE.MeshBasicMaterial({
-          color: 0xffffff,
-          transparent: true,
-          opacity: 0.82,
-          blending: THREE.AdditiveBlending,
-          side: THREE.DoubleSide
-        });
-        const innerTail = new THREE.Mesh(innerTailGeo, innerTailMat);
-        aGroup.add(innerTail);
+        const debrisMesh = new THREE.Points(debrisGeo, debrisMat);
+        aGroup.add(debrisMesh);
 
         aGroup.visible = false;
         scene.add(aGroup);
@@ -687,13 +721,19 @@
         asteroids.push({
           group: aGroup,
           rock: rock,
+          debris: debrisMesh,
           active: false,
           progress: 0,
           speed: 0.0075,
           pathIndex: i % asteroidPaths.length,
-          timer: (i + 1) * 100 + Math.random() * 80, // initial stagger
+          timer: (i + 1) * 90 + Math.random() * 70, // initial stagger
           start: new THREE.Vector3(),
-          end: new THREE.Vector3()
+          end: new THREE.Vector3(),
+          rotSpeed: {
+            x: 0.010 + (i % 3) * 0.004,
+            y: 0.016 + (i % 2) * 0.005,
+            z: 0.008 + (i % 4) * 0.003
+          }
         });
       }
 
@@ -756,7 +796,7 @@
           b.mesh.position.copy(pt);
         });
 
-        // Animate highly visible shooting asteroids passing right past Earth
+        // Animate authentic photorealistic asteroids passing right past Earth
         asteroids.forEach(ast => {
           if (!ast.active) {
             ast.timer--;
@@ -767,7 +807,7 @@
               ast.start.copy(path.start);
               ast.end.copy(path.end);
               ast.progress = 0;
-              ast.speed = 0.0072 + Math.random() * 0.0025; // Smooth 2.5-second flyby
+              ast.speed = 0.0068 + Math.random() * 0.0022; // Smooth ~2.8s flyby
               ast.active = true;
               ast.group.visible = true;
             }
@@ -776,13 +816,13 @@
             const curPos = new THREE.Vector3().lerpVectors(ast.start, ast.end, ast.progress);
             ast.group.position.copy(curPos);
 
-            // Orient tail directly along opposite of motion direction
-            const dir = new THREE.Vector3().subVectors(ast.end, ast.start).normalize();
-            ast.group.lookAt(curPos.clone().add(dir));
+            // Chaotic multi-axis tumble rotation (authentic space asteroid tumble)
+            ast.rock.rotation.x += ast.rotSpeed.x;
+            ast.rock.rotation.y += ast.rotSpeed.y;
+            ast.rock.rotation.z += ast.rotSpeed.z;
 
-            // Fast tumbling space rock rotation
-            ast.rock.rotation.x += 0.07;
-            ast.rock.rotation.y += 0.10;
+            ast.debris.rotation.x += ast.rotSpeed.x * 0.8;
+            ast.debris.rotation.y += ast.rotSpeed.y * 0.8;
 
             if (ast.progress >= 1.0) {
               ast.active = false;

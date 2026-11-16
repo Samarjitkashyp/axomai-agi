@@ -523,11 +523,16 @@ def stream_master_orchestrator(req: MasterRequest):
                 session_id=req.session_id,
                 manual_agent=req.manual_agent
             ):
+                if isinstance(event, dict):
+                    if "event" not in event and "type" in event:
+                        event["event"] = event["type"]
+                    elif "type" not in event and "event" in event:
+                        event["type"] = event["event"]
                 yield f"data: {json.dumps(event)}\n\n"
         except Exception as e:
             logger.error(f"SSE stream unhandled exception: {e}", exc_info=True)
-            yield f"data: {json.dumps({'type': 'error', 'error': f'Stream resilient recovery: {str(e)}'})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'answer': f'Stream processed with recovery: {str(e)}'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'event': 'error', 'error': f'Stream resilient recovery: {str(e)}'})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'event': 'done', 'answer': f'Stream processed with recovery: {str(e)}'})}\n\n"
 
     return StreamingResponse(
         event_generator(),

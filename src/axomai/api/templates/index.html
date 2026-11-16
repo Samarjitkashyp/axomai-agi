@@ -798,12 +798,20 @@
             if (line.startsWith('data: ')) {
               try {
                 const event = JSON.parse(line.substring(6));
-                if (event.event === 'token' && event.content) {
+                const evType = event.type || event.event;
+                if (evType === 'status' && event.message && !fullAnswer) {
+                  const body = document.getElementById(`${responseCardId}-body`);
+                  if (body) {
+                    body.innerHTML = `<span class="text-cyan-400 font-code animate-pulse">&gt; ${event.message}</span>`;
+                  }
+                } else if (evType === 'token' && event.content) {
                   fullAnswer += event.content;
                   updateAssistantContent(responseCardId, fullAnswer);
-                } else if ((event.event === 'final' || event.event === 'done') && event.answer) {
-                  fullAnswer = event.answer;
+                } else if ((evType === 'final' || evType === 'done') && (event.answer || event.content || fullAnswer)) {
+                  fullAnswer = event.answer || event.content || fullAnswer;
                   updateAssistantContent(responseCardId, fullAnswer);
+                } else if (evType === 'error' && event.error) {
+                  updateAssistantContent(responseCardId, `**Cognitive Notice:** ${event.error}`);
                 }
               } catch (_) {}
             }

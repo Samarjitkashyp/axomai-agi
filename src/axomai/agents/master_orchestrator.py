@@ -115,6 +115,15 @@ class MasterOrchestrator:
         """
         q = query.lower().strip()
 
+        # Check for Direct Web URL / Live Portal Navigation Intent
+        if re.search(r'https?://[^\s]+', query) or any(k in q for k in ["browse ", "navigate to ", "visit ", "crawl ", "extract tables from ", "website se ", "site se ", "portal se "]):
+            return {
+                "agent": "z2",
+                "name": "Z2 Bravo",
+                "reason": "Direct web URL navigation, portal crawl, and autonomous web document extraction requested",
+                "confidence": 0.99
+            }
+
         # 0. Check for Autonomous Mission Control (Multi-Step Strategic Goal)
         mission_triggers = [
             "mission:", "project:", "launch mission", "launch project", "execute mission",
@@ -734,6 +743,14 @@ class MasterOrchestrator:
                     if event.get("evidence"):
                         for ev in event.get("evidence", []):
                             context_snippets.append(f"{ev.get('source', '')}: {ev.get('text', '')}")
+                    if event.get("downloaded_doc"):
+                        doc_info = event.get("downloaded_doc")
+                        summary = doc_info.get("content_summary") or ""
+                        context_snippets.append(f"Downloaded Document '{doc_info.get('title')}': Direct URL: {doc_info.get('direct_url')}\n{summary}")
+                    if event.get("browser_intelligence"):
+                        b_intel = event.get("browser_intelligence")
+                        if isinstance(b_intel, dict) and b_intel.get("extracted_content"):
+                            context_snippets.append(f"Extracted Web Content:\n{b_intel.get('extracted_content')[:4000]}")
                     yield event
                 elif event_type == "token":
                     accumulated_answer += event.get("content", "")

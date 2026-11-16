@@ -37,14 +37,14 @@ class SelfHealer:
             "You are Z Sentinel Autonomous Repair & Fact-Grounding Engine. "
             "Your task is to rewrite draft answers so they strictly eliminate hallucinations, "
             "remove false numbers or fabricated claims, and strictly adhere to the provided ground truth context. "
-            "Keep professional formatting and markdown intact."
+            "Always preserve all verified document links, direct download links, and markdown cards intact."
         )
         user_prompt = (
             f"User Query: {query}\n\n"
-            f"=== 📜 VERIFIED GROUND TRUTH CONTEXT ===\n{context_str[:2500]}\n\n"
-            f"=== ⚠️ DRAFT ANSWER WITH HALLUCINATIONS/DISCREPANCIES ===\n{draft_answer[:2500]}\n\n"
+            f"=== 📜 VERIFIED GROUND TRUTH CONTEXT ===\n{context_str[:8000]}\n\n"
+            f"=== ⚠️ DRAFT ANSWER WITH HALLUCINATIONS/DISCREPANCIES ===\n{draft_answer[:8000]}\n\n"
             f"Flagged Discrepancies: {hallucinated_claims}\n\n"
-            "Produce only the corrected, 100% grounded response in clean Markdown."
+            "Produce only the corrected, 100% grounded response in clean Markdown. Never remove verified direct download links."
         )
 
         try:

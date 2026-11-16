@@ -399,9 +399,10 @@ class AutonomousBrowserAgent:
                     # Contextual expansion if text is generic like "Click Here", "Download", "View"
                     clean_check = text.lower().strip()
                     if clean_check in ("", "click here", "download", "view", "pdf", "click", "here", "view details", "link", "view all"):
-                        parent_text = a_tag.parent.get_text(strip=True) if a_tag.parent else ""
+                        parent_text = a_tag.parent.get_text(separator=" ", strip=True) if a_tag.parent else ""
                         if len(parent_text) > len(text) and len(parent_text) < 250:
-                            text = parent_text
+                            cleaned_parent = re.sub(r'\s*(?:click here|download|view details|view all|view|link)\s*$', '', parent_text, flags=re.IGNORECASE).strip()
+                            text = cleaned_parent if cleaned_parent else parent_text
 
                     if full_url in seen_urls:
                         continue

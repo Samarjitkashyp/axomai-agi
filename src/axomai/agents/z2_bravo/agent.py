@@ -203,6 +203,14 @@ class Z2BravoAgent:
             if verified_download_card:
                 yield {"type": "token", "content": verified_download_card}
 
+            doc_context = ""
+            if downloaded_doc:
+                doc_context = (
+                    f"Downloaded Document: {downloaded_doc.get('title')}\n"
+                    f"Direct Link: {downloaded_doc.get('direct_url')}\n"
+                    f"Document Summary (OCR/Text):\n{downloaded_doc.get('content_summary', '')}\n"
+                )
+
             prompt = (
                 f"You are Z2 Bravo Autonomous Browser Agent with Relentless Execution. The user instructed: '{topic}'.\n"
                 f"Target Portal: {target_url}\n"
@@ -210,8 +218,8 @@ class Z2BravoAgent:
                 f"Autonomous Fallback Pivots: {', '.join(pivots) if pivots else 'Direct Portal Link Match'}\n"
                 f"Extracted Tables Count: {len(tables)}\n"
                 f"Summaries:\n" + "\n".join([f"- {p['title']} ({p['url']}): {p['summary']}" for p in browser_res.get("pages_summary", [])]) + "\n"
-                f"Downloaded Document: {downloaded_doc.get('title') if downloaded_doc else 'None'}\n\n"
-                "Provide a crisp, professional executive briefing summarizing the tender requirements, next steps, and portal findings."
+                f"{doc_context}\n\n"
+                "Provide a crisp, professional executive briefing summarizing the key takeaways, next steps, and submission guidelines based on the verified findings above."
             )
 
             full_answer = verified_download_card

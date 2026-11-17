@@ -67,12 +67,12 @@ class MissionArtifactStore:
         """Retrieves all artifacts produced in a mission."""
         return self._artifacts.get(mission_id, [])
 
-    def get_chained_context(self, mission_id: str, current_step_id: int) -> str:
+    def get_chained_context(self, mission_id: str, current_step_id: int, max_prior_words: int = 1200) -> str:
         """
-        Builds rich, structured context without arbitrary character truncation.
+        Builds budgeted, indexed context without prompt context explosion.
         Provides:
         1. High-level roadmap digest of all completed milestones.
-        2. Full verbatim content of the immediately preceding milestone for direct dependency injection.
+        2. Budgeted, focused payload of the immediately preceding milestone.
         """
         arts = self.get_artifacts(mission_id)
         if not arts:
@@ -81,7 +81,7 @@ class MissionArtifactStore:
         completed_digest = []
         for a in arts:
             completed_digest.append(
-                f"- [Stage {a.step_id} - {a.agent_name}]: {a.title} ({a.deliverable_type})\n"
+                f"- [Stage {a.step_id} - {a.agent_name}]: {a.title} ({a.deliverable_type}) | Artifact ID: `{a.artifact_id}`\n"
                 f"  Summary: {a.summary}\n"
                 f"  Quality Score: {int(a.quality_score * 100)}%"
             )
@@ -92,11 +92,17 @@ class MissionArtifactStore:
             "\n".join(completed_digest)
         ]
 
-        # Inject the entire content of the most recent prior milestone
+        # Inject budgeted content of the most recent prior milestone to avoid token overflow
         prior_art = arts[-1]
+        prior_words = prior_art.full_content.strip().split()
+        if len(prior_words) <= max_prior_words:
+            prior_payload = prior_art.full_content
+        else:
+            prior_payload = " ".join(prior_words[:max_prior_words]) + f"\n\n... [Content indexed under Artifact `{prior_art.artifact_id}`; truncated to maintain LLM context budget]"
+
         context_blocks.append(
-            f"\n#### 📑 Direct Preceding Stage Deliverable (Full Content from {prior_art.agent_name} - Stage {prior_art.step_id}):\n"
-            f"```text\n{prior_art.full_content}\n```"
+            f"\n#### 📑 Direct Preceding Stage Deliverable (Indexed Content from {prior_art.agent_name} - Stage {prior_art.step_id}):\n"
+            f"```text\n{prior_payload}\n```"
         )
 
         return "\n\n" + "\n".join(context_blocks) + "\n\n"

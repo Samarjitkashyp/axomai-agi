@@ -157,15 +157,29 @@ class MissionVerifier:
         except Exception:
             criteria_met.append("sentinel_fallback_accepted")
 
-        # 4. Final Quality Score & Pass/Fail Verdict
+        # 4. Final Quality Score & Strict Zero-Tolerance Pass/Fail Verdict
+        mandatory_criteria = {"non_empty_output", "substantive_length"}
+        if agent_key in ["z4", "z4_nexus", "coding"]:
+            mandatory_criteria.add("code_artifacts_present")
+        elif agent_key in ["z2", "z2_bravo", "research"]:
+            mandatory_criteria.add("domain_terminology_grounding")
+        elif agent_key in ["z3", "z13", "z17", "financial", "analytics"]:
+            mandatory_criteria.add("quantitative_metrics_present")
+        elif agent_key in ["z8", "z11", "legal", "compliance"]:
+            mandatory_criteria.add("regulatory_framework_anchored")
+
         total_eval_points = len(criteria_met) + len(missing_criteria)
         quality_score = round(len(criteria_met) / max(total_eval_points, 1), 2)
         
-        # Must meet at least 60% of criteria to pass
-        passed = (quality_score >= 0.50) and ("non_empty_output" not in missing_criteria)
+        # Zero-Tolerance Rigor:
+        # 1. Every mandatory criterion MUST be satisfied (no exceptions).
+        # 2. Minimum overall quality score must be >= 0.70.
+        missing_mandatory = [c for c in missing_criteria if c in mandatory_criteria]
+        passed = (len(missing_mandatory) == 0) and (quality_score >= 0.70)
 
-        feedback = "Milestone passed verification criteria." if passed else (
-            f"Milestone failed verification ({round(quality_score * 100)}% score). Deficiencies: " + "; ".join(feedback_notes)
+        feedback = "Milestone passed strict verification criteria." if passed else (
+            f"Milestone failed verification ({round(quality_score * 100)}% score). "
+            f"Mandatory failures: {missing_mandatory}. Deficiencies: " + "; ".join(feedback_notes)
         )
 
         return VerificationResult(

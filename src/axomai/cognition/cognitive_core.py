@@ -95,6 +95,28 @@ class CognitiveCore:
             except Exception as m_err:
                 executed_mission = {"status": "EXECUTION_ERROR", "error": str(m_err)}
 
+        # 6. Empirical Prediction Engine Integration (Learning from Outcome)
+        active_prediction = None
+        if executed_mission and strategic_goals:
+            try:
+                from axomai.learning.prediction_engine import prediction_engine
+                top_goal = strategic_goals[0]
+                is_mission_success = executed_mission.get("status") == "COMPLETED"
+                pred = prediction_engine.emit_prediction(
+                    domain=top_goal.get("target_agent", "general"),
+                    target_entity=top_goal.get("title", "Strategic Objective")[:60],
+                    hypothesis=f"Autonomous pipeline will satisfy acceptance criteria for: {top_goal.get('action_directive', '')[:100]}",
+                    predicted_outcome="MISSION_DELIVERABLES_VERIFIED",
+                    confidence=top_goal.get("feasibility", 0.85)
+                )
+                active_prediction = prediction_engine.evaluate_prediction(
+                    prediction_id=pred.prediction_id,
+                    actual_outcome=executed_mission.get("status", "UNKNOWN"),
+                    is_correct=is_mission_success
+                )
+            except Exception:
+                pass
+
         result = {
             "cycle_index": self.deliberation_count,
             "timestamp": now,
@@ -105,6 +127,7 @@ class CognitiveCore:
             "acquired_tools_count": len(acquired_tools),
             "acquired_tools": acquired_tools,
             "active_mission": executed_mission,
+            "empirical_prediction": active_prediction,
             "world_model_entities": len(self.world_model.entities),
             "capabilities_active": len(self.capability_registry.list_all()),
             "self_state": self.self_model.get_self_state()

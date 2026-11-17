@@ -159,11 +159,13 @@ class AutonomousMissionManager:
                             target_agent=fallback_agent,
                             context_str=upstream_context
                         )
-                        if fallback_verif.passed or len(fallback_output.strip()) > 100:
+                        if fallback_verif.passed:
                             step_output = fallback_output
                             verification = fallback_verif
                             step_recovered = True
                             recovery_notes.append(f"Recovered successfully via fallback agent {fallback_agent}.")
+                        else:
+                            recovery_notes.append(f"Fallback agent {fallback_agent} also failed verification: {fallback_verif.feedback}")
                     except Exception as ex3:
                         recovery_notes.append(f"Fallback routing exception: {str(ex3)}")
 

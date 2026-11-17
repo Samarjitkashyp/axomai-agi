@@ -1,14 +1,16 @@
 """
-Z2 Bravo Web Search Engine.
-High-speed, multi-provider web search engine with deduplication,
-domain extraction, and strategic query expansion.
+Z2 Bravo Web Search Engine - Multi-Provider Live Intelligence.
+Aggregates live results from Google Search / Google News, Bing News / Web,
+and DuckDuckGo with domain deduplication and real-time freshness ranking.
 """
 
 import re
+import urllib.parse
+import urllib.request
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
-from ddgs import DDGS
 from rich.console import Console
 
 console = Console()
@@ -28,125 +30,175 @@ def clean_conversational_query(q: str) -> str:
     cleaned = re.sub(r'[,;:\"\'\(\)\[\]{}]+', ' ', cleaned).strip()
 
     words = cleaned.split()
-    if len(words) > 5:
+    if len(words) > 6:
         stop_words = {
             "the", "a", "an", "and", "or", "for", "with", "in", "on", "at", "to", "from", "of",
             "pehle", "ka", "ke", "me", "nayi", "banao", "perform", "deep", "top", "conduct",
-            "model", "assess", "district", "districts", "presence", "pricing", "spending", "density"
+            "model", "assess", "presence", "spending", "density"
         }
         meaningful = [w for w in words if w.lower() not in stop_words]
-        cleaned = " ".join(meaningful[:5]) if meaningful else " ".join(words[:5])
+        cleaned = " ".join(meaningful[:6]) if meaningful else " ".join(words[:6])
 
     return cleaned or q
 
 class WebSearchEngine:
+    """Multi-provider live web search engine supporting Google, Bing, and DuckDuckGo."""
+
     def __init__(self, default_max_results: int = 6):
         self.default_max_results = default_max_results
+        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 AxomAI/4.0"
+
+    def search_google_news(self, query: str, limit: int = 5) -> List[Dict[str, str]]:
+        """Queries Google News RSS index for up-to-the-minute real-world reporting."""
+        results = []
+        try:
+            encoded_q = urllib.parse.quote(query)
+            url = f"https://news.google.com/rss/search?q={encoded_q}&hl=en-IN&gl=IN&ceid=IN:en"
+            req = urllib.request.Request(url, headers={"User-Agent": self.user_agent})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                tree = ET.fromstring(resp.read())
+                for item in tree.findall(".//item")[:limit]:
+                    title_elem = item.find("title")
+                    link_elem = item.find("link")
+                    pub_elem = item.find("pubDate")
+                    source_elem = item.find("source")
+                    desc_elem = item.find("description")
+
+                    title = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
+                    link = link_elem.text.strip() if link_elem is not None and link_elem.text else ""
+                    pub_date = pub_elem.text.strip() if pub_elem is not None and pub_elem.text else ""
+                    source = source_elem.text.strip() if source_elem is not None and source_elem.text else "Google News"
+                    raw_desc = desc_elem.text if desc_elem is not None and desc_elem.text else ""
+                    clean_desc = re.sub(r'<[^>]+>', ' ', raw_desc).strip()
+
+                    if title:
+                        parsed = urlparse(link)
+                        domain = parsed.netloc.replace("www.", "").strip() or source
+                        results.append({
+                            "title": title,
+                            "url": link,
+                            "snippet": f"[{pub_date[:16]}] {clean_desc[:300]}" if pub_date else clean_desc[:300],
+                            "domain": domain,
+                            "provider": "google_news"
+                        })
+        except Exception:
+            pass
+        return results
+
+    def search_bing_news(self, query: str, limit: int = 4) -> List[Dict[str, str]]:
+        """Queries Bing News RSS index for cross-engine corroboration."""
+        results = []
+        try:
+            encoded_q = urllib.parse.quote(query)
+            url = f"https://www.bing.com/news/search?q={encoded_q}&format=rss"
+            req = urllib.request.Request(url, headers={"User-Agent": self.user_agent})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                tree = ET.fromstring(resp.read())
+                for item in tree.findall(".//item")[:limit]:
+                    title_elem = item.find("title")
+                    link_elem = item.find("link")
+                    desc_elem = item.find("description")
+                    pub_elem = item.find("pubDate")
+
+                    title = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
+                    link = link_elem.text.strip() if link_elem is not None and link_elem.text else ""
+                    raw_desc = desc_elem.text if desc_elem is not None and desc_elem.text else ""
+                    clean_desc = re.sub(r'<[^>]+>', ' ', raw_desc).strip()
+                    pub_date = pub_elem.text.strip() if pub_elem is not None and pub_elem.text else ""
+
+                    if title:
+                        parsed = urlparse(link)
+                        domain = parsed.netloc.replace("www.", "").strip() or "Bing News"
+                        results.append({
+                            "title": title,
+                            "url": link,
+                            "snippet": f"[{pub_date[:16]}] {clean_desc[:300]}" if pub_date else clean_desc[:300],
+                            "domain": domain,
+                            "provider": "bing_news"
+                        })
+        except Exception:
+            pass
+        return results
+
+    def search_ddg(self, query: str, limit: int = 4) -> List[Dict[str, str]]:
+        """Queries DuckDuckGo text index as supplementary provider."""
+        results = []
+        try:
+            from ddgs import DDGS
+            with DDGS() as ddgs:
+                text_items = list(ddgs.text(query, max_results=limit))
+                for item in text_items:
+                    url = item.get("href", "").strip()
+                    title = item.get("title", "").strip()
+                    body = item.get("body", "").strip()
+                    if url and title:
+                        parsed = urlparse(url)
+                        domain = parsed.netloc.replace("www.", "").strip()
+                        results.append({
+                            "title": title,
+                            "url": url,
+                            "snippet": body[:300],
+                            "domain": domain,
+                            "provider": "duckduckgo"
+                        })
+        except Exception:
+            pass
+        return results
 
     def search(self, query: str, max_results: Optional[int] = None) -> List[Dict[str, str]]:
         """
-        Executes search on live web index and returns cleaned result cards.
-        Intelligently routes time-sensitive queries to live news indexes.
+        Executes unified multi-provider search across Google, Bing, and DuckDuckGo.
+        Deduplicates by URL and aggregates diverse source perspectives.
         """
         limit = max_results or self.default_max_results
         cleaned_query = clean_conversational_query(query)
-        results: List[Dict[str, str]] = []
+        aggregated: List[Dict[str, str]] = []
         seen_urls = set()
 
-        is_time_sensitive = any(w in cleaned_query.lower() for w in [
-            "today", "aaj", "current", "latest", "now", "live", "news",
-            "breaking", "up and down", "market today", "share market", "stock market",
-            "sensex", "nifty", "yesterday", "this week"
-        ])
+        # 1. Fetch live Google intelligence
+        g_results = self.search_google_news(cleaned_query, limit=max(3, limit // 2))
+        for res in g_results:
+            if res["url"] not in seen_urls:
+                seen_urls.add(res["url"])
+                aggregated.append(res)
 
-        try:
-            with DDGS() as ddgs:
-                # 1. If time-sensitive, fetch fresh breaking news first
-                if is_time_sensitive:
-                    try:
-                        # Clean query for news index
-                        news_q = cleaned_query
-                        if "up and down" in news_q.lower():
-                            news_q = re.sub(r'up and down', 'indices', news_q, flags=re.IGNORECASE).strip()
-                        if "market" in news_q.lower() and not any(w in news_q.lower() for w in ["stock", "share"]):
-                            news_q = news_q.replace("market", "stock market")
+        # 2. Fetch live Bing intelligence
+        b_results = self.search_bing_news(cleaned_query, limit=max(2, limit // 2))
+        for res in b_results:
+            if res["url"] not in seen_urls:
+                seen_urls.add(res["url"])
+                aggregated.append(res)
 
-                        raw_news = list(ddgs.news(news_q, max_results=min(limit, 4)))
-                        for item in raw_news:
-                            url = item.get("url", "").strip()
-                            if not url or url in seen_urls:
-                                continue
-                            seen_urls.add(url)
-                            parsed = urlparse(url)
-                            domain = item.get("source") or parsed.netloc.replace("www.", "").strip()
-                            date_str = item.get("date", "")[:10]
-                            body = item.get("body", "").strip()
-                            snippet = f"[{date_str}] {body}" if date_str else body
+        # 3. Supplementary DuckDuckGo search if needed
+        if len(aggregated) < limit:
+            ddg_results = self.search_ddg(cleaned_query, limit=limit - len(aggregated))
+            for res in ddg_results:
+                if res["url"] not in seen_urls:
+                    seen_urls.add(res["url"])
+                    aggregated.append(res)
 
-                            results.append({
-                                "title": item.get("title", "").strip(),
-                                "url": url,
-                                "snippet": snippet,
-                                "domain": domain
-                            })
-                    except Exception as ne:
-                        console.print(f"[dim yellow][Z2 News Index Skip][/dim yellow] {ne}")
+        # Fallback if specific cleaned query returned zero results
+        if not aggregated and cleaned_query != query:
+            fallback_g = self.search_google_news(query[:50], limit=limit)
+            for res in fallback_g:
+                if res["url"] not in seen_urls:
+                    seen_urls.add(res["url"])
+                    aggregated.append(res)
 
-                # 2. General web text search
-                text_items = []
-                if is_time_sensitive:
-                    try:
-                        text_items = list(ddgs.text(cleaned_query, timelimit='w', max_results=limit))
-                    except Exception:
-                        text_items = []
-
-                if not text_items:
-                    text_items = list(ddgs.text(cleaned_query, max_results=limit))
-
-                for item in text_items:
-                    url = item.get("href", "").strip()
-                    if not url or url in seen_urls:
-                        continue
-                    seen_urls.add(url)
-
-                    parsed = urlparse(url)
-                    domain = parsed.netloc.replace("www.", "").strip()
-
-                    results.append({
-                        "title": item.get("title", "").strip(),
-                        "url": url,
-                        "snippet": item.get("body", "").strip(),
-                        "domain": domain
-                    })
-        except Exception as e:
-            console.print(f"[dim red][Z2 Search Error][/dim red] {e}")
-
-        return results
+        return aggregated[:limit]
 
     def multi_query_search(self, queries: List[str], max_per_query: int = 3) -> List[Dict[str, str]]:
-        """
-        Executes multiple targeted queries across different sub-angles,
-        deduplicating by domain/URL for broad coverage.
-        """
+        """Executes multiple targeted queries across different sub-angles."""
         aggregated: List[Dict[str, str]] = []
-        seen_domains = set()
         seen_urls = set()
 
         for q in queries:
             sub_results = self.search(q, max_results=max_per_query)
             for item in sub_results:
-                url = item["url"]
-                domain = item["domain"]
-
-                # Prioritize diversity of domains
-                if url in seen_urls:
-                    continue
-                seen_urls.add(url)
-                seen_domains.add(domain)
-                aggregated.append(item)
+                if item["url"] not in seen_urls:
+                    seen_urls.add(item["url"])
+                    aggregated.append(item)
 
         return aggregated
 
-
 web_search_engine = WebSearchEngine()
-

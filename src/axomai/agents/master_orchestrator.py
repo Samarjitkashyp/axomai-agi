@@ -726,7 +726,9 @@ class MasterOrchestrator:
                 "algorithm", "debug", "unit test", "class", "syntax", "python", "javascript",
                 "typescript", "c++", "java", "rust", "go", "sql", "explain this code", "analyze code",
                 "modify", "change", "update", "edit", "rewrite", "badlo", "karo", "banana", "likho",
-                "add feature", "add function", "fix this", "improve", "convert", "translate", "diff"
+                "add feature", "add function", "fix this", "improve", "convert", "translate", "diff",
+                "remove", "delete", "hatao", "hata do", "hata", "cut", "strip", "omit", "header",
+                "footer", "navbar", "sidebar", "section", "div", "button", "tag", "element", "style", "css"
             ]
             if any(k in q for k in coding_intents) or any(k in q for k in z4_explicit_keywords):
                 return {

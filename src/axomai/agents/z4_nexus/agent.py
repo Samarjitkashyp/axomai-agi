@@ -167,14 +167,29 @@ class Z4NexusAgent:
         is_cve_patch = any(k in q_lower for k in ["cve", "dependabot", "patch vulnerabilities", "vulnerable package", "upgrade dependencies", "audit requirements", "cve patch"])
         is_deep_reasoning = any(k in q_lower for k in ["deep reasoning", "deep think", "o1 think", "tree of thoughts", "think step by step", "complex algorithm"])
         is_computer_use = any(k in q_lower for k in ["computer use", "workspace vitals", "run dev server", "check open ports", "workspace operator", "run command"])
-        is_code_surgeon = any(k in q_lower for k in [
+        code_surgeon_keywords = [
             "modify", "change", "update", "edit", "rewrite", "refactor", "surgical",
             "diff", "inline edit", "canvas edit", "replace", "add to this", "add function",
             "add feature", "add method", "add code", "is code ko change", "is file ko modify",
             "file modify", "code modify", "badlo", "sudharo", "theek karo", "change karo",
             "update karo", "modify karo", "convert to", "translate to", "improve this code",
-            "fix and update", "change the", "modify this", "change this", "update this", "edit this"
-        ]) and bool(extracted_code)
+            "fix and update", "change the", "modify this", "change this", "update this", "edit this",
+            "remove", "delete", "hatao", "hata do", "hata", "cut", "strip", "omit", "exclude", "drop",
+            "remove header", "delete header", "header remove", "header delete", "header hatao", "header hata do",
+            "header ko remove", "header ko delete", "header ko hatao", "header ko hata do",
+            "remove footer", "delete footer", "footer remove", "footer delete", "footer hatao",
+            "remove navbar", "delete navbar", "navbar remove", "navbar delete", "navbar hatao",
+            "remove section", "delete section", "section remove", "remove button", "delete button",
+            "remove this", "delete this", "hata do isko", "hatao isko", "remove element", "delete element"
+        ]
+        is_code_surgeon = (
+            any(k in q_lower for k in code_surgeon_keywords) or
+            (bool(uploaded_file_ctx) and any(k in q_lower for k in [
+                "remove", "delete", "hata", "hatao", "change", "modify", "edit", "update", "replace",
+                "header", "footer", "navbar", "sidebar", "section", "button", "style", "css", "color",
+                "tag", "element", "div", "add", "insert", "fix", "clean"
+            ]))
+        ) and bool(extracted_code)
         is_vision_to_code = any(k in q_lower for k in ["whiteboard to code", "sketch to code", "wireframe to code", "figma to code", "screenshot to code", "sketch to react"])
         is_deep_research = any(k in q_lower for k in ["deep research", "research docs", "technical whitepaper", "latest changelog", "breaking changes in", "research documentation"])
         is_voice_turn = any(k in q_lower for k in ["voice mode", "spoken turn", "pair programming voice", "audio dialogue", "voice turn"])

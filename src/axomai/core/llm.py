@@ -43,7 +43,7 @@ class LLMBrain:
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.2,
-        max_tokens: int = 2048,
+        max_tokens: int = 8192,
         model_override: Optional[str] = None
     ) -> str:
         """
@@ -88,7 +88,7 @@ class LLMBrain:
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.2,
-        max_tokens: int = 2048,
+        max_tokens: int = 8192,
         model_override: Optional[str] = None
     ):
         """

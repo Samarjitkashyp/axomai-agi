@@ -128,6 +128,15 @@ class MasterOrchestrator:
                 "confidence": 0.99
             }
 
+        # Check for Z4 Nexus Reverse Engineering & Web App Cloning Intent
+        if any(k in q for k in ["reverse engineer", "clone website", "clone app", "app cloner", "reconstruct website"]):
+            return {
+                "agent": "z4",
+                "name": "Z4 Nexus (Polyglot Code Engine)",
+                "reason": "Autonomous live web reverse-engineering and app cloning detected",
+                "confidence": 0.99
+            }
+
         # Check for Direct Web URL / Live Portal Navigation Intent
         if re.search(r'https?://[^\s]+', query) or any(k in q for k in ["browse ", "navigate to ", "visit ", "crawl ", "extract tables from ", "website se ", "site se ", "portal se "]):
             return {
@@ -589,6 +598,14 @@ class MasterOrchestrator:
             "whiteboard to code", "sketch to code", "wireframe to code", "figma to code", "sketch to react",
             "deep research", "technical whitepaper", "research docs",
             "voice mode", "spoken turn", "pair programming voice",
+            # Revolutionary Beyond-Big-Tech Capabilities (Unbeatable AGI Tier)
+            "sentry", "crash report", "stack trace hotfix", "incident resolution", "auto-patch",
+            "synthetic squad", "war room", "synthetic team", "virtual tech company",
+            "time travel", "create checkpoint", "rollback state", "shadow snapshot",
+            "reverse engineer", "clone app", "clone website", "app cloner",
+            "kernel optimize", "cuda kernel", "triton kernel", "hardware accelerate", "simd kernel",
+            "self metamorphosis", "evolve capability", "acquire capability", "dynamic tool synthesis",
+            "sovereign shield", "air gap audit", "zero leak proof", "airgap compliance", "privacy certificate",
             # Languages & Frameworks
             "python", "javascript", "typescript", "react", "nextjs", "next.js", "nodejs", "node.js",
             "vue", "angular", "html", "css", "tailwind", "c++", "cpp", "c#", "csharp",

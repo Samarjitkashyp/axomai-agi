@@ -28,6 +28,13 @@ from axomai.agents.z4_nexus.tools.code_surgeon import code_surgeon
 from axomai.agents.z4_nexus.tools.vision_to_code import vision_to_code
 from axomai.agents.z4_nexus.tools.deep_researcher import deep_researcher
 from axomai.agents.z4_nexus.tools.voice_bridge import voice_bridge
+from axomai.agents.z4_nexus.tools.production_sentry import production_sentry
+from axomai.agents.z4_nexus.tools.synthetic_war_room import synthetic_war_room
+from axomai.agents.z4_nexus.tools.time_travel_sandbox import time_travel_sandbox
+from axomai.agents.z4_nexus.tools.app_reverse_engineer import app_reverse_engineer
+from axomai.agents.z4_nexus.tools.kernel_optimizer import kernel_optimizer
+from axomai.agents.z4_nexus.tools.self_metamorphosis import self_metamorphosis
+from axomai.agents.z4_nexus.tools.sovereign_privacy_shield import sovereign_privacy_shield
 
 __all__ = [
     "code_sandbox",
@@ -55,5 +62,12 @@ __all__ = [
     "code_surgeon",
     "vision_to_code",
     "deep_researcher",
-    "voice_bridge"
+    "voice_bridge",
+    "production_sentry",
+    "synthetic_war_room",
+    "time_travel_sandbox",
+    "app_reverse_engineer",
+    "kernel_optimizer",
+    "self_metamorphosis",
+    "sovereign_privacy_shield"
 ]

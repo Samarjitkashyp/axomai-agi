@@ -90,15 +90,173 @@ class Z4NexusAgent:
         is_db_migration = any(k in q_lower for k in ["db migration", "schema migration", "alembic", "prisma migrate", "mock data", "seed data", "synthetic data"])
         is_api_playground = any(k in q_lower for k in ["openapi spec", "swagger", "api playground", "postman collection", "test endpoint curl", "curl suite"])
         is_cve_patch = any(k in q_lower for k in ["cve", "dependabot", "patch vulnerabilities", "vulnerable package", "upgrade dependencies", "audit requirements", "cve patch"])
+        is_deep_reasoning = any(k in q_lower for k in ["deep reasoning", "deep think", "o1 think", "tree of thoughts", "think step by step", "complex algorithm"])
+        is_computer_use = any(k in q_lower for k in ["computer use", "workspace vitals", "run dev server", "check open ports", "workspace operator", "run command"])
+        is_code_surgeon = any(k in q_lower for k in ["inline edit", "surgical edit", "canvas edit", "modify only line", "only change", "diff replace", "surgical refactor"])
+        is_vision_to_code = any(k in q_lower for k in ["whiteboard to code", "sketch to code", "wireframe to code", "figma to code", "screenshot to code", "sketch to react"])
+        is_deep_research = any(k in q_lower for k in ["deep research", "research docs", "technical whitepaper", "latest changelog", "breaking changes in", "research documentation"])
+        is_voice_turn = any(k in q_lower for k in ["voice mode", "spoken turn", "pair programming voice", "audio dialogue", "voice turn"])
         is_tool_forge = any(k in q_lower for k in ["forge tool", "create tool", "build tool", "new tool", "dynamic tool", "tool forge", "generate a tool"])
         is_api = any(k in q_lower for k in ["integrate api", "api client", "webhook", "swagger", "openapi", "stripe", "razorpay", "shopify", "rest api client"])
         is_direct_exec = any(k in q_lower for k in ["run this", "execute this", "run python", "run javascript", "run node", "execute code", "run code", "eval code"]) and ("```" in query or "print(" in query or "console.log" in query or "import " in query or "def " in query)
         is_bug_fix = any(k in q_lower for k in ["fix this", "debug", "syntax error", "traceback", "exception in", "why is this code failing", "fix code", "find bug"])
 
         # =========================================================================
+        # 0A. OPENAI o1 / o3 STYLE DEEP REASONING & TREE-OF-THOUGHTS
+        # =========================================================================
+        if is_deep_reasoning:
+            yield {
+                "type": "status",
+                "stage": "deep_reasoning_core",
+                "message": "🧠 Z4 Nexus: Initiating o1-style deep tree-of-thoughts & constraint search..."
+            }
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "DEEP_REASONING_TREE_OF_THOUGHTS",
+                "tools_used": ["deep_reasoning_engine", "llm_neural_core"]
+            }
+            yield from deep_reasoning.reason_and_solve(query=query, context=extracted_code)
+            yield {"type": "done", "answer": ""}
+            return
+
+        # =========================================================================
+        # 0B. GEMINI 2.0 MULTIMODAL WHITEBOARD & SKETCH TO CODE
+        # =========================================================================
+        elif is_vision_to_code:
+            yield {
+                "type": "status",
+                "stage": "vision_to_code",
+                "message": "🎨 Z4 Nexus: Translating visual wireframe & sketch into responsive React..."
+            }
+            v_res = vision_to_code.synthesize_ui_from_sketch(query)
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "VISION_TO_CODE",
+                "artifact": v_res["artifact"],
+                "tools_used": ["vision_to_code", "artifacts_canvas", "llm_neural_core"]
+            }
+            full_answer = (
+                f"### 🎨 Synthesized React + Tailwind UI\n\n"
+                f"{v_res['artifact']['markdown_block']}\n\n"
+                f"✨ Component ready for live split-screen preview in Canvas."
+            )
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 0C. CHATGPT CANVAS TARGETED INLINE CODE SURGEON
+        # =========================================================================
+        elif is_code_surgeon and extracted_code:
+            yield {
+                "type": "status",
+                "stage": "code_surgeon",
+                "message": "🎯 Z4 Nexus: Applying targeted surgical diff replacement..."
+            }
+            s_res = code_surgeon.apply_surgical_edit(original_code=extracted_code, edit_instruction=query)
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "SURGICAL_CANVAS_DIFF",
+                "diff_summary": s_res["diff_summary"],
+                "tools_used": ["code_surgeon", "unified_diff_engine"]
+            }
+            full_answer = (
+                f"### 🎯 Targeted Surgical Diff\n\n"
+                f"**Summary:** `{s_res['diff_summary']}`\n\n"
+                f"```diff\n{s_res['unified_diff']}\n```\n\n"
+                f"#### Updated Clean Code:\n```\n{s_res['modified_code']}\n```"
+            )
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 0D. CLAUDE 3.5 COMPUTER USE & WORKSPACE OPERATOR
+        # =========================================================================
+        elif is_computer_use:
+            yield {
+                "type": "status",
+                "stage": "computer_operator",
+                "message": "💻 Z4 Nexus: Operating local developer workspace & auditing system vitals..."
+            }
+            vitals = computer_operator.get_workspace_vitals()
+            cmd_res = None
+            if "run" in q_lower or "install" in q_lower or "build" in q_lower:
+                cmd_res = computer_operator.run_workspace_command(query)
+
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "COMPUTER_USE_WORKSPACE_OPERATOR",
+                "vitals": vitals,
+                "tools_used": ["computer_operator", "host_process_manager"]
+            }
+            full_answer = (
+                f"### 💻 Workspace Vitals & Host Operator\n\n"
+                f"- **Active Dev Ports:** `{vitals['active_dev_ports']}`\n"
+                f"- **Python:** `{vitals['python_executable']}`\n"
+                f"- **Node:** `{'Ready' if vitals['node_available'] else 'Not Found'}` | **Git:** `{'Ready' if vitals['git_available'] else 'Not Found'}`\n\n"
+                f"{('**Command Execution Output:**\n```\n' + (cmd_res['stdout'] or cmd_res['stderr']) + '\n```') if cmd_res else 'Workspace ready for autonomous operations.'}"
+            )
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 0E. GEMINI DEEP RESEARCH & DOCUMENTATION SCRAPER
+        # =========================================================================
+        elif is_deep_research:
+            yield {
+                "type": "status",
+                "stage": "deep_researcher",
+                "message": "🔬 Z4 Nexus: Conducting multi-hop technical research & API doc grounding..."
+            }
+            res_dossier = deep_researcher.research_topic(query)
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "DEEP_TECHNICAL_RESEARCH",
+                "research_duration_ms": res_dossier["research_duration_ms"],
+                "tools_used": ["deep_researcher", "documentation_scraper", "llm_neural_core"]
+            }
+            full_answer = res_dossier["dossier"]
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 0F. CHATGPT ADVANCED VOICE MODE PROTOCOL
+        # =========================================================================
+        elif is_voice_turn:
+            yield {
+                "type": "status",
+                "stage": "voice_bridge",
+                "message": "🎙️ Z4 Nexus: Processing real-time pair-programming audio stream..."
+            }
+            v_pkt = voice_bridge.process_voice_turn(speech_transcript=query)
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "ADVANCED_VOICE_MODE",
+                "latency_ms": v_pkt["latency_ms"],
+                "tools_used": ["voice_bridge", "audio_synthesizer"]
+            }
+            full_answer = f"🎙️ **Z4 Nexus (Voice):** {v_pkt['spoken_response']}"
+            yield {"type": "token", "content": full_answer}
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
         # 1. AUTONOMOUS VISUAL & E2E BROWSER TESTING
         # =========================================================================
-        if is_e2e_browser:
+        elif is_e2e_browser:
             yield {
                 "type": "status",
                 "stage": "e2e_browser_test",

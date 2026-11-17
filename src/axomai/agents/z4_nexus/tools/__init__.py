@@ -21,6 +21,13 @@ from axomai.agents.z4_nexus.tools.db_migrator import db_migrator
 from axomai.agents.z4_nexus.tools.api_playground import api_playground
 from axomai.agents.z4_nexus.tools.dev_memory import dev_memory
 from axomai.agents.z4_nexus.tools.cve_patcher import cve_patcher
+from axomai.agents.z4_nexus.tools.artifacts_canvas import artifacts_canvas
+from axomai.agents.z4_nexus.tools.deep_reasoning import deep_reasoning
+from axomai.agents.z4_nexus.tools.computer_operator import computer_operator
+from axomai.agents.z4_nexus.tools.code_surgeon import code_surgeon
+from axomai.agents.z4_nexus.tools.vision_to_code import vision_to_code
+from axomai.agents.z4_nexus.tools.deep_researcher import deep_researcher
+from axomai.agents.z4_nexus.tools.voice_bridge import voice_bridge
 
 __all__ = [
     "code_sandbox",
@@ -41,5 +48,12 @@ __all__ = [
     "db_migrator",
     "api_playground",
     "dev_memory",
-    "cve_patcher"
+    "cve_patcher",
+    "artifacts_canvas",
+    "deep_reasoning",
+    "computer_operator",
+    "code_surgeon",
+    "vision_to_code",
+    "deep_researcher",
+    "voice_bridge"
 ]

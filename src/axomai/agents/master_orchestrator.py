@@ -582,6 +582,13 @@ class MasterOrchestrator:
             "deploy to vercel", "deploy to railway", "cloud deploy", "live preview", "dockerize",
             "db migration", "schema migration", "alembic", "prisma migrate", "mock data", "seed data",
             "openapi spec", "swagger", "api playground", "postman collection", "cve patch", "dependabot",
+            # Big-Tech Superpowers (ChatGPT Canvas, Claude Artifacts, Gemini Multimodal)
+            "deep reasoning", "deep think", "o1 think", "tree of thoughts",
+            "computer use", "workspace vitals", "workspace operator",
+            "inline edit", "surgical edit", "canvas edit", "diff replace",
+            "whiteboard to code", "sketch to code", "wireframe to code", "figma to code", "sketch to react",
+            "deep research", "technical whitepaper", "research docs",
+            "voice mode", "spoken turn", "pair programming voice",
             # Languages & Frameworks
             "python", "javascript", "typescript", "react", "nextjs", "next.js", "nodejs", "node.js",
             "vue", "angular", "html", "css", "tailwind", "c++", "cpp", "c#", "csharp",

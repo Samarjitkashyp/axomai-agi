@@ -53,11 +53,11 @@ class ContinuousLearner:
 
         cleaned_text = san_res["cleaned_text"]
 
-        # 4. Extract ontological knowledge triples
-        triples = self.sanitizer.extract_candidate_triples(cleaned_text)
+        # 4. Extract ontological knowledge triples with verified evidence spans
+        evidence_triples = self.sanitizer.extract_evidence_triples(cleaned_text)
         
         # Epistemic Honesty: If no verifiable relations are discovered, do NOT hallucinate fake correlations!
-        if not triples:
+        if not evidence_triples:
             return {
                 "status": "INSUFFICIENT_EVIDENCE",
                 "topic": topic,
@@ -71,11 +71,14 @@ class ContinuousLearner:
                 "timestamp": now
             }
 
-        # 5. Ingest into Semantic Knowledge Graph with calibrated confidence
+        # 5. Ingest into Semantic Knowledge Graph with calibrated confidence & evidence quote
         ingested = []
-        for s, p, o in triples:
-            calibrated_confidence = 0.88 if "RSS" in source or "Wire" in source else 0.92
-            res = self.semantic.add_fact(s, p, o, confidence=calibrated_confidence, source_ref=source)
+        for it in evidence_triples:
+            s, p, o = it["subject"], it["predicate"], it["object"]
+            conf = it["confidence"]
+            evidence_quote = it.get("evidence_span", "")[:120]
+            source_citation = f"{source} | Evidence: '{evidence_quote}'"
+            res = self.semantic.add_fact(s, p, o, confidence=conf, source_ref=source_citation)
             ingested.append(res)
             self.total_facts_learned += 1
 

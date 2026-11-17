@@ -165,6 +165,7 @@ class CapabilityAcquisitionEngine:
             }
 
         # 1. Attempt High-Fidelity Z4 Nexus Tool Forge with Z Sentinel AST Verification
+        forge_diagnostic = None
         try:
             from axomai.agents.z4_nexus.tools.tool_forge import ToolForge
             forge = ToolForge()
@@ -188,8 +189,20 @@ class CapabilityAcquisitionEngine:
                     "ast_audit": "PASSED",
                     "description": directive
                 }
-        except Exception:
-            pass
+            else:
+                forge_diagnostic = forge_res.get("error", "Z4 Tool Forge AST or Sandbox rejection")
+                self_model.record_failure_mode(
+                    domain="capability_acquisition",
+                    error_context=f"Tool Forge rejected '{tool_name}': {forge_diagnostic}",
+                    mitigation="Engaging resilient deterministic analytical kernel fallback"
+                )
+        except Exception as forge_ex:
+            forge_diagnostic = str(forge_ex)
+            self_model.record_failure_mode(
+                domain="capability_acquisition",
+                error_context=f"Tool Forge exception on '{tool_name}': {forge_diagnostic}",
+                mitigation="Engaging resilient deterministic analytical kernel fallback"
+            )
 
         # 2. Resilient Deterministic Sandboxed Analytical Tool Synthesis Fallback
         safe_directive = directive.replace('"', '\\"')

@@ -76,43 +76,24 @@ class CognitiveCore:
                 if acq_res.get("status") == "CAPABILITY_ACQUIRED_AND_OPERATIONAL":
                     acquired_tools.append(acq_res)
 
-        # 5. Autonomous Mission Dispatch & Execution Loop
+        # 5. Autonomous Mission Dispatch & Chained Execution Loop
         executed_mission = None
         if strategic_goals and auto_execute_top_mission:
             top_goal = strategic_goals[0]
             try:
-                from axomai.agents.mission_control.planner import mission_planner
-                from axomai.memory.episodic_memory import episodic_memory
+                from axomai.agents.mission_control.mission_manager import autonomous_mission_manager
                 mission_title = top_goal.get("title", "Autonomous Strategic Objective")
                 directive = top_goal.get("action_directive", mission_title)
-                plan = mission_planner.plan_mission(directive)
-                executed_mission = {
-                    "mission_id": plan.mission_id,
-                    "title": plan.title,
-                    "strategic_objective": plan.strategic_objective,
-                    "total_steps": plan.total_steps,
-                    "milestones": [m.model_dump() for m in plan.milestones],
-                    "status": "DISPATCHED_AND_PLANNED"
-                }
-                # Update World Model with newly dispatched mission
-                self.world_model.update_entity("active_mission", {
-                    "mission_id": plan.mission_id,
-                    "title": plan.title,
-                    "status": "IN_PROGRESS",
-                    "total_steps": plan.total_steps
-                })
-                # Record mission activation in episodic memory
-                episodic_memory.record_episode(
-                    query=f"Autonomous Strategic Mission: {plan.title}",
-                    agent_id="mission_controller",
-                    outcome_status="IN_PROGRESS",
-                    reward_score=0.9,
-                    reflection=f"Planned {plan.total_steps}-milestone autonomous roadmap for strategic goal '{top_goal.get('goal_id')}'.",
-                    lesson_learned=f"Decomposed objective into multi-agent milestones across specialized agents.",
-                    metadata={"mission_id": plan.mission_id, "goal_id": top_goal.get("goal_id")}
+                target_agent = top_goal.get("target_agent", "z4")
+
+                # Chained multi-agent execution via Autonomous Mission Manager
+                executed_mission = autonomous_mission_manager.execute_goal_as_mission(
+                    goal_title=mission_title,
+                    action_directive=directive,
+                    target_agent=target_agent
                 )
             except Exception as m_err:
-                executed_mission = {"status": "DISPATCH_ERROR", "error": str(m_err)}
+                executed_mission = {"status": "EXECUTION_ERROR", "error": str(m_err)}
 
         result = {
             "cycle_index": self.deliberation_count,

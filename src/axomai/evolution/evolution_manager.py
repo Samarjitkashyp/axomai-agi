@@ -144,12 +144,14 @@ class EvolutionManager:
         except Exception:
             pass
 
-        duration_sec = round(time.time() - t0, 2)
+        duration_sec = round((time.time() - t0) * 1000, 2)
         cycle_record = {
             "cycle_id": f"evo_cycle_{len(self.evolution_cycles) + 1:04d}",
             "target_anomaly": target_failure,
             "selected_hypothesis": selected_hyp,
-            "sandbox_status": sandbox_res.get("status"),
+            "tournament_results": tournament_results,
+            "sandbox_status": "TOURNAMENT_ALL_VARIANTS_TESTED" if tournament_results else "SANDBOX_FAILED",
+            "winning_patch": patch_id,
             "benchmark_verdict": verdict,
             "status": status,
             "duration_sec": duration_sec,

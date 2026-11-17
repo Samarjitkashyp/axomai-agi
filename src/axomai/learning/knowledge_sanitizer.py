@@ -94,5 +94,41 @@ class KnowledgeSanitizer:
 
         return candidates
 
+    def extract_evidence_triples(self, sanitized_text: str) -> List[Dict[str, Any]]:
+        """
+        Extracts candidate ontological relations with verified evidence spans and calibrated confidence.
+        """
+        candidates = []
+        sentences = [s.strip() for s in re.split(r'[.!?]\s+', sanitized_text) if len(s.strip()) > 15]
+
+        relation_regexes = [
+            (r"([A-Z][a-zA-Z0-9\s]{2,30})\s+(?:is|are)\s+(located\s+in|operated\s+by|managed\s+by|headquartered\s+in)\s+([A-Z][a-zA-Z0-9\s]{2,30})", "LOCATED_IN", 0.94),
+            (r"([A-Z][a-zA-Z0-9\s]{2,30})\s+(supplies|exports|produces|sells|distributes)\s+([a-zA-Z0-9\s\$\₹\€]{3,30})", "PRODUCES_OR_EXPORTS", 0.92),
+            (r"([A-Z][a-zA-Z0-9\s]{2,30})\s+(mandates|regulates|enforces|announced)\s+([a-zA-Z0-9\s]{3,30})", "REGULATES_OR_ANNOUNCED", 0.90),
+            (r"([A-Z][a-zA-Z0-9\s]{2,30})\s+(?:recorded|achieved|reported)\s+([a-zA-Z0-9\s%₹\$\€]+)", "PERFORMANCE_EVENT", 0.88),
+            (r"([A-Z][a-zA-Z0-9\s]{2,30})\s+(?:invests|funded|allocated)\s+([0-9\.]+\s*(?:crore|million|billion|inr|usd)?)\s+(?:in|for)\s+([a-zA-Z0-9\s]{3,30})", "CAPITAL_ALLOCATION", 0.95)
+        ]
+
+        for sent in sentences:
+            for pat, default_pred, base_conf in relation_regexes:
+                match = re.search(pat, sent, re.IGNORECASE)
+                if match:
+                    groups = [g.strip() for g in match.groups() if g]
+                    if len(groups) >= 2:
+                        subj = groups[0]
+                        obj = groups[-1]
+                        conf = base_conf
+                        if any(c.isdigit() for c in sent):
+                            conf = min(0.98, conf + 0.03)
+                        candidates.append({
+                            "subject": subj,
+                            "predicate": default_pred,
+                            "object": obj,
+                            "evidence_span": sent,
+                            "confidence": round(conf, 3)
+                        })
+                        break
+        return candidates
+
 knowledge_sanitizer = KnowledgeSanitizer()
 

@@ -28,7 +28,10 @@ class StrategicGoal:
         feasibility: float,
         risk_tier: str,
         target_agent: str,
-        action_directive: str
+        action_directive: str,
+        information_gain: float = 0.5,
+        uncertainty_reduction: float = 0.5,
+        capability_growth: float = 0.5
     ):
         self.goal_id = goal_id
         self.title = title
@@ -39,8 +42,15 @@ class StrategicGoal:
         self.risk_tier = risk_tier
         self.target_agent = target_agent
         self.action_directive = action_directive
-        # Composite utility score: (Urgency * 0.4) + (Impact * 0.4) + (Feasibility * 0.2)
-        self.priority_score = round((urgency * 0.4) + (impact * 0.4) + (feasibility * 0.2), 3)
+        self.information_gain = information_gain
+        self.uncertainty_reduction = uncertainty_reduction
+        self.capability_growth = capability_growth
+        
+        # Multi-Factor Expected Utility Model:
+        # Balances operational urgency/impact with epistemic information gain, uncertainty reduction, and capability growth
+        weighted_operational = (urgency * 0.30) + (impact * 0.30) + (feasibility * 0.15)
+        weighted_epistemic = (information_gain * 0.15) + (uncertainty_reduction * 0.05) + (capability_growth * 0.05)
+        self.priority_score = round(weighted_operational + weighted_epistemic, 3)
         self.created_at = datetime.now(timezone.utc).isoformat()
         self.status = "FORMULATED"
 

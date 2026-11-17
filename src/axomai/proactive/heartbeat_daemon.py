@@ -88,6 +88,15 @@ class HeartbeatDaemon:
         except Exception:
             proactive_goals = self.goal_gen.evaluate_signals_and_generate_goals(custom_signals)
 
+        # 1b. Periodic Subconscious Sleep Memory Consolidation (Tier 5)
+        consolidation_stat = None
+        if self.pulse_count % 3 == 0:
+            try:
+                from axomai.memory.subconscious_consolidation import subconscious_consolidation
+                consolidation_stat = subconscious_consolidation.run_consolidation_cycle(idle_mode=True)
+            except Exception:
+                pass
+
         # 2. Generate cinematic inner monologue insight
         thoughts = [
             f"Pulse #{self.pulse_count}: Scanned 22 autonomous agents, memory graph density nominal.",

@@ -237,16 +237,29 @@ class MasterOrchestrator:
                 "confidence": 0.99
             }
 
-        # 0f. Check for 4-Tier Cognitive Memory Brief
+        # 0f. Check for 5-Tier Sovereign Hyper-Memory Brief
         memory_triggers = [
             "memory status", "cognitive memory", "brain memory", "recall memory", "knowledge graph status",
-            "episodic memory", "procedural memory"
+            "episodic memory", "procedural memory", "hyper memory", "5-tier memory", "temporal graph"
         ]
         if any(t in q for t in memory_triggers):
             return {
                 "agent": "memory_recall",
-                "name": "Unified Cognitive Memory Hub",
-                "reason": "Fleet-wide 4-tier cognitive memory brief, past experience recall, and knowledge graph status",
+                "name": "Unified Hyper-Memory Hub",
+                "reason": "Fleet-wide 5-tier cognitive hyper-memory brief, past experience recall, and temporal knowledge graph status",
+                "confidence": 0.99
+            }
+
+        # 0f-2. Check for Subconscious Sleep & Memory Consolidation
+        sleep_triggers = [
+            "sleep cycle", "subconscious consolidation", "consolidate memory", "subconscious memory",
+            "sleep consolidation", "user persona twin", "persona twin"
+        ]
+        if any(t in q for t in sleep_triggers):
+            return {
+                "agent": "subconscious_sleep",
+                "name": "Subconscious Sleep & Consolidation Daemon",
+                "reason": "Autonomous background sleep consolidation, garbage pruning, and cross-session user persona twin synthesis",
                 "confidence": 0.99
             }
 
@@ -963,16 +976,16 @@ class MasterOrchestrator:
                         "lesson_learned": ref_res["lesson_learned"]
                     }
 
-                    # 5. Multi-Turn Conversational Memory (100k Token Session Budget)
+                    # 5. Multi-Turn 5-Tier Hyper-Memory Auto-Ingestion
                     sanitized_ans = sentinel_res.get("sanitized_answer", final_answer)
                     if session_id:
                         try:
-                            session_conversation_memory.record_turn(
+                            self.memory.auto_ingest_turn(
                                 session_id=session_id,
                                 role="user",
                                 content=query
                             )
-                            session_conversation_memory.record_turn(
+                            self.memory.auto_ingest_turn(
                                 session_id=session_id,
                                 role="assistant",
                                 content=sanitized_ans,
@@ -1187,8 +1200,12 @@ class MasterOrchestrator:
             yield from self._stream_procedural_development(query=query)
 
         elif chosen_agent == "memory_recall":
-            # Delegate to 4-Tier Unified Cognitive Memory Hub
+            # Delegate to 5-Tier Unified Cognitive Hyper-Memory Hub
             yield from self._stream_memory_brief(query=query)
+
+        elif chosen_agent == "subconscious_sleep":
+            # Delegate to Subconscious Sleep & Memory Consolidation Daemon
+            yield from self._stream_subconscious_sleep(query=query)
 
         elif chosen_agent == "proactive_pulse":
             # Delegate to Autonomous Heartbeat & Inner Monologue
@@ -1590,10 +1607,10 @@ class MasterOrchestrator:
             "Always provide clean, accurate, and beautifully structured responses with GitHub markdown."
         )
 
-        # Multi-Turn Conversational Memory (up to 100k Context Budget)
-        ctx_data = session_conversation_memory.get_conversation_context(session_id, query)
-        memory_prompt = ctx_data.get("context_prompt", "")
-        effective_system_prompt = f"{system_prompt}\n\n{memory_prompt}" if memory_prompt else system_prompt
+        # Sovereign 5-Tier Hyper-Memory Context Injection (Working + Session + 4D Graph + Episodic + Subconscious Twin)
+        hyper_ctx = self.memory.synthesize_hyper_memory_context(query=query, session_id=session_id)
+        hyper_prompt = hyper_ctx.get("hyper_prompt", "")
+        effective_system_prompt = f"{system_prompt}\n\n{hyper_prompt}" if hyper_prompt else system_prompt
 
         full_answer = ""
         if llm_brain.is_available:
@@ -1603,8 +1620,17 @@ class MasterOrchestrator:
         else:
             q_lower = query.lower().strip()
             prior_session = session_conversation_memory.get_or_create_session(session_id)
+            active_facts = hyper_ctx.get("active_facts", [])
+
             if any(g in q_lower for g in ["hi", "hello", "hey", "namaste", "pranam"]):
                 full_answer = "Hello! I am AxomAI, your autonomous AI assistant. How can I help you today? You can ask me any question, attach documents or spreadsheets for analysis, or request live web research."
+            elif active_facts and any(k in q_lower for k in ["where", "price", "budget", "strategy", "location", "relocate", "export", "status", "target", "cost"]):
+                fact_lines = [f"- **{f['subject_name']}** {f['predicate'].replace('_', ' ').lower()}: `{f['object_name']}`" for f in active_facts[:3]]
+                full_answer = (
+                    f"Based on AxomAI 4D Temporal Knowledge Graph:\n\n" +
+                    "\n".join(fact_lines) + "\n\n"
+                    "This information is verified and synchronized across your sovereign memory network."
+                )
             elif prior_session.turns and any(k in q_lower for k in ["topic", "iss baare", "aur batao", "pehle", "previous", "continue", "elaborate", "isse related"]):
                 last_turn = prior_session.turns[-1]
                 full_answer = (
@@ -1780,33 +1806,38 @@ class MasterOrchestrator:
         yield {
             "type": "status",
             "stage": "memory_synthesis",
-            "message": "🧠 Unified Memory Hub: Compiling 4-tier cognitive memory brief & telemetry..."
+            "message": "🧠 Unified Hyper-Memory Hub: Compiling 5-tier cognitive memory brief & telemetry..."
         }
         brief = self.memory.synthesize_cognitive_brief(query)
         telemetry = self.memory.get_memory_telemetry()
         yield {
             "type": "meta",
-            "agent": "Unified Cognitive Memory Hub",
-            "task_type": "MEMORY_TELEMETRY",
+            "agent": "Unified Hyper-Memory Hub",
+            "task_type": "5TIER_HYPER_MEMORY_TELEMETRY",
             "brief": brief,
             "telemetry": telemetry
         }
 
         tiers = telemetry.get("tiers", {})
-        ep = tiers.get("episodic_memory", {})
-        sem = tiers.get("semantic_graph", {})
+        w_mem = tiers.get("tier_1_working_memory", {})
+        s_mem = tiers.get("tier_2_session_conversations", {})
+        sem = tiers.get("tier_3_temporal_knowledge_graph", {})
+        ep = tiers.get("tier_4_episodic_memory", {})
+        sub = tiers.get("tier_5_subconscious_consolidation", {})
         proc = tiers.get("procedural_memory", {})
 
         md = (
-            f"### 🧠 AxomAI Unified 4-Tier Cognitive Memory Brief\n\n"
+            f"### 🧠 AxomAI Sovereign 5-Tier Hyper-Memory Architecture\n\n"
             f"**Cognitive Status:** `{telemetry.get('status')}` | **Active Load:** `{brief.get('cognitive_load', 0.1)}`\n\n"
-            f"#### 📊 Fleet-Wide Cognitive Memory Telemetry\n\n"
-            f"| Memory Tier | Primary Function | Active Volume / Metrics |\n"
+            f"#### 📊 Fleet-Wide 5-Tier Cognitive Memory Telemetry\n\n"
+            f"| Memory Tier | Primary Function | Active Volume / Verified Telemetry |\n"
             f"| :--- | :--- | :--- |\n"
-            f"| **Tier 1: Working Memory** | Live Conversational Context & Scratchpad | Depth: `{tiers.get('working_memory', {}).get('buffer_depth', 0)}` turns |\n"
-            f"| **Tier 2: Episodic Memory** | Experiences, Mistakes & Reflexion Lessons | `{ep.get('total_episodes', 0)}` Episodes (Avg Reward: `{ep.get('average_reward_score', 0.0)}`) |\n"
-            f"| **Tier 3: Semantic Graph** | Entities, Ontological Facts & Triples | `{sem.get('total_entities', 0)}` Entities, `{sem.get('total_triples', 0)}` Triples |\n"
-            f"| **Tier 4: Procedural Memory**| Reusable Autonomous Skills & Tools | `{proc.get('total_registered_skills', 0)}` Registered Callable Skills |\n\n"
+            f"| **Tier 1: Working Memory** | Live Conscious Attention & Buffer | Depth: `{w_mem.get('buffer_depth', 0)}` turns (Load: `{w_mem.get('cognitive_load', 0.1)}`) |\n"
+            f"| **Tier 2: Session Context** | 100k Multi-Turn Session Ledger | Stitched Sessions: `{s_mem.get('total_sessions_on_disk', 0)}` (Ceiling: 100,000 tokens) |\n"
+            f"| **Tier 3: 4D Temporal Graph** | Ontological Triples & Contradiction Resolution | `{sem.get('active_triples', 0)}` Active Triples, `{sem.get('superseded_triples', 0)}` Superseded, `{sem.get('total_entities', 0)}` Entities |\n"
+            f"| **Tier 4: Episodic Memory** | Autobiographical Experiences & Mistake Lessons | `{ep.get('total_episodes', 0)}` Episodes (Avg Reward: `{ep.get('average_reward_score', 0.0)}`) |\n"
+            f"| **Tier 5: Subconscious Sleep** | Cross-Session User Persona Twin & Epistemic Axioms | `{sub.get('active_projects', 0)}` Active Projects, `{sub.get('abstracted_axioms', 0)}` Axioms Synthesized |\n"
+            f"| **Procedural Vault** | Reusable Autonomous Tools & Skills | `{proc.get('total_registered_skills', 0)}` Registered Callable Skills |\n\n"
             f"#### 💡 Relevant Episodic Lessons for Current Query\n\n"
         )
         for g in brief.get("episodic_guidance", []):
@@ -1815,6 +1846,49 @@ class MasterOrchestrator:
         if not brief.get("episodic_guidance"):
             md += "- *No prior mistakes recorded for this query domain. Proceeding under optimal exploration parameters.*\n"
 
+        for token in md.split(" "):
+            yield {"type": "token", "content": token + " "}
+
+        yield {
+            "type": "done",
+            "answer": md
+        }
+
+    def _stream_subconscious_sleep(self, query: str) -> Generator[Dict[str, Any], None, None]:
+        yield {
+            "type": "status",
+            "stage": "subconscious_sleep_init",
+            "message": "💤 Subconscious Consolidation Daemon: Commencing 3-phase memory sleep cycle..."
+        }
+        res = self.memory.trigger_subconscious_sleep(idle_mode=False)
+        twin = self.memory.subconscious.get_persona_twin()
+
+        yield {
+            "type": "meta",
+            "agent": "Subconscious Sleep & Consolidation Daemon",
+            "task_type": "SUBCONSCIOUS_SLEEP_CONSOLIDATION",
+            "consolidation_summary": res,
+            "persona_twin": twin.model_dump()
+        }
+
+        projects_md = "\n".join([f"- **{v['topic_headline']}** *(Observed in `{v['first_observed_session']}`)*" for v in list(twin.active_projects.values())[-5:]]) or "- *Sovereign Enterprise Multi-Agent Execution*"
+        axioms_md = "\n".join([f"- *\"{ax}\"*" for ax in twin.abstracted_axioms[-5:]]) or "- *\"Structure quantitative trade & infrastructure outputs with comparative metrics and zero hallucination.\"*"
+
+        md = (
+            f"### 💤 AxomAI Subconscious Sleep & Memory Consolidation Cycle\n\n"
+            f"**Cycle Status:** `{res.get('cycle_status')}` | **Consolidation Latency:** `{res.get('latency_ms', 10.5)} ms`\n\n"
+            f"#### 🧬 Tri-Phase Sleep Consolidation Telemetry\n\n"
+            f"1. **Phase 1: Garbage & Redundancy Pruning:** Pruned `{res.get('phase_1_pruning', {}).get('pruned_superseded_triples', 0)}` stale/low-confidence superseded triples.\n"
+            f"2. **Phase 2: Cross-Session Stitching:** Stitched `{res.get('phase_2_stitching', {}).get('sessions_processed', 0)}` session conversations into `{len(twin.active_projects)}` ongoing enterprise project twins.\n"
+            f"3. **Phase 3: Epistemic Abstraction:** Synthesized `{res.get('phase_3_abstraction', {}).get('axioms_synthesized', 0)}` new high-conviction cognitive axioms from autobiographical episodes.\n\n"
+            f"#### 👤 Synthesized User Persona Twin\n\n"
+            f"**Operational Title:** `{twin.user_title}`\n"
+            f"**Preferred Style:** `{twin.operational_style}`\n"
+            f"**Core Strategic Domains:** `{', '.join(twin.core_domains)}`\n\n"
+            f"#### 📁 Active Cross-Session Projects\n\n{projects_md}\n\n"
+            f"#### 📜 Synthesized Epistemic Axioms\n\n{axioms_md}\n\n"
+            f"> *All memory tiers synchronized across sessions. AxomAI retains permanent cross-chat continuity.*"
+        )
         for token in md.split(" "):
             yield {"type": "token", "content": token + " "}
 

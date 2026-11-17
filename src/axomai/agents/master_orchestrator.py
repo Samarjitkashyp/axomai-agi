@@ -41,6 +41,7 @@ from axomai.agents.cross_swarm_loop import cross_swarm_loop
 from axomai.syndicates import commercial_revenue_syndicate, infrastructure_energy_shield, institutional_syndicate
 from axomai.agents.mission_control import mission_executor
 from axomai.memory import unified_memory_hub
+from axomai.memory.session_memory import session_conversation_memory
 from axomai.learning import continuous_learner
 from axomai.evolution import reflexion_engine, autonomous_developer
 from axomai.supervision import agent_watchdog, circuit_breaker
@@ -841,6 +842,7 @@ class MasterOrchestrator:
         self,
         event_stream: Generator[Dict[str, Any], None, None],
         query: str,
+        session_id: Optional[str] = None,
         is_auto: bool = False,
         routing_reason: str = "",
         agent_id: str = "orchestrator"
@@ -961,9 +963,27 @@ class MasterOrchestrator:
                         "lesson_learned": ref_res["lesson_learned"]
                     }
 
+                    # 5. Multi-Turn Conversational Memory (100k Token Session Budget)
+                    sanitized_ans = sentinel_res.get("sanitized_answer", final_answer)
+                    if session_id:
+                        try:
+                            session_conversation_memory.record_turn(
+                                session_id=session_id,
+                                role="user",
+                                content=query
+                            )
+                            session_conversation_memory.record_turn(
+                                session_id=session_id,
+                                role="assistant",
+                                content=sanitized_ans,
+                                agent_name=agent_id
+                            )
+                        except Exception:
+                            pass
+
                     yield {
                         "type": "done",
-                        "answer": sentinel_res.get("sanitized_answer", final_answer),
+                        "answer": sanitized_ans,
                         "verification_audit": v_audit,
                         "evolution": {
                             "reward_score": ref_res["reward_score"],
@@ -999,6 +1019,18 @@ class MasterOrchestrator:
         Protected end-to-end by Z Sentinel Autonomous Cyber & Grounding Guardrails.
         """
         session_id = session_id or str(uuid.uuid4())[:8]
+
+        # Step 0a: 100k Long-Context Conversational Memory Exhaustion Check (ChatGPT-style)
+        if session_conversation_memory.is_context_exhausted(session_id):
+            exhaust_msg = session_conversation_memory.get_exhaustion_message(session_id)
+            yield {
+                "type": "status",
+                "stage": "context_limit_reached",
+                "message": "🔔 Session Context Limit Reached (~100,000 tokens). Please start a New Chat."
+            }
+            yield {"type": "token", "content": exhaust_msg}
+            yield {"type": "done", "answer": exhaust_msg}
+            return
 
         # Step 0: Z Sentinel Security & PII Pre-Execution Audit
         prompt_audit = self.sentinel.audit_prompt(query)
@@ -1117,6 +1149,7 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self._stream_conversational(query=query, session_id=session_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
                 routing_reason=routing_reason
             )
@@ -1129,6 +1162,7 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self._stream_swarm_symphony(query, session_id=session_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
                 routing_reason=routing_reason
             )
@@ -1138,6 +1172,7 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.mission_control.execute_mission_stream(goal=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
                 routing_reason=routing_reason,
                 agent_id="mission"
@@ -1176,8 +1211,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z4.code_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z4"
             )
 
         elif chosen_agent == "z5":
@@ -1185,8 +1222,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z5.schedule_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z5"
             )
 
         elif chosen_agent == "z6":
@@ -1194,8 +1233,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z6.comms_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z6"
             )
 
         elif chosen_agent == "z7":
@@ -1203,8 +1244,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z7.presentation_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z7"
             )
 
         elif chosen_agent == "z8":
@@ -1212,8 +1255,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z8.legal_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z8"
             )
 
         elif chosen_agent == "z9":
@@ -1221,8 +1266,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z9.memory_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z9"
             )
 
         elif chosen_agent == "z10":
@@ -1230,8 +1277,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z10.logistics_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z10"
             )
 
         elif chosen_agent == "z11":
@@ -1239,8 +1288,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z11.policy_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z11"
             )
 
         elif chosen_agent == "z12":
@@ -1248,8 +1299,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z12.hr_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z12"
             )
 
         elif chosen_agent == "z13":
@@ -1257,8 +1310,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z13.market_surveillance_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z13"
             )
 
         elif chosen_agent == "z14":
@@ -1266,8 +1321,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z14.trade_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z14"
             )
 
         elif chosen_agent == "z15":
@@ -1275,8 +1332,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z15.cyber_defense_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z15"
             )
 
         elif chosen_agent == "z16":
@@ -1284,8 +1343,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z16.geospatial_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z16"
             )
 
         elif chosen_agent == "z17":
@@ -1293,8 +1354,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.z17.equity_research_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z17"
             )
 
         elif chosen_agent == "y1":
@@ -1302,8 +1365,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.y1.agri_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="y1"
             )
 
         elif chosen_agent == "y2":
@@ -1311,8 +1376,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.y2.energy_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="y2"
             )
 
         elif chosen_agent == "y3":
@@ -1320,8 +1387,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.y3.healthcare_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="y3"
             )
 
         elif chosen_agent == "y4":
@@ -1329,8 +1398,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.y4.infra_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="y4"
             )
 
         elif chosen_agent == "y5":
@@ -1338,8 +1409,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.y5.geopolitics_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="y5"
             )
 
         elif chosen_agent == "cross_swarm":
@@ -1347,8 +1420,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.cross_swarm.swarm_loop_stream(query=query, session_id=session_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="cross_swarm"
             )
 
         elif chosen_agent == "revenue_syndicate":
@@ -1356,8 +1431,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.revenue_syndicate.syndicate_stream(query=query, session_id=session_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="revenue_syndicate"
             )
 
         elif chosen_agent == "infra_shield":
@@ -1365,8 +1442,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.infra_shield.shield_stream(query=query, session_id=session_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="infra_shield"
             )
 
         elif chosen_agent == "institutional_syndicate":
@@ -1374,8 +1453,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 self.institutional_syndicate.institutional_stream(query=query, session_id=session_id),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="institutional_syndicate"
             )
 
         elif chosen_agent == "z3":
@@ -1390,8 +1471,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 _z3_gen(),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z3"
             )
 
         elif chosen_agent == "z2":
@@ -1406,8 +1489,10 @@ class MasterOrchestrator:
             yield from self._execute_with_sentinel_guard(
                 _z2_gen(),
                 query=query,
+                session_id=session_id,
                 is_auto=is_auto,
-                routing_reason=routing_reason
+                routing_reason=routing_reason,
+                agent_id="z2"
             )
 
         else:
@@ -1427,8 +1512,10 @@ class MasterOrchestrator:
                 yield from self._execute_with_sentinel_guard(
                     _multi_z1_gen(),
                     query=query,
+                    session_id=session_id,
                     is_auto=is_auto,
-                    routing_reason=routing_reason
+                    routing_reason=routing_reason,
+                    agent_id="z1"
                 )
             elif resolved_file_path:
                 def _z1_gen():
@@ -1445,8 +1532,10 @@ class MasterOrchestrator:
                 yield from self._execute_with_sentinel_guard(
                     _z1_gen(),
                     query=query,
+                    session_id=session_id,
                     is_auto=is_auto,
-                    routing_reason=routing_reason
+                    routing_reason=routing_reason,
+                    agent_id="z1"
                 )
             else:
                 yield {
@@ -1457,8 +1546,10 @@ class MasterOrchestrator:
                 yield from self._execute_with_sentinel_guard(
                     self._stream_conversational(query=query, session_id=session_id),
                     query=query,
+                    session_id=session_id,
                     is_auto=is_auto,
-                    routing_reason="Direct conversational response"
+                    routing_reason="Direct conversational response",
+                    agent_id="AxomAI Assistant"
                 )
 
     def _stream_conversational(
@@ -1499,15 +1590,28 @@ class MasterOrchestrator:
             "Always provide clean, accurate, and beautifully structured responses with GitHub markdown."
         )
 
+        # Multi-Turn Conversational Memory (up to 100k Context Budget)
+        ctx_data = session_conversation_memory.get_conversation_context(session_id, query)
+        memory_prompt = ctx_data.get("context_prompt", "")
+        effective_system_prompt = f"{system_prompt}\n\n{memory_prompt}" if memory_prompt else system_prompt
+
         full_answer = ""
         if llm_brain.is_available:
-            for chunk in llm_brain.stream_generate(system_prompt, query):
+            for chunk in llm_brain.stream_generate(effective_system_prompt, query):
                 full_answer += chunk
                 yield {"type": "token", "content": chunk}
         else:
             q_lower = query.lower().strip()
+            prior_session = session_conversation_memory.get_or_create_session(session_id)
             if any(g in q_lower for g in ["hi", "hello", "hey", "namaste", "pranam"]):
                 full_answer = "Hello! I am AxomAI, your autonomous AI assistant. How can I help you today? You can ask me any question, attach documents or spreadsheets for analysis, or request live web research."
+            elif prior_session.turns and any(k in q_lower for k in ["topic", "iss baare", "aur batao", "pehle", "previous", "continue", "elaborate", "isse related"]):
+                last_turn = prior_session.turns[-1]
+                full_answer = (
+                    f"Continuing our discussion from the previous topic: '{last_turn.content[:140]}...'\n\n"
+                    f"AxomAI active session memory has preserved this context ({prior_session.total_tokens:,} tokens tracked). "
+                    "I am tracking our complete discussion thread and ready to delve deeper into this topic. What specific aspect would you like to explore next?"
+                )
             else:
                 full_answer = f"I received your question: \"{query}\". How can I assist you further?"
             for token in full_answer.split(" "):

@@ -131,6 +131,52 @@ class SelfModel:
         if len(self.known_failure_modes) > 20:
             self.known_failure_modes.pop(0)
 
+    def calibrate_domain(self, domain: str, predicted_confidence: float, actual_success: bool) -> float:
+        """
+        Dynamically updates epistemic confidence calibration based on empirical task outcomes.
+        Penalizes overconfidence on failures; rewards calibrated accuracy on successes.
+        """
+        current_conf = self.confidence_calibration.get(domain, 0.85)
+        if actual_success:
+            # Positive calibration adjustment toward 1.0
+            error = 1.0 - predicted_confidence
+            new_conf = round(min(0.99, current_conf + 0.03 * (1.0 - error)), 3)
+        else:
+            # Significant penalty for overconfidence when actual outcome fails
+            overconfidence = max(0.1, predicted_confidence)
+            new_conf = round(max(0.40, current_conf - 0.08 * overconfidence), 3)
+
+        self.confidence_calibration[domain] = new_conf
+        return new_conf
+
+    def get_capability_vulnerabilities(self) -> List[Dict[str, Any]]:
+        """
+        Identifies capabilities that demonstrate failure modes or sub-par accuracy (< 75%).
+        Used by Cognitive Goal Formation to trigger autonomous self-improvement missions.
+        """
+        vulnerabilities = []
+        profile = self.get_performance_profile()
+        for dom, data in profile.get("domains", {}).items():
+            if data["total_runs"] > 0 and data["accuracy_pct"] < 75.0:
+                vulnerabilities.append({
+                    "capability": dom,
+                    "accuracy_pct": data["accuracy_pct"],
+                    "total_runs": data["total_runs"],
+                    "reason": "SUB_PAR_ACCURACY"
+                })
+
+        for f in self.known_failure_modes[-5:]:
+            dom = f.get("domain", "general")
+            if not any(v["capability"] == dom for v in vulnerabilities):
+                vulnerabilities.append({
+                    "capability": dom,
+                    "accuracy_pct": 50.0,
+                    "total_runs": 1,
+                    "reason": f"RECENT_FAILURE: {f.get('context', '')[:80]}"
+                })
+
+        return vulnerabilities
+
     def get_hardware_telemetry(self) -> Dict[str, Any]:
         """Reads real-time compute resources."""
         cpu = psutil.cpu_percent(interval=None)

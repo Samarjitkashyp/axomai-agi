@@ -222,6 +222,34 @@ class CognitiveGoalFormation:
                 )
                 candidates.append(g)
 
+        # Step 2: Introspective Self-Model Vulnerability Assessment (Closed Metacognitive Loop)
+        try:
+            vulnerabilities = self.self_model.get_capability_vulnerabilities()
+            for v in vulnerabilities:
+                cap = v["capability"]
+                reason = v["reason"]
+                self.goal_counter += 1
+                g = StrategicGoal(
+                    goal_id=f"strat_{self.goal_counter:04d}",
+                    title=f"Autonomous Self-Improvement & Capability Remediation: {cap}",
+                    rationalization=(
+                        f"Self-Model introspective diagnostics detected performance vulnerability in '{cap}' "
+                        f"({reason}). Synthesizing capability upgrades, AST validation, and automated benchmark remediation."
+                    ),
+                    urgency=0.88,
+                    impact=0.94,
+                    feasibility=0.92,
+                    risk_tier="LOW_RISK",
+                    target_agent="z4",
+                    action_directive=f"Synthesize improved heuristics, verify in sandbox, and run benchmark test suite for domain: {cap}.",
+                    information_gain=0.96,
+                    uncertainty_reduction=0.92,
+                    capability_growth=0.99
+                )
+                candidates.append(g)
+        except Exception:
+            pass
+
         # Sort candidates by composite priority score
         candidates.sort(key=lambda x: x.priority_score, reverse=True)
         self.active_strategic_goals = candidates

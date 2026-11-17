@@ -560,6 +560,13 @@ class MasterOrchestrator:
             "traceback", "fix code", "bug in", "code for", "program to", "script to", "develop",
             "refactor", "code review", "algorithm", "data structure", "leetcode",
             "software architecture", "api design", "rest api", "graphql", "crud",
+            # Advanced Engineering Capabilities
+            "self heal", "self-healing", "auto test", "auto-test", "unit test", "pytest", "jest",
+            "security audit", "vulnerability scan", "sast", "check security", "code audit",
+            "scaffold", "scaffold project", "boilerplate", "create fullstack", "generate repo",
+            "architecture diagram", "system design", "er diagram", "database schema", "mermaid",
+            "git commit", "git diff", "git status", "pull request", "pr description", "pr dossier",
+            "codebase index", "workspace symbols", "repo map", "file structure", "symbol table",
             # Languages & Frameworks
             "python", "javascript", "typescript", "react", "nextjs", "next.js", "nodejs", "node.js",
             "vue", "angular", "html", "css", "tailwind", "c++", "cpp", "c#", "csharp",
@@ -570,11 +577,12 @@ class MasterOrchestrator:
             # Concepts
             "recursion", "binary search", "sorting", "dynamic programming", "linked list",
             "stack", "queue", "tree", "graph", "hash map", "time complexity", "big o",
-            "unit test", "pytest", "jest", "git command"
+            "git command"
         ]
         coding_patterns = [
             r'\b(code|coding|programmer|developer|software|syntax|function|variable|class|method|loop|array|pointer|compiler|runtime)\b',
             r'\b(how to (code|program|build an app|implement|develop|create an api))\b',
+            r'\b(self[- ]?heal|scaffold|system design|security audit|vulnerability|git diff|commit message)\b',
             r'```[a-zA-Z0-9_-]*\n'
         ]
         if any(bool(re.search(r'\b' + re.escape(k) + r'\b', q)) if len(k) <= 4 else (k in q) for k in z4_explicit_keywords) or any(re.search(p, q) for p in coding_patterns):

@@ -75,6 +75,54 @@ class Z4NexusAgent:
         self.name = "Z4 Nexus"
         self.role = "Autonomous Polyglot Software Engineer & Code Architect"
 
+    def load_uploaded_file_context(self, doc_id: str) -> Optional[Dict[str, Any]]:
+        """Safely retrieves uploaded file source code and metadata from the document store."""
+        try:
+            import os
+            import uuid
+            from axomai.db.session import SyncSessionLocal
+            from axomai.db.models import Document
+
+            clean_id = str(doc_id).strip()
+            try:
+                doc_uuid = uuid.UUID(clean_id)
+            except ValueError:
+                return None
+
+            with SyncSessionLocal() as db:
+                doc = db.query(Document).filter(Document.id == doc_uuid).first()
+                if not doc:
+                    return None
+
+                filename = doc.filename or "uploaded_file"
+                file_type = doc.file_type or ""
+                file_path = doc.file_path or ""
+                file_size = doc.file_size_bytes or 0
+                content = ""
+
+                if file_path and os.path.exists(file_path):
+                    try:
+                        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+                            content = f.read()
+                    except Exception as e:
+                        content = f"# [Error reading file on disk: {e}]"
+
+                if not content and doc.chunks:
+                    chunk_texts = [c.content for c in doc.chunks if c.content]
+                    if chunk_texts:
+                        content = "\n".join(chunk_texts)
+
+                return {
+                    "id": str(doc.id),
+                    "filename": filename,
+                    "file_type": file_type,
+                    "file_path": file_path,
+                    "file_size": file_size,
+                    "content": content
+                }
+        except Exception:
+            return None
+
     def code_stream(
         self,
         query: str,
@@ -89,6 +137,19 @@ class Z4NexusAgent:
         # Extract code snippet if present
         code_match = re.search(r'```(?:[a-zA-Z0-9_-]+)?\s*(.*?)\s*```', query, re.DOTALL)
         extracted_code = code_match.group(1).strip() if code_match else ""
+
+        # Ingest uploaded file context (ChatGPT/Claude/Gemini parity)
+        uploaded_file_ctx = None
+        if doc_id and doc_id not in ["web_research", "database_analytics", "multi_compare"]:
+            uploaded_file_ctx = self.load_uploaded_file_context(doc_id)
+            if uploaded_file_ctx and uploaded_file_ctx.get("content"):
+                yield {
+                    "type": "status",
+                    "stage": "code_ingestion",
+                    "message": f"📁 Z4 Nexus: Ingested uploaded source code '{uploaded_file_ctx['filename']}' ({uploaded_file_ctx['file_type']}) for deep analysis..."
+                }
+                if not extracted_code:
+                    extracted_code = uploaded_file_ctx["content"]
 
         # Intent Detection
         is_security_audit = any(k in q_lower for k in ["security audit", "vulnerability", "vulnerabilities", "scan code", "sast", "check security", "security check", "injection check"])
@@ -120,8 +181,8 @@ class Z4NexusAgent:
         is_sovereign_shield = any(k in q_lower for k in ["sovereign shield", "air gap audit", "zero leak proof", "airgap compliance", "privacy certificate", "zero-leak"])
         is_tool_forge = any(k in q_lower for k in ["forge tool", "create tool", "build tool", "new tool", "dynamic tool", "tool forge", "generate a tool"])
         is_api = any(k in q_lower for k in ["integrate api", "api client", "webhook", "swagger", "openapi", "stripe", "razorpay", "shopify", "rest api client"])
-        is_direct_exec = any(k in q_lower for k in ["run this", "execute this", "run python", "run javascript", "run node", "execute code", "run code", "eval code"]) and ("```" in query or "print(" in query or "console.log" in query or "import " in query or "def " in query)
-        is_bug_fix = any(k in q_lower for k in ["fix this", "debug", "syntax error", "traceback", "exception in", "why is this code failing", "fix code", "find bug"])
+        is_direct_exec = any(k in q_lower for k in ["run this", "execute this", "run python", "run javascript", "run node", "execute code", "run code", "eval code"]) and ("```" in query or "print(" in query or "console.log" in query or "import " in query or "def " in query or bool(extracted_code))
+        is_bug_fix = any(k in q_lower for k in ["fix this", "debug", "syntax error", "traceback", "exception in", "why is this code failing", "fix code", "find bug", "check bug", "find error"])
 
         # =========================================================================
         # REVOLUTIONARY 1: AUTONOMOUS PRODUCTION SENTRY & LOG AUTO-PATCHER
@@ -1115,6 +1176,15 @@ class Z4NexusAgent:
             if any(k in q_lower for k in ["project", "file", "function", "class", "module", "component", "route", "service"]):
                 repo_context = repo_indexer.get_context_for_query(query, max_chars=1500)
 
+            # Injected uploaded source file context (ChatGPT/Claude/Gemini parity)
+            file_code_prompt = ""
+            if uploaded_file_ctx and uploaded_file_ctx.get("content"):
+                file_code_prompt = (
+                    f"Uploaded Source File: '{uploaded_file_ctx['filename']}' ({uploaded_file_ctx['file_type']})\n"
+                    f"File Content:\n```{uploaded_file_ctx.get('file_type', '').lower()}\n"
+                    f"{uploaded_file_ctx['content'][:25000]}\n```\n\n"
+                )
+
             # Injected personalized developer memory profile
             style_prompt = dev_memory.format_style_prompt()
 
@@ -1127,6 +1197,7 @@ class Z4NexusAgent:
 
             prompt = (
                 f"User Request: {query}\n\n"
+                f"{file_code_prompt}"
                 f"{style_prompt}\n\n"
                 f"{('Codebase Context:\n' + repo_context + '\n\n') if repo_context else ''}"
                 "As Z4 Nexus Senior Polyglot Software Engineer & Code Architect:\n"

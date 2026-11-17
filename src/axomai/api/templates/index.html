@@ -214,9 +214,8 @@
     </div>
 
     <!-- Attached Files Bar (Centered) -->
-    <div id="attached-files-bar" class="w-full max-w-3xl px-4 py-1.5 flex items-center gap-2 overflow-x-auto hidden">
-      <span class="text-xs font-medium text-slate-400">Attached:</span>
-      <div id="attached-files-chips" class="flex items-center gap-2"></div>
+    <div id="attached-files-bar" class="w-full max-w-3xl px-4 py-2 hidden">
+      <div id="attached-files-chips" class="flex items-center gap-2.5 overflow-x-auto pb-1"></div>
     </div>
 
     <!-- Dialogue Input Bar (Floating Modern Pill) -->
@@ -224,9 +223,9 @@
       <form onsubmit="handleSendQueryForm(event)" class="relative flex items-center bg-cardDark/90 border border-slate-700/80 focus-within:border-sky-500/70 focus-within:ring-2 focus-within:ring-sky-500/20 rounded-2xl shadow-xl p-1.5 transition-all">
         
         <!-- File Attach Button -->
-        <label class="p-2.5 rounded-xl text-slate-400 hover:text-sky-400 hover:bg-slate-700/50 cursor-pointer transition-colors flex items-center justify-center shrink-0" title="Attach Document (PDF, Image, Excel, CSV)">
+        <label class="p-2.5 rounded-xl text-slate-400 hover:text-sky-400 hover:bg-slate-700/50 cursor-pointer transition-colors flex items-center justify-center shrink-0" title="Attach Files (Code, Documents, Images, Data)">
           <i data-lucide="paperclip" class="w-4 h-4"></i>
-          <input type="file" id="chat-file-input" class="hidden" multiple onchange="handleFileInputChange(event)" accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls,.docx,.csv,.tsv,.txt,.md">
+          <input type="file" id="chat-file-input" class="hidden" multiple onchange="handleFileInputChange(event)" accept="*">
         </label>
 
         <!-- Query Input -->
@@ -851,9 +850,42 @@
     // =========================================================================
     // CHAT & FILE ATTACHMENT APPLICATION LOGIC
     // =========================================================================
+    function formatFileSize(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function getFileIcon(filename) {
+      const ext = (filename || '').split('.').pop().toLowerCase();
+      const codeExts = ['py', 'js', 'jsx', 'ts', 'tsx', 'cpp', 'c', 'h', 'hpp', 'java', 'cs', 'go', 'rs', 'php', 'rb', 'html', 'css', 'sql', 'sh', 'bash', 'ps1', 'json', 'yaml', 'yml', 'toml', 'xml'];
+      const tableExts = ['xlsx', 'xls', 'csv', 'tsv'];
+      const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+      const pdfExts = ['pdf'];
+
+      if (codeExts.includes(ext)) return 'code-2';
+      if (tableExts.includes(ext)) return 'table';
+      if (imageExts.includes(ext)) return 'image';
+      if (pdfExts.includes(ext)) return 'file-text';
+      return 'file';
+    }
+
+    function getFileBadgeColor(filename) {
+      const ext = (filename || '').split('.').pop().toLowerCase();
+      const codeExts = ['py', 'js', 'jsx', 'ts', 'tsx', 'cpp', 'c', 'h', 'hpp', 'java', 'cs', 'go', 'rs', 'php', 'rb', 'html', 'css', 'sql', 'sh', 'bash', 'ps1'];
+      if (codeExts.includes(ext)) return 'bg-amber-500/10 text-amber-300 border-amber-500/30';
+      if (ext === 'pdf') return 'bg-rose-500/10 text-rose-300 border-rose-500/30';
+      if (['xlsx', 'xls', 'csv'].includes(ext)) return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30';
+      if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) return 'bg-purple-500/10 text-purple-300 border-purple-500/30';
+      return 'bg-sky-500/10 text-sky-300 border-sky-500/30';
+    }
+
     function handleFileInputChange(e) {
       if (e.target.files && e.target.files.length) {
         uploadFilesBatch(e.target.files);
+        e.target.value = '';
       }
     }
 
@@ -868,7 +900,16 @@
           });
           if (res.ok) {
             const data = await res.json();
-            attachedFiles.push({ id: data.id, title: data.filename });
+            const docId = data.id || data.document_id;
+            const filename = data.filename || file.name;
+            const fileSize = data.file_size || file.size || 0;
+            const fileType = data.file_type || (filename.includes('.') ? filename.split('.').pop().toUpperCase() : 'FILE');
+            attachedFiles.push({
+              id: docId,
+              title: filename,
+              size: fileSize,
+              type: fileType
+            });
             renderAttachedFiles();
           }
         } catch (err) {
@@ -886,12 +927,25 @@
         return;
       }
       bar.classList.remove('hidden');
-      chips.innerHTML = attachedFiles.map((f, i) => `
-        <span class="px-2.5 py-1 rounded-lg bg-cardDark border border-slate-700 text-xs font-medium text-sky-300 flex items-center gap-1.5">
-          <span>${escapeHtml(f.title)}</span>
-          <button type="button" onclick="removeAttachedFile(${i})" class="text-slate-400 hover:text-red-400">&times;</button>
-        </span>
-      `).join('');
+      chips.innerHTML = attachedFiles.map((f, i) => {
+        const ext = (f.title || '').split('.').pop().toUpperCase();
+        const icon = getFileIcon(f.title);
+        return `
+          <div class="relative group flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 hover:border-slate-600 shadow-md transition-all shrink-0">
+            <div class="w-7 h-7 rounded-lg bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+              <i data-lucide="${icon}" class="w-4 h-4"></i>
+            </div>
+            <div class="flex flex-col min-w-0 pr-1 text-left">
+              <span class="text-xs font-semibold text-slate-200 truncate max-w-[140px] sm:max-w-[180px]">${escapeHtml(f.title)}</span>
+              <span class="text-[10px] text-slate-400 font-mono">${formatFileSize(f.size)} • ${ext}</span>
+            </div>
+            <button type="button" onclick="removeAttachedFile(${i})" class="w-5 h-5 rounded-md hover:bg-slate-700/80 text-slate-400 hover:text-rose-400 flex items-center justify-center transition-colors ml-1" title="Remove file">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
     }
 
     function removeAttachedFile(index) {
@@ -904,20 +958,24 @@
       e.preventDefault();
       const input = document.getElementById('user-query-input');
       const query = input.value.trim();
-      if (!query) return;
+      if (!query && !attachedFiles.length) return;
+
+      const filesToSend = [...attachedFiles];
+      attachedFiles = [];
+      renderAttachedFiles();
 
       input.value = '';
-      appendUserMessage(query);
+      appendUserMessage(query, filesToSend);
 
       const responseCardId = 'msg-' + Math.random().toString(36).substring(2, 9);
       appendAssistantPlaceholder(responseCardId);
 
       try {
         const payload = {
-          query: query,
+          query: query || (filesToSend.length ? `Analyze the attached file: ${filesToSend[0].title}` : ''),
           session_id: currentSessionId,
-          document_id: attachedFiles.length ? attachedFiles[0].id : null,
-          document_ids: attachedFiles.map(f => f.id),
+          document_id: filesToSend.length ? filesToSend[0].id : null,
+          document_ids: filesToSend.map(f => f.id),
           manual_agent: null
         };
 
@@ -971,16 +1029,52 @@
       return String(text).replace(/[&<>"']/g, m => map[m]);
     }
 
-    function appendUserMessage(text) {
+    function appendUserMessage(text, files = []) {
       const container = document.getElementById('chat-messages-container');
       const hero = document.getElementById('welcome-hero');
       if (hero) hero.classList.add('hidden');
 
       const div = document.createElement('div');
-      div.className = 'flex justify-end';
+      div.className = 'flex justify-end mb-4';
+
+      let filesHtml = '';
+      if (files && files.length > 0) {
+        filesHtml = `
+          <div class="flex flex-wrap gap-2 justify-end mb-2 w-full">
+            ${files.map(f => {
+              const ext = (f.title || '').split('.').pop().toUpperCase();
+              const icon = getFileIcon(f.title);
+              const badgeClass = getFileBadgeColor(f.title);
+              return `
+                <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-800/95 border border-slate-700 text-slate-200 shadow-sm">
+                  <div class="w-7 h-7 rounded-lg bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+                    <i data-lucide="${icon}" class="w-4 h-4"></i>
+                  </div>
+                  <div class="flex flex-col min-w-0 text-left">
+                    <span class="text-xs font-semibold text-slate-100 truncate max-w-[180px] sm:max-w-[240px]">${escapeHtml(f.title)}</span>
+                    <span class="text-[10px] text-slate-400 font-mono">${formatFileSize(f.size)} • ${ext}</span>
+                  </div>
+                  <span class="text-[9px] px-1.5 py-0.5 rounded border ${badgeClass} font-mono font-medium ml-1">ATTACHED</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+
+      let textHtml = '';
+      if (text) {
+        textHtml = `
+          <div class="max-w-xl p-3.5 px-4 rounded-2xl rounded-br-sm bg-sky-600 text-white text-sm leading-relaxed shadow-sm">
+            ${escapeHtml(text)}
+          </div>
+        `;
+      }
+
       div.innerHTML = `
-        <div class="max-w-xl p-3.5 px-4 rounded-2xl rounded-br-sm bg-sky-600 text-white text-sm leading-relaxed shadow-sm">
-          ${escapeHtml(text)}
+        <div class="max-w-xl flex flex-col items-end">
+          ${filesHtml}
+          ${textHtml}
         </div>
       `;
       container.appendChild(div);

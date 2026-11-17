@@ -679,8 +679,16 @@ class MasterOrchestrator:
             }
 
         # 5. Context-based Routing
-        # If user has an active uploaded file selected and the query is not web/db:
+        # If user has an active uploaded file selected:
         if has_active_file and doc_id and doc_id not in ["web_research", "database_analytics", "multi_compare"]:
+            coding_intents = ["code", "script", "function", "bug", "error", "optimize", "refactor", "algorithm", "debug", "unit test", "class", "syntax", "python", "javascript", "typescript", "c++", "java", "rust", "go", "sql", "explain this code", "analyze code"]
+            if any(k in q for k in coding_intents) or any(k in q for k in z4_explicit_keywords):
+                return {
+                    "agent": "z4",
+                    "name": "Z4 Nexus (Polyglot Code Engine)",
+                    "reason": "Autonomous code analysis, refactoring, or software engineering on uploaded file context",
+                    "confidence": 0.96
+                }
             return {
                 "agent": "z1",
                 "name": "Z1 Alpha",

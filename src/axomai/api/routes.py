@@ -304,9 +304,11 @@ async def upload_file(file: UploadFile = File(...)):
 
         return {
             "success": True,
+            "id": doc_id,
             "document_id": doc_id,
             "filename": udm.file.filename,
             "file_type": udm.file.file_type,
+            "file_size": file_size,
             "page_count": udm.page_count,
             "stats": udm.stats,
             "tables_extracted": len(udm.tables),

@@ -9,8 +9,13 @@ from axomai.core.udm import (
 
 class TextReaderTool(BaseFileTool):
     name = "text_reader"
-    description = "Reads plain text, Markdown, JSON, YAML, and log files"
-    supported_extensions = {".txt", ".md", ".markdown", ".log", ".json", ".yaml", ".yml"}
+    description = "Reads plain text, Markdown, JSON, YAML, code files, and logs"
+    supported_extensions = {
+        ".txt", ".md", ".markdown", ".log", ".json", ".yaml", ".yml",
+        ".py", ".js", ".ts", ".tsx", ".jsx", ".cpp", ".c", ".h", ".hpp",
+        ".java", ".cs", ".go", ".rs", ".php", ".rb", ".html", ".css",
+        ".sql", ".sh", ".bash", ".bat", ".ps1", ".toml", ".env", ".ini", ".xml"
+    }
 
     def parse(self, file_path: str | Path, options: Optional[Dict[str, Any]] = None) -> UnifiedDocumentModel:
         file_info = self.get_file_info(file_path, "TEXT")

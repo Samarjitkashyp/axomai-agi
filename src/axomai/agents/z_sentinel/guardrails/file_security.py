@@ -12,14 +12,21 @@ class FileSecurityGuard:
     """Enterprise file scanner and malware barrier."""
 
     ALLOWED_EXTENSIONS = {
+        # Documents & Spreadsheets
         ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt",
-        ".csv", ".txt", ".md", ".json", ".png", ".jpg", ".jpeg", ".webp", ".bmp"
+        ".csv", ".tsv", ".txt", ".md", ".json", ".yaml", ".yml", ".toml", ".xml",
+        # Images
+        ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".svg",
+        # Source Code & Engineering Files for AI Analysis
+        ".py", ".js", ".ts", ".tsx", ".jsx", ".cpp", ".c", ".h", ".hpp",
+        ".java", ".cs", ".go", ".rs", ".php", ".rb", ".html", ".css",
+        ".sql", ".sh", ".bash", ".ps1", ".env", ".ini", ".log"
     }
 
     DANGEROUS_EXTENSIONS = {
-        ".exe", ".bat", ".cmd", ".sh", ".vbs", ".ps1", ".scr", ".jar",
-        ".msi", ".py", ".php", ".phtml", ".dll", ".so", ".bin", ".elf",
-        ".com", ".hta", ".cpl", ".wsf", ".asp", ".aspx", ".jsp", ".cgi"
+        ".exe", ".cmd", ".vbs", ".scr", ".jar",
+        ".msi", ".dll", ".so", ".bin", ".elf",
+        ".com", ".hta", ".cpl", ".wsf"
     }
 
     MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024 # 50 MB

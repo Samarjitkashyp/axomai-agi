@@ -578,6 +578,9 @@ class MasterOrchestrator:
             "traceback", "fix code", "bug in", "code for", "program to", "script to", "develop",
             "refactor", "code review", "algorithm", "data structure", "leetcode",
             "software architecture", "api design", "rest api", "graphql", "crud",
+            "modify", "modify this", "modify code", "modify file", "change code", "change file",
+            "update code", "update file", "edit code", "edit file", "rewrite", "refactor code",
+            "add function", "add feature", "fix bug", "badlo", "theek karo", "sudharo",
             # Advanced Engineering Capabilities
             "self heal", "self-healing", "auto test", "auto-test", "unit test", "pytest", "jest",
             "security audit", "vulnerability scan", "sast", "check security", "code audit",
@@ -622,6 +625,7 @@ class MasterOrchestrator:
             r'\b(code|coding|programmer|developer|software|syntax|function|variable|class|method|loop|array|pointer|compiler|runtime)\b',
             r'\b(how to (code|program|build an app|implement|develop|create an api))\b',
             r'\b(self[- ]?heal|scaffold|system design|security audit|vulnerability|git diff|commit message)\b',
+            r'\b(modify|refactor|update|rewrite|change|edit)\s+(this|the)?\s*(file|code|script|function|class)\b',
             r'```[a-zA-Z0-9_-]*\n'
         ]
         if any(bool(re.search(r'\b' + re.escape(k) + r'\b', q)) if len(k) <= 4 else (k in q) for k in z4_explicit_keywords) or any(re.search(p, q) for p in coding_patterns):
@@ -649,9 +653,45 @@ class MasterOrchestrator:
                 "confidence": 0.95
             }
 
+        # Check active uploaded document context
+        is_code_file = False
+        if has_active_file and doc_id and doc_id not in ["web_research", "database_analytics", "multi_compare"]:
+            try:
+                import uuid
+                from axomai.db.session import SyncSessionLocal
+                from axomai.db.models import Document
+                clean_id = str(doc_id).strip()
+                if len(clean_id) >= 32:
+                    doc_uuid = uuid.UUID(clean_id)
+                    with SyncSessionLocal() as db:
+                        doc = db.query(Document).filter(Document.id == doc_uuid).first()
+                        if doc:
+                            fn = (doc.filename or "").lower()
+                            ext = "." + fn.split(".")[-1] if "." in fn else ""
+                            code_exts = {
+                                ".py", ".js", ".ts", ".tsx", ".jsx", ".cpp", ".c", ".cc", ".cxx", ".h", ".hpp",
+                                ".java", ".cs", ".go", ".rs", ".php", ".rb", ".html", ".htm", ".css", ".scss",
+                                ".sql", ".sh", ".bash", ".ps1", ".bat", ".json", ".yaml", ".yml", ".toml", ".xml",
+                                ".env", ".ini", ".cfg", ".conf", ".dart", ".swift", ".kt", ".vue", ".svelte"
+                            }
+                            if ext in code_exts or any(fn.startswith(k) for k in ["dockerfile", "makefile"]):
+                                is_code_file = True
+            except Exception:
+                pass
+
+        # If user has an active source code file uploaded, default all actions on it to Z4 Nexus
+        if is_code_file:
+            if not any(k in q for k in ["market share", "breaking news", "stock market", "select ", "duckdb"]):
+                return {
+                    "agent": "z4",
+                    "name": "Z4 Nexus (Polyglot Code Engine)",
+                    "reason": "Autonomous polyglot software engineering, code reading, and modifying uploaded file",
+                    "confidence": 0.99
+                }
+
         # Check for Z1 Alpha Intent (Explicit Document / Image / OCR / Vision)
         z1_explicit_keywords = [
-            "in this document", "in this pdf", "uploaded file", "this file",
+            "in this document", "in this pdf", "uploaded pdf",
             "ocr", "transcribe", "image", "screenshot", "read page", "page 1",
             "page 2", "extract text from image", "spreadsheet audit", "word doc"
         ]
@@ -681,7 +721,13 @@ class MasterOrchestrator:
         # 5. Context-based Routing
         # If user has an active uploaded file selected:
         if has_active_file and doc_id and doc_id not in ["web_research", "database_analytics", "multi_compare"]:
-            coding_intents = ["code", "script", "function", "bug", "error", "optimize", "refactor", "algorithm", "debug", "unit test", "class", "syntax", "python", "javascript", "typescript", "c++", "java", "rust", "go", "sql", "explain this code", "analyze code"]
+            coding_intents = [
+                "code", "script", "function", "bug", "error", "optimize", "refactor",
+                "algorithm", "debug", "unit test", "class", "syntax", "python", "javascript",
+                "typescript", "c++", "java", "rust", "go", "sql", "explain this code", "analyze code",
+                "modify", "change", "update", "edit", "rewrite", "badlo", "karo", "banana", "likho",
+                "add feature", "add function", "fix this", "improve", "convert", "translate", "diff"
+            ]
             if any(k in q for k in coding_intents) or any(k in q for k in z4_explicit_keywords):
                 return {
                     "agent": "z4",

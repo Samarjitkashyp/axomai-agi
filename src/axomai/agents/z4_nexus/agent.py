@@ -167,7 +167,14 @@ class Z4NexusAgent:
         is_cve_patch = any(k in q_lower for k in ["cve", "dependabot", "patch vulnerabilities", "vulnerable package", "upgrade dependencies", "audit requirements", "cve patch"])
         is_deep_reasoning = any(k in q_lower for k in ["deep reasoning", "deep think", "o1 think", "tree of thoughts", "think step by step", "complex algorithm"])
         is_computer_use = any(k in q_lower for k in ["computer use", "workspace vitals", "run dev server", "check open ports", "workspace operator", "run command"])
-        is_code_surgeon = any(k in q_lower for k in ["inline edit", "surgical edit", "canvas edit", "modify only line", "only change", "diff replace", "surgical refactor"])
+        is_code_surgeon = any(k in q_lower for k in [
+            "modify", "change", "update", "edit", "rewrite", "refactor", "surgical",
+            "diff", "inline edit", "canvas edit", "replace", "add to this", "add function",
+            "add feature", "add method", "add code", "is code ko change", "is file ko modify",
+            "file modify", "code modify", "badlo", "sudharo", "theek karo", "change karo",
+            "update karo", "modify karo", "convert to", "translate to", "improve this code",
+            "fix and update", "change the", "modify this", "change this", "update this", "edit this"
+        ]) and bool(extracted_code)
         is_vision_to_code = any(k in q_lower for k in ["whiteboard to code", "sketch to code", "wireframe to code", "figma to code", "screenshot to code", "sketch to react"])
         is_deep_research = any(k in q_lower for k in ["deep research", "research docs", "technical whitepaper", "latest changelog", "breaking changes in", "research documentation"])
         is_voice_turn = any(k in q_lower for k in ["voice mode", "spoken turn", "pair programming voice", "audio dialogue", "voice turn"])
@@ -430,22 +437,84 @@ class Z4NexusAgent:
             yield {
                 "type": "status",
                 "stage": "code_surgeon",
-                "message": "🎯 Z4 Nexus: Applying targeted surgical diff replacement..."
+                "message": "🎯 Z4 Nexus: Reading file, executing precision code modification & synthesizing diff..."
             }
             s_res = code_surgeon.apply_surgical_edit(original_code=extracted_code, edit_instruction=query)
+
+            # Detect language for syntax highlighting
+            detected_lang = polyglot_runner.detect_language(s_res.get("modified_code", extracted_code))
+            if uploaded_file_ctx and uploaded_file_ctx.get("filename"):
+                fn_ext = uploaded_file_ctx["filename"].split(".")[-1].lower()
+                ext_map = {"py": "python", "js": "javascript", "ts": "typescript", "html": "html", "css": "css", "cpp": "cpp", "c": "c", "java": "java", "go": "go", "rs": "rust", "sh": "bash", "sql": "sql", "json": "json", "yaml": "yaml"}
+                detected_lang = ext_map.get(fn_ext, detected_lang)
+
+            # Persist modified file into storage/generated for 1-click download
+            download_link = ""
+            mod_filename = ""
+            try:
+                from axomai.config import settings
+                orig_name = uploaded_file_ctx.get("filename", "code_file.py") if uploaded_file_ctx else "modified_code.py"
+                clean_orig = re.sub(r'^[a-f0-9]{8}_', '', orig_name)
+                mod_filename = f"modified_{clean_orig}"
+                gen_dir = settings.STORAGE_DIR / "generated"
+                gen_dir.mkdir(parents=True, exist_ok=True)
+                mod_path = gen_dir / mod_filename
+                with open(mod_path, "w", encoding="utf-8") as f:
+                    f.write(s_res.get("modified_code", extracted_code))
+                download_link = f"/api/download/generated/{mod_filename}"
+            except Exception:
+                pass
+
+            # Update document in vault and database so next queries build on the modified version
+            if uploaded_file_ctx and uploaded_file_ctx.get("file_path"):
+                try:
+                    fp = Path(uploaded_file_ctx["file_path"])
+                    if fp.exists():
+                        with open(fp, "w", encoding="utf-8") as f:
+                            f.write(s_res.get("modified_code", extracted_code))
+                    import uuid
+                    from axomai.db.session import SyncSessionLocal
+                    from axomai.db.models import Document, DocumentChunk
+                    doc_uuid = uuid.UUID(uploaded_file_ctx["id"])
+                    with SyncSessionLocal() as db:
+                        d = db.query(Document).filter(Document.id == doc_uuid).first()
+                        if d:
+                            d.file_size_bytes = len(s_res.get("modified_code", extracted_code).encode("utf-8"))
+                            db.query(DocumentChunk).filter(DocumentChunk.document_id == doc_uuid).delete()
+                            new_chunk = DocumentChunk(
+                                document_id=doc_uuid,
+                                chunk_index=0,
+                                page_number=1,
+                                content_type="code",
+                                content=s_res.get("modified_code", extracted_code)
+                            )
+                            db.add(new_chunk)
+                            db.commit()
+                except Exception:
+                    pass
+
             yield {
                 "type": "meta",
                 "agent": self.name,
                 "task_type": "SURGICAL_CANVAS_DIFF",
-                "diff_summary": s_res["diff_summary"],
-                "tools_used": ["code_surgeon", "unified_diff_engine"]
+                "diff_summary": s_res.get("diff_summary", "Modified code"),
+                "tools_used": ["code_surgeon", "unified_diff_engine", "llm_neural_core"]
             }
+
+            diff_block = f"```diff\n{s_res['unified_diff']}\n```\n\n" if s_res.get("unified_diff") else ""
+            explanation_block = f"{s_res['explanation']}\n\n" if s_res.get("explanation") else ""
+            download_block = f"\n\n---\n📥 **[Download Modified File: `{mod_filename}`]({download_link})**" if download_link else ""
+
             full_answer = (
-                f"### 🎯 Targeted Surgical Diff\n\n"
-                f"**Summary:** `{s_res['diff_summary']}`\n\n"
-                f"```diff\n{s_res['unified_diff']}\n```\n\n"
-                f"#### Updated Clean Code:\n```\n{s_res['modified_code']}\n```"
+                f"### 🎯 Z4 Nexus Code Modification & Refactor\n\n"
+                f"{explanation_block}"
+                f"**Changes Applied:** `{s_res.get('diff_summary', 'Code updated successfully')}`\n\n"
+                f"{diff_block}"
+                f"#### 📄 Complete Production-Grade Updated File:\n"
+                f"```{detected_lang}\n{s_res['modified_code']}\n```"
+                f"{download_block}"
             )
+
             for chunk in full_answer.split("\n\n"):
                 yield {"type": "token", "content": chunk + "\n\n"}
             yield {"type": "done", "answer": full_answer}

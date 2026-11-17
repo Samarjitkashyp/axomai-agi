@@ -439,6 +439,15 @@ class MasterOrchestrator:
                 "confidence": 0.97
             }
 
+        # Check for Z4 Nexus Dependency Patching Intent (CVE Patch, Dependabot, Requirements/Package.json)
+        if any(k in q for k in ["cve patch", "dependabot", "patch dependencies", "patch dependency", "audit requirements", "package.json cve", "requirements.txt cve"]):
+            return {
+                "agent": "z4",
+                "name": "Z4 Nexus (Polyglot Code Engine)",
+                "reason": "Autonomous dependency vulnerability patching, CVE remediation, and lockfile upgrade detected",
+                "confidence": 0.99
+            }
+
         # Check for Z15 Sovereign Intent (Global Cyber Defense, CVE, Vulnerabilities, SOC2, Zero-Trust, MITRE, SBOM, Canary)
         z15_explicit_keywords = [
             "cve", "cvss", "vulnerability scan", "cyber defense", "threat intelligence",
@@ -567,6 +576,12 @@ class MasterOrchestrator:
             "architecture diagram", "system design", "er diagram", "database schema", "mermaid",
             "git commit", "git diff", "git status", "pull request", "pr description", "pr dossier",
             "codebase index", "workspace symbols", "repo map", "file structure", "symbol table",
+            "e2e test", "browser test", "playwright", "cypress", "visual test", "inspect dom",
+            "red team", "blue team", "adversarial", "stress test", "harden code", "race condition",
+            "flamegraph", "optimize performance", "bottleneck", "latency optimization", "speedup",
+            "deploy to vercel", "deploy to railway", "cloud deploy", "live preview", "dockerize",
+            "db migration", "schema migration", "alembic", "prisma migrate", "mock data", "seed data",
+            "openapi spec", "swagger", "api playground", "postman collection", "cve patch", "dependabot",
             # Languages & Frameworks
             "python", "javascript", "typescript", "react", "nextjs", "next.js", "nodejs", "node.js",
             "vue", "angular", "html", "css", "tailwind", "c++", "cpp", "c#", "csharp",

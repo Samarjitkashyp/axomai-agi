@@ -1,6 +1,6 @@
 """
 Z4 Nexus - Autonomous Polyglot Software Engineer & Chief Code Architect Agent.
-World-class autonomous coding engine featuring:
+Bleeding-edge autonomous coding engine featuring:
 1. Autonomous Self-Healing Loop (Auto-Test & Auto-Fix)
 2. Polyglot Multi-Language Sandbox Runner (Python, Node.js/JS, TS, Shell, C++, Go, Rust)
 3. Codebase Knowledge Graph & AST Repository Indexer
@@ -8,7 +8,15 @@ World-class autonomous coding engine featuring:
 5. Autonomous Git & CI/CD Workflow Engine
 6. Interactive System Architecture & Database Schema Visualizer (Mermaid)
 7. 1-Click Full-Stack Project Scaffolding
-8. Self-Evolving Dynamic Tool Forge
+8. Autonomous Visual & E2E Headless Browser Testing
+9. Dual-Agent Adversarial Red-Team & Blue-Team Code Review
+10. Automated Performance Profiling & Flamegraph Heatmaps
+11. 1-Click Multi-Cloud Deployment & Live Preview Links
+12. Database Schema Migration & Mock Seed Generator
+13. Interactive API Playground & OpenAPI Spec Engine
+14. Long-Term Developer Memory & Personalized Coding Style
+15. Autonomous CVE Dependency Patcher (Smart Dependabot)
+16. Self-Evolving Dynamic Tool Forge
 """
 
 import re
@@ -26,27 +34,24 @@ from axomai.agents.z4_nexus.tools.security_scanner import security_scanner
 from axomai.agents.z4_nexus.tools.git_workflow import git_workflow
 from axomai.agents.z4_nexus.tools.arch_visualizer import arch_visualizer
 from axomai.agents.z4_nexus.tools.project_scaffolder import project_scaffolder
+from axomai.agents.z4_nexus.tools.e2e_browser_tester import e2e_browser_tester
+from axomai.agents.z4_nexus.tools.adversarial_reviewer import adversarial_reviewer
+from axomai.agents.z4_nexus.tools.perf_profiler import perf_profiler
+from axomai.agents.z4_nexus.tools.cloud_deployer import cloud_deployer
+from axomai.agents.z4_nexus.tools.db_migrator import db_migrator
+from axomai.agents.z4_nexus.tools.api_playground import api_playground
+from axomai.agents.z4_nexus.tools.dev_memory import dev_memory
+from axomai.agents.z4_nexus.tools.cve_patcher import cve_patcher
 
 NEXUS_SYSTEM_PROMPT = """You are Z4 Nexus, the Autonomous Polyglot Software Engineer & Chief Code Architect of AxomAI.
-You possess elite mastery across ALL programming languages, system architectures, algorithms, and engineering domains.
+You possess world-class mastery across ALL programming languages, frameworks, architectures, algorithms, and engineering disciplines.
 
-Your Capabilities & Standards:
-1. Multi-Language Polyglot Mastery:
-   - Python, JavaScript (ES6+), TypeScript, React, Next.js, Node.js, Vue, Angular, HTML5, CSS3, Tailwind CSS
-   - C, C++, C#, Java, Kotlin, Swift, Rust, Go, PHP, Ruby, Scala
-   - SQL (PostgreSQL, MySQL, SQLite, DuckDB), NoSQL (MongoDB, Redis), GraphQL
-   - Linux Shell / Bash, PowerShell, Docker, Docker Compose, Kubernetes, CI/CD pipelines
-2. Engineering Rigor:
-   - Write clean, complete, production-grade, bug-free, well-commented code.
-   - Never use lazy placeholder comments like `// TODO: implement later` or `...`. Always provide complete, runnable implementations.
-   - Follow language-specific idiomatic best practices (PEP 8 for Python, ESLint/Prettier for JS/TS, modern C++20 guidelines, Rust safety).
-   - Analyze time and space complexity (Big-O notation) for algorithms and data structures.
-   - Include thorough error handling, input validation, and typing (type hints, TypeScript interfaces, etc.).
-3. Problem Solving & Communication:
-   - For conceptual questions: Explain with crystal clarity, architectural diagrams/tables, and clear code examples.
-   - For debugging: Pinpoint the exact root cause, explain why the bug occurred, and provide the fully corrected code.
-   - Communicate helpfully, articulate step-by-step instructions, and present code in clean syntax-highlighted GitHub markdown blocks.
-   - Converse naturally in English, Hinglish, or Hindi according to user preference.
+Your Standards:
+1. Write clean, complete, production-grade, bug-free, well-commented code.
+2. Never use lazy placeholder comments like `// TODO: implement later` or `...`. Always provide complete, runnable implementations.
+3. Follow language-specific idiomatic best practices (PEP 8, TypeScript strict, modern C++20, Rust safety).
+4. Analyze time and space complexity (Big-O notation) for all algorithms.
+5. Include thorough error handling, input validation, and defensive typing.
 """
 
 class Z4NexusAgent:
@@ -72,21 +77,258 @@ class Z4NexusAgent:
         extracted_code = code_match.group(1).strip() if code_match else ""
 
         # Intent Detection
-        is_security_audit = any(k in q_lower for k in ["security audit", "vulnerability", "vulnerabilities", "scan code", "sast", "check security", "security check", "leak", "injection check"])
+        is_security_audit = any(k in q_lower for k in ["security audit", "vulnerability", "vulnerabilities", "scan code", "sast", "check security", "security check", "injection check"])
         is_self_healing = any(k in q_lower for k in ["self heal", "self-healing", "auto test", "auto-test", "verify and fix", "test and heal", "run test loop", "unit test pass", "test loop"])
         is_scaffold = any(k in q_lower for k in ["scaffold", "scaffold project", "boilerplate", "create fullstack", "generate repo", "build fullstack app", "create project", "setup project"])
         is_arch_diagram = any(k in q_lower for k in ["architecture diagram", "system design", "er diagram", "database schema", "sequence diagram", "mermaid", "flowchart", "c4 diagram"])
         is_git = any(k in q_lower for k in ["git commit", "commit message", "git diff", "git status", "pull request", "pr description", "pr dossier"])
         is_repo_query = any(k in q_lower for k in ["codebase", "workspace symbols", "where is function", "search codebase", "repo map", "file structure", "symbol table"])
+        is_e2e_browser = any(k in q_lower for k in ["e2e test", "browser test", "playwright", "cypress", "visual test", "ui test", "inspect dom", "viewport test"])
+        is_adversarial = any(k in q_lower for k in ["red team", "blue team", "adversarial", "stress test", "harden code", "race condition check", "attack simulation"])
+        is_perf_profile = any(k in q_lower for k in ["profile", "benchmark", "flamegraph", "optimize performance", "bottleneck", "latency optimization", "speedup"])
+        is_cloud_deploy = any(k in q_lower for k in ["deploy to vercel", "deploy to railway", "cloud deploy", "live preview", "deploy app", "dockerize", "deployment manifest"])
+        is_db_migration = any(k in q_lower for k in ["db migration", "schema migration", "alembic", "prisma migrate", "mock data", "seed data", "synthetic data"])
+        is_api_playground = any(k in q_lower for k in ["openapi spec", "swagger", "api playground", "postman collection", "test endpoint curl", "curl suite"])
+        is_cve_patch = any(k in q_lower for k in ["cve", "dependabot", "patch vulnerabilities", "vulnerable package", "upgrade dependencies", "audit requirements", "cve patch"])
         is_tool_forge = any(k in q_lower for k in ["forge tool", "create tool", "build tool", "new tool", "dynamic tool", "tool forge", "generate a tool"])
         is_api = any(k in q_lower for k in ["integrate api", "api client", "webhook", "swagger", "openapi", "stripe", "razorpay", "shopify", "rest api client"])
         is_direct_exec = any(k in q_lower for k in ["run this", "execute this", "run python", "run javascript", "run node", "execute code", "run code", "eval code"]) and ("```" in query or "print(" in query or "console.log" in query or "import " in query or "def " in query)
         is_bug_fix = any(k in q_lower for k in ["fix this", "debug", "syntax error", "traceback", "exception in", "why is this code failing", "fix code", "find bug"])
 
         # =========================================================================
-        # 1. SAST SECURITY & VULNERABILITY AUDITING ROUTE
+        # 1. AUTONOMOUS VISUAL & E2E BROWSER TESTING
         # =========================================================================
-        if is_security_audit and (extracted_code or "code" in q_lower or "def " in query):
+        if is_e2e_browser:
+            yield {
+                "type": "status",
+                "stage": "e2e_browser_test",
+                "message": "🌐 Z4 Nexus: Running autonomous visual DOM & headless browser inspection..."
+            }
+
+            test_target = extracted_code or query
+            e2e_res = e2e_browser_tester.test_frontend_snippet(test_target)
+            playwright_script = e2e_browser_tester.generate_e2e_playwright_test(user_flow=query)
+
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "E2E_BROWSER_TESTING",
+                "visual_score": e2e_res["visual_score"],
+                "status": e2e_res["status"],
+                "elements_inspected": e2e_res["elements_inspected"],
+                "tools_used": ["e2e_browser_tester", "playwright_generator", "polyglot_runner"]
+            }
+
+            full_answer = (
+                f"### 🌐 Z4 Nexus Visual & E2E Testing Dossier\n\n"
+                f"**Visual Health Score:** `{e2e_res['visual_score']}/100` ({e2e_res['status']})\n\n"
+                f"**DOM Elements Inspected:**\n"
+                f"- Buttons: `{e2e_res['elements_inspected']['buttons_count']}` | Inputs: `{e2e_res['elements_inspected']['inputs_count']}` | Forms: `{e2e_res['elements_inspected']['forms_count']}`\n\n"
+                f"**Detected Responsive / A11y Issues:** `{e2e_res['issues_count']}`\n\n"
+                f"### 🧪 Generated Playwright E2E Test Suite\n```typescript\n{playwright_script}\n```"
+            )
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 2. DUAL-AGENT ADVERSARIAL RED-TEAM & BLUE-TEAM CODE REVIEW
+        # =========================================================================
+        elif is_adversarial and (extracted_code or "def " in query or "class " in query):
+            yield {
+                "type": "status",
+                "stage": "adversarial_red_blue",
+                "message": "⚔️ Z4 Nexus: Executing hostile Red-Team stress-testing & Blue-Team hardening..."
+            }
+
+            review_target = extracted_code or query
+            adv_res = adversarial_reviewer.review_and_harden(review_target)
+
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "ADVERSARIAL_HARDENING",
+                "resilience_score": adv_res["resilience_score"],
+                "status": adv_res["status"],
+                "tools_used": ["red_team_auditor", "blue_team_architect", "llm_neural_core"]
+            }
+
+            full_answer = (
+                f"### ⚔️ Z4 Nexus Adversarial Red-Team / Blue-Team Dossier\n\n"
+                f"**Code Resilience Score:** `{adv_res['resilience_score']}/100` ({adv_res['status']})\n\n"
+                f"#### 🔴 Red-Team Attack Exploits Detected:\n"
+                f"{json.dumps(adv_res['red_team_audit'].get('exploits_found', []), indent=2)}\n\n"
+                f"#### 🛡️ Blue-Team Hardened Defense Implementation:\n"
+                f"```python\n{adv_res['blue_team_hardened_code']}\n```\n\n"
+                f"**Architectural Hardening Summary:**\n{adv_res['defense_summary']}"
+            )
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 3. PERFORMANCE PROFILING & FLAMEGRAPH HEATMAPS
+        # =========================================================================
+        elif is_perf_profile and (extracted_code or "def " in query or "for " in query):
+            yield {
+                "type": "status",
+                "stage": "performance_profiler",
+                "message": "⚡ Z4 Nexus: Profiling execution hotspots & generating optimization heatmap..."
+            }
+
+            perf_target = extracted_code or query
+            perf_res = perf_profiler.profile_and_optimize(perf_target)
+
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "PERFORMANCE_PROFILING",
+                "avg_latency_ms": perf_res["measured_avg_latency_ms"],
+                "status": perf_res["status"],
+                "tools_used": ["perf_profiler", "flamegraph_visualizer", "polyglot_runner"]
+            }
+
+            full_answer = perf_res["profiling_dossier"]
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 4. 1-CLICK MULTI-CLOUD DEPLOYMENT & LIVE PREVIEW
+        # =========================================================================
+        elif is_cloud_deploy:
+            yield {
+                "type": "status",
+                "stage": "cloud_deployer",
+                "message": "☁️ Z4 Nexus: Synthesizing cloud infrastructure manifests & live preview..."
+            }
+
+            platform = "railway" if "railway" in q_lower else ("docker" if "docker" in q_lower else "vercel")
+            deploy_res = cloud_deployer.prepare_deployment(
+                project_name="axomai-service",
+                stack_description=query,
+                target_platform=platform
+            )
+
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "CLOUD_DEPLOYMENT",
+                "platform": deploy_res["platform"],
+                "preview_url": deploy_res["preview_url"],
+                "tools_used": ["cloud_deployer", "docker_builder", "llm_brain"]
+            }
+
+            full_answer = deploy_res["deployment_dossier"]
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 5. DATABASE SCHEMA MIGRATION & MOCK SEED GENERATOR
+        # =========================================================================
+        elif is_db_migration:
+            yield {
+                "type": "status",
+                "stage": "db_migrator",
+                "message": "🗄️ Z4 Nexus: Synthesizing forward/rollback migrations & mock seed dataset..."
+            }
+
+            dialect = "prisma" if "prisma" in q_lower else ("sqlite" if "sqlite" in q_lower else "postgresql")
+            mig_res = db_migrator.generate_migration_and_seed(schema_change_intent=query, dialect=dialect)
+
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "DATABASE_MIGRATION_AND_SEED",
+                "dialect": mig_res["dialect"],
+                "seed_count": mig_res["seed_count"],
+                "tools_used": ["db_migrator", "synthetic_data_generator"]
+            }
+
+            full_answer = mig_res["migration_dossier"]
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 6. INTERACTIVE API PLAYGROUND & OPENAPI SPEC ENGINE
+        # =========================================================================
+        elif is_api_playground:
+            yield {
+                "type": "status",
+                "stage": "api_playground",
+                "message": "🔌 Z4 Nexus: Synthesizing OpenAPI 3.1 specification & interactive cURL suite..."
+            }
+
+            framework = "express" if "express" in q_lower else "fastapi"
+            api_res = api_playground.generate_api_suite(api_code_or_intent=query, framework=framework)
+
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "API_PLAYGROUND_AND_OPENAPI",
+                "framework": api_res["framework"],
+                "tools_used": ["api_playground", "openapi_generator", "curl_synthesizer"]
+            }
+
+            full_answer = api_res["playground_dossier"]
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 7. AUTONOMOUS CVE DEPENDENCY PATCHER (SMART DEPENDABOT)
+        # =========================================================================
+        elif is_cve_patch:
+            yield {
+                "type": "status",
+                "stage": "cve_patcher",
+                "message": "🛡️ Z4 Nexus: Auditing dependency manifest against active CVE advisory database..."
+            }
+
+            manifest_type = "package.json" if ("package.json" in q_lower or "{" in query) else "requirements.txt"
+            target_manifest = extracted_code or query
+            cve_res = cve_patcher.scan_and_patch(target_manifest, manifest_type=manifest_type)
+
+            yield {
+                "type": "meta",
+                "agent": self.name,
+                "task_type": "CVE_DEPENDENCY_AUDIT",
+                "vulnerabilities_detected": cve_res["vulnerabilities_detected"],
+                "is_clean": cve_res["is_clean"],
+                "tools_used": ["cve_patcher", "dependabot_engine"]
+            }
+
+            full_answer = (
+                f"### 🛡️ Z4 Nexus CVE Dependency Audit\n\n"
+                f"**Vulnerabilities Detected:** `{cve_res['vulnerabilities_detected']}`\n\n"
+                f"**CVE Findings Breakdown:**\n{json.dumps(cve_res['findings'], indent=2)}\n\n"
+                f"#### 📦 Patched Non-Breaking Manifest ({manifest_type}):\n"
+                f"```\n{cve_res['patched_manifest']}\n```"
+            )
+            for chunk in full_answer.split("\n\n"):
+                yield {"type": "token", "content": chunk + "\n\n"}
+
+            yield {"type": "done", "answer": full_answer}
+            return
+
+        # =========================================================================
+        # 8. SAST SECURITY & VULNERABILITY AUDITING ROUTE
+        # =========================================================================
+        elif is_security_audit and (extracted_code or "code" in q_lower or "def " in query):
             yield {
                 "type": "status",
                 "stage": "security_audit",
@@ -132,7 +374,7 @@ class Z4NexusAgent:
             return
 
         # =========================================================================
-        # 2. AUTONOMOUS SELF-HEALING LOOP (AUTO-TEST & AUTO-FIX)
+        # 9. AUTONOMOUS SELF-HEALING LOOP (AUTO-TEST & AUTO-FIX)
         # =========================================================================
         elif is_self_healing or (is_bug_fix and extracted_code):
             yield {
@@ -188,7 +430,7 @@ class Z4NexusAgent:
             return
 
         # =========================================================================
-        # 3. 1-CLICK FULL-STACK PROJECT SCAFFOLDING
+        # 10. 1-CLICK FULL-STACK PROJECT SCAFFOLDING
         # =========================================================================
         elif is_scaffold:
             yield {
@@ -235,7 +477,7 @@ class Z4NexusAgent:
             return
 
         # =========================================================================
-        # 4. SYSTEM ARCHITECTURE & SCHEMA VISUALIZER (MERMAID)
+        # 11. SYSTEM ARCHITECTURE & SCHEMA VISUALIZER (MERMAID)
         # =========================================================================
         elif is_arch_diagram:
             yield {
@@ -266,7 +508,7 @@ class Z4NexusAgent:
             return
 
         # =========================================================================
-        # 5. AUTONOMOUS GIT & CI/CD WORKFLOW
+        # 12. AUTONOMOUS GIT & CI/CD WORKFLOW
         # =========================================================================
         elif is_git:
             yield {
@@ -298,7 +540,7 @@ class Z4NexusAgent:
             return
 
         # =========================================================================
-        # 6. CODEBASE KNOWLEDGE GRAPH & REPOSITORY INDEXER
+        # 13. CODEBASE KNOWLEDGE GRAPH & REPOSITORY INDEXER
         # =========================================================================
         elif is_repo_query:
             yield {
@@ -344,7 +586,7 @@ class Z4NexusAgent:
             return
 
         # =========================================================================
-        # 7. MULTI-LANGUAGE POLYGLOT SANDBOX EXECUTION
+        # 14. MULTI-LANGUAGE POLYGLOT SANDBOX EXECUTION
         # =========================================================================
         elif is_direct_exec and extracted_code:
             detected_lang = polyglot_runner.detect_language(extracted_code)
@@ -393,7 +635,7 @@ class Z4NexusAgent:
             return
 
         # =========================================================================
-        # 8. API INTEGRATION CLIENT GENERATOR
+        # 15. API INTEGRATION CLIENT GENERATOR
         # =========================================================================
         elif is_api:
             yield {
@@ -434,7 +676,7 @@ class Z4NexusAgent:
             return
 
         # =========================================================================
-        # 9. SELF-EVOLVING DYNAMIC TOOL FORGE
+        # 16. SELF-EVOLVING DYNAMIC TOOL FORGE
         # =========================================================================
         elif is_tool_forge:
             yield {
@@ -486,7 +728,7 @@ class Z4NexusAgent:
             return
 
         # =========================================================================
-        # 10. UNIVERSAL POLYGLOT SOFTWARE ENGINEERING (DEFAULT ROUTE)
+        # 17. UNIVERSAL POLYGLOT SOFTWARE ENGINEERING (DEFAULT ROUTE)
         # =========================================================================
         else:
             yield {
@@ -500,15 +742,19 @@ class Z4NexusAgent:
             if any(k in q_lower for k in ["project", "file", "function", "class", "module", "component", "route", "service"]):
                 repo_context = repo_indexer.get_context_for_query(query, max_chars=1500)
 
+            # Injected personalized developer memory profile
+            style_prompt = dev_memory.format_style_prompt()
+
             yield {
                 "type": "meta",
                 "agent": "Z4 Nexus (Polyglot Software Engineer)",
                 "task_type": "POLYGLOT_SOFTWARE_ENGINEERING",
-                "tools_used": ["polyglot_code_architect", "system_designer", "repo_indexer", "llm_neural_core"]
+                "tools_used": ["polyglot_code_architect", "system_designer", "repo_indexer", "dev_memory", "llm_neural_core"]
             }
 
             prompt = (
                 f"User Request: {query}\n\n"
+                f"{style_prompt}\n\n"
                 f"{('Codebase Context:\n' + repo_context + '\n\n') if repo_context else ''}"
                 "As Z4 Nexus Senior Polyglot Software Engineer & Code Architect:\n"
                 "1. Deliver a complete, robust, production-ready solution in the requested language/framework.\n"

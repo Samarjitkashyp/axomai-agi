@@ -13,6 +13,14 @@ from axomai.agents.z4_nexus.tools.security_scanner import security_scanner
 from axomai.agents.z4_nexus.tools.git_workflow import git_workflow
 from axomai.agents.z4_nexus.tools.arch_visualizer import arch_visualizer
 from axomai.agents.z4_nexus.tools.project_scaffolder import project_scaffolder
+from axomai.agents.z4_nexus.tools.e2e_browser_tester import e2e_browser_tester
+from axomai.agents.z4_nexus.tools.adversarial_reviewer import adversarial_reviewer
+from axomai.agents.z4_nexus.tools.perf_profiler import perf_profiler
+from axomai.agents.z4_nexus.tools.cloud_deployer import cloud_deployer
+from axomai.agents.z4_nexus.tools.db_migrator import db_migrator
+from axomai.agents.z4_nexus.tools.api_playground import api_playground
+from axomai.agents.z4_nexus.tools.dev_memory import dev_memory
+from axomai.agents.z4_nexus.tools.cve_patcher import cve_patcher
 
 __all__ = [
     "code_sandbox",
@@ -25,5 +33,13 @@ __all__ = [
     "security_scanner",
     "git_workflow",
     "arch_visualizer",
-    "project_scaffolder"
+    "project_scaffolder",
+    "e2e_browser_tester",
+    "adversarial_reviewer",
+    "perf_profiler",
+    "cloud_deployer",
+    "db_migrator",
+    "api_playground",
+    "dev_memory",
+    "cve_patcher"
 ]

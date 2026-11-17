@@ -280,6 +280,7 @@ async def upload_file(file: UploadFile = File(...)):
         # 2. Z Sentinel File Security Audit
         audit = z_sentinel_agent.audit_uploaded_file(file.filename, header_bytes, file_size)
         if not audit["is_safe"]:
+            print(f"[Z Sentinel Upload Blocked] {file.filename}: {audit['reason']} (Threat: {audit['threat_type']})")
             raise HTTPException(
                 status_code=400,
                 detail=f"🛡️ Security Alert: {audit['reason']} (Threat: {audit['threat_type']})"

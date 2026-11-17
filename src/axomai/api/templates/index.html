@@ -889,8 +889,51 @@
       }
     }
 
+    function showUploadToast(filename, message) {
+      let toast = document.getElementById('upload-error-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'upload-error-toast';
+        toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 z-50 max-w-lg w-[90%] flex items-center gap-3 p-3.5 px-4 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-200 text-xs shadow-2xl backdrop-blur-md transition-all duration-300';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `
+        <div class="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+          <i data-lucide="alert-circle" class="w-4 h-4"></i>
+        </div>
+        <div class="flex-1 min-w-0 text-left">
+          <div class="font-semibold text-rose-300 truncate">${escapeHtml(filename)}</div>
+          <div class="text-[11px] text-rose-200/80 leading-tight mt-0.5">${escapeHtml(message)}</div>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white p-1 rounded transition-colors">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      `;
+      lucide.createIcons();
+      setTimeout(() => {
+        if (toast && toast.parentElement) {
+          toast.remove();
+        }
+      }, 7000);
+    }
+
     async function uploadFilesBatch(files) {
+      const bar = document.getElementById('attached-files-bar');
+      const chips = document.getElementById('attached-files-chips');
+      bar.classList.remove('hidden');
+
       for (const file of files) {
+        const tempId = 'uploading-' + Math.random().toString(36).substring(2, 7);
+        const tempDiv = document.createElement('div');
+        tempDiv.id = tempId;
+        tempDiv.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-sky-500/40 text-slate-300 text-xs shadow-sm animate-pulse shrink-0';
+        tempDiv.innerHTML = `
+          <i data-lucide="loader-2" class="w-3.5 h-3.5 text-sky-400 animate-spin"></i>
+          <span class="truncate max-w-[120px] font-mono text-[11px]">${escapeHtml(file.name)}</span>
+        `;
+        chips.appendChild(tempDiv);
+        lucide.createIcons();
+
         const formData = new FormData();
         formData.append('file', file);
         try {
@@ -898,6 +941,9 @@
             method: 'POST',
             body: formData
           });
+          const tempEl = document.getElementById(tempId);
+          if (tempEl) tempEl.remove();
+
           if (res.ok) {
             const data = await res.json();
             const docId = data.id || data.document_id;
@@ -911,9 +957,19 @@
               type: fileType
             });
             renderAttachedFiles();
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            const errMsg = errData.detail || `Upload failed (Status ${res.status})`;
+            console.error('File upload rejected by server:', errMsg);
+            showUploadToast(file.name, errMsg);
+            renderAttachedFiles();
           }
         } catch (err) {
-          console.error('File upload failed:', err);
+          const tempEl = document.getElementById(tempId);
+          if (tempEl) tempEl.remove();
+          console.error('File upload network/runtime error:', err);
+          showUploadToast(file.name, err.message || 'Network error occurred');
+          renderAttachedFiles();
         }
       }
     }

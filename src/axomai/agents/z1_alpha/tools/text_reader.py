@@ -11,10 +11,13 @@ class TextReaderTool(BaseFileTool):
     name = "text_reader"
     description = "Reads plain text, Markdown, JSON, YAML, code files, and logs"
     supported_extensions = {
-        ".txt", ".md", ".markdown", ".log", ".json", ".yaml", ".yml",
-        ".py", ".js", ".ts", ".tsx", ".jsx", ".cpp", ".c", ".h", ".hpp",
-        ".java", ".cs", ".go", ".rs", ".php", ".rb", ".html", ".css",
-        ".sql", ".sh", ".bash", ".bat", ".ps1", ".toml", ".env", ".ini", ".xml"
+        ".txt", ".md", ".markdown", ".rst", ".tex", ".log", ".json", ".yaml", ".yml",
+        ".py", ".js", ".ts", ".tsx", ".jsx", ".cpp", ".c", ".cc", ".cxx", ".h", ".hpp",
+        ".java", ".cs", ".go", ".rs", ".php", ".rb", ".html", ".htm", ".css", ".scss", ".sass", ".less",
+        ".sql", ".sh", ".bash", ".zsh", ".fish", ".bat", ".ps1", ".toml", ".env", ".ini", ".cfg", ".conf", ".properties", ".xml",
+        ".dart", ".swift", ".kt", ".kts", ".scala", ".r", ".m", ".vue", ".svelte", ".astro",
+        ".graphql", ".gql", ".proto", ".prisma", ".sol", ".lua", ".pl", ".pm", ".ex", ".exs",
+        ".erl", ".hs", ".clj", ".cljs", ".tf", ".lock", ".sum", ".mod", ".ipynb", ".diff", ".patch"
     }
 
     def parse(self, file_path: str | Path, options: Optional[Dict[str, Any]] = None) -> UnifiedDocumentModel:

@@ -14,18 +14,26 @@ class FileSecurityGuard:
     ALLOWED_EXTENSIONS = {
         # Documents & Spreadsheets
         ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt",
-        ".csv", ".tsv", ".txt", ".md", ".json", ".yaml", ".yml", ".toml", ".xml",
+        ".csv", ".tsv", ".txt", ".md", ".markdown", ".rst", ".tex",
         # Images
-        ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".svg",
+        ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".svg", ".gif", ".ico", ".tiff",
         # Source Code & Engineering Files for AI Analysis
-        ".py", ".js", ".ts", ".tsx", ".jsx", ".cpp", ".c", ".h", ".hpp",
-        ".java", ".cs", ".go", ".rs", ".php", ".rb", ".html", ".css",
-        ".sql", ".sh", ".bash", ".ps1", ".env", ".ini", ".log"
+        ".py", ".js", ".ts", ".tsx", ".jsx", ".cpp", ".c", ".cc", ".cxx", ".h", ".hpp",
+        ".java", ".cs", ".go", ".rs", ".php", ".rb", ".html", ".htm", ".css", ".scss", ".sass", ".less",
+        ".sql", ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat",
+        ".json", ".yaml", ".yml", ".toml", ".xml", ".env", ".ini", ".cfg", ".conf", ".properties", ".log",
+        ".dart", ".swift", ".kt", ".kts", ".scala", ".r", ".m", ".vue", ".svelte", ".astro",
+        ".graphql", ".gql", ".proto", ".prisma", ".sol", ".lua", ".pl", ".pm", ".ex", ".exs",
+        ".erl", ".hs", ".clj", ".cljs", ".tf", ".lock", ".sum", ".mod", ".ipynb", ".diff", ".patch"
+    }
+
+    KNOWN_TEXT_FILENAMES = {
+        "dockerfile", "makefile", "license", "procfile", "gemfile",
+        "vagrantfile", "caddyfile", "readme", ".gitignore", ".env", ".bashrc", ".zshrc"
     }
 
     DANGEROUS_EXTENSIONS = {
-        ".exe", ".cmd", ".vbs", ".scr", ".jar",
-        ".msi", ".dll", ".so", ".bin", ".elf",
+        ".exe", ".scr", ".msi", ".dll", ".so", ".bin", ".elf",
         ".com", ".hta", ".cpl", ".wsf"
     }
 
@@ -56,31 +64,31 @@ class FileSecurityGuard:
             }
         """
         sanitized_name = self.sanitize_filename(filename)
+        clean_lower = sanitized_name.lower()
         ext = Path(sanitized_name).suffix.lower()
 
-        # 1. Extension Verification
-        if not ext:
-            return {
-                "is_safe": False,
-                "sanitized_name": sanitized_name,
-                "threat_type": "MISSING_EXTENSION",
-                "reason": "Z Sentinel blocked file: Extension is missing or undefined."
-            }
+        # 1. Extension & Known Filename Verification
+        is_known_text_file = (
+            clean_lower in self.KNOWN_TEXT_FILENAMES
+            or any(clean_lower.startswith(k) for k in ["dockerfile", "makefile", "license", "readme"])
+            or (b"\x00" not in header_bytes[:1024])
+        )
 
         if ext in self.DANGEROUS_EXTENSIONS:
             return {
                 "is_safe": False,
                 "sanitized_name": sanitized_name,
                 "threat_type": "EXECUTABLE_FILE_BLOCKED",
-                "reason": f"Z Sentinel blocked executable/script extension '{ext}'. Only documents, spreadsheets, and images are permitted."
+                "reason": f"Z Sentinel blocked compiled executable binary extension '{ext}'."
             }
 
-        if ext not in self.ALLOWED_EXTENSIONS:
+        # If extension is not explicitly listed, allow if it's verifiable plain text / source code
+        if ext not in self.ALLOWED_EXTENSIONS and not is_known_text_file:
             return {
                 "is_safe": False,
                 "sanitized_name": sanitized_name,
-                "threat_type": "UNSUPPORTED_EXTENSION",
-                "reason": f"Z Sentinel blocked unsupported extension '{ext}'."
+                "threat_type": "UNSUPPORTED_BINARY_EXTENSION",
+                "reason": f"Z Sentinel blocked unsupported binary extension '{ext}'."
             }
 
         # 2. File Size Verification
@@ -92,14 +100,14 @@ class FileSecurityGuard:
                 "reason": f"File exceeds maximum allowed size of 50 MB ({round(file_size/(1024*1024), 1)} MB)."
             }
 
-        # 3. Magic Byte & Binary Inspection
-        # Windows PE executable (starts with MZ)
+        # 3. Magic Byte & Binary Executable Inspection
+        # Windows PE executable / DLL (starts with MZ)
         if header_bytes.startswith(b"MZ"):
             return {
                 "is_safe": False,
                 "sanitized_name": sanitized_name,
                 "threat_type": "EXECUTABLE_MAGIC_BYTES (PE_HEADER)",
-                "reason": "Z Sentinel intercepted executable binary payload (Windows PE header) disguised as a document."
+                "reason": "Z Sentinel intercepted executable binary payload (Windows PE header)."
             }
 
         # Linux ELF binary (starts with \x7fELF)
@@ -108,18 +116,29 @@ class FileSecurityGuard:
                 "is_safe": False,
                 "sanitized_name": sanitized_name,
                 "threat_type": "EXECUTABLE_MAGIC_BYTES (ELF_BINARY)",
-                "reason": "Z Sentinel intercepted Linux binary executable payload disguised as a document."
+                "reason": "Z Sentinel intercepted Linux binary executable payload."
             }
 
-        # Web shells & Script injections in text/image files
-        header_text = header_bytes[:512].lower()
-        if b"<?php" in header_text or b"<script" in header_text or b"#!/bin/sh" in header_text or b"#!/bin/bash" in header_text:
+        # Mach-O binary
+        if header_bytes[:4] in [b"\xfe\xed\xfa\xce", b"\xce\xfa\xed\xfe", b"\xcf\xfa\xed\xfe"]:
             return {
                 "is_safe": False,
                 "sanitized_name": sanitized_name,
-                "threat_type": "SCRIPT_PAYLOAD_DETECTED",
-                "reason": "Z Sentinel detected embedded web shell or script instructions inside uploaded content."
+                "threat_type": "EXECUTABLE_MAGIC_BYTES (MACHO_BINARY)",
+                "reason": "Z Sentinel intercepted Mach-O executable payload."
             }
+
+        # Web shells & Script injections in binary media files (e.g. polyglot image exploits)
+        image_extensions = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".ico", ".tiff"}
+        if ext in image_extensions:
+            header_text = header_bytes[:512].lower()
+            if b"<?php" in header_text or b"<script" in header_text or b"#!/bin/sh" in header_text or b"#!/bin/bash" in header_text:
+                return {
+                    "is_safe": False,
+                    "sanitized_name": sanitized_name,
+                    "threat_type": "POLYGLOT_IMAGE_EXPLOIT",
+                    "reason": "Z Sentinel detected embedded script instructions inside uploaded image binary."
+                }
 
         return {
             "is_safe": True,

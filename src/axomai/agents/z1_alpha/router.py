@@ -54,6 +54,14 @@ class ToolRouter:
         ext = path.suffix.lower()
         tool = self.tools.get(ext)
         if not tool:
+            # Universal text fallback for extensionless or custom code files (Dockerfile, .env, etc.)
+            try:
+                with open(path, "rb") as f:
+                    chunk = f.read(2048)
+                if b"\x00" not in chunk:
+                    return self.tools.get(".txt") or TextReaderTool()
+            except Exception:
+                pass
             raise ValueError(f"No specialized reader tool registered for extension '{ext}' (File: {path.name})")
         return tool
 

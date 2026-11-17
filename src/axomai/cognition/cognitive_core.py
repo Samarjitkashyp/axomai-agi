@@ -54,15 +54,26 @@ class CognitiveCore:
         # 3. Deliberate and formulate strategic goals
         strategic_goals = self.goal_formation.deliberate_and_formulate_goals(active_signals)
 
-        # 4. Check for potential missing capabilities across goals
+        # 4. Closed-Loop Autonomous Capability Acquisition Across Strategic Goals
+        import re
         acquired_tools = []
         for goal in strategic_goals:
-            target = goal.get("target_agent", "")
-            # If a goal requires a domain tool not registered, we can acquire it
-            tool_name = f"tool_{goal.get('goal_id', 'gen')}"
-            if not self.capability_registry.has_capability(tool_name) and "solar" in goal.get("title", "").lower():
-                # Autonomous acquisition example for solar yield
-                pass
+            goal_id = goal.get("goal_id", "gen")
+            goal_title = goal.get("title", "")
+            clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', goal_title.lower()[:24]).strip('_')
+            tool_name = f"tool_{clean_name}" if clean_name else f"tool_{goal_id}"
+
+            # If the required domain capability is not in the active registry, autonomously synthesize it
+            if not self.capability_registry.has_capability(tool_name):
+                acq_res = self.acquisition_engine.synthesize_and_acquire_for_goal({
+                    "goal_id": goal_id,
+                    "title": goal_title,
+                    "tool_name": tool_name,
+                    "target_agent": goal.get("target_agent", "z4"),
+                    "action_directive": goal.get("action_directive", goal_title)
+                })
+                if acq_res.get("status") == "CAPABILITY_ACQUIRED_AND_OPERATIONAL":
+                    acquired_tools.append(acq_res)
 
         result = {
             "cycle_index": self.deliberation_count,
@@ -71,6 +82,8 @@ class CognitiveCore:
             "signals_observed_count": len(active_signals),
             "strategic_goals_count": len(strategic_goals),
             "strategic_goals": strategic_goals,
+            "acquired_tools_count": len(acquired_tools),
+            "acquired_tools": acquired_tools,
             "world_model_entities": len(self.world_model.entities),
             "capabilities_active": len(self.capability_registry.list_all()),
             "self_state": self.self_model.get_self_state()

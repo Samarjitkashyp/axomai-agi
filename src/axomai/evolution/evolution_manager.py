@@ -67,21 +67,8 @@ def execute(resisting: float, driving: float) -> float:
 
         # 5. Benchmark Suite Evaluation & Regression Check
         harness = EvaluationHarness()
-        # For candidate scorecard, evaluate against benchmark
-        candidate_score = {
-            "version": f"evo_{patch_id}",
-            "timestamp": now,
-            "composite_axomiq": 100.0,
-            "pass_rate": 100.0,
-            "pillars": {
-                "REASONING": 100.0,
-                "QUANTITATIVE": 100.0,
-                "MEMORY_RECALL": 100.0,
-                "CYBER_SECURITY": 100.0,
-                "ORCHESTRATION": 100.0,
-                "ROBUSTNESS": 100.0
-            }
-        }
+        # Execute empirical benchmark battery to measure real candidate performance
+        candidate_score = harness.run_benchmark(version_tag=f"evo_{patch_id}")
         detector = RegressionDetector()
         verdict = detector.compare_and_decide(candidate_score)
 

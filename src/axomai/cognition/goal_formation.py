@@ -163,6 +163,55 @@ class CognitiveGoalFormation:
                 )
                 candidates.append(g)
 
+            elif dom == "external_world_radar":
+                self.goal_counter += 1
+                g = StrategicGoal(
+                    goal_id=f"strat_{self.goal_counter:04d}",
+                    title=f"Live External Intelligence Assimilation: {ind}",
+                    rationalization=(
+                        f"Live external world signal observed: {msg}. Assessing regional economic, "
+                        f"logistics, and strategic impact on active operations."
+                    ),
+                    urgency=0.75,
+                    impact=0.88,
+                    feasibility=0.92,
+                    risk_tier="LOW_RISK",
+                    target_agent="z2_bravo",
+                    action_directive=f"Harvest corroborating external intelligence for: {msg[:100]} and update World Model."
+                )
+                candidates.append(g)
+
+            elif dom == "network_infrastructure":
+                self.goal_counter += 1
+                g = StrategicGoal(
+                    goal_id=f"strat_{self.goal_counter:04d}",
+                    title="Network Routing & Airgap Sovereign Protocol Activation",
+                    rationalization=f"Network telemetry signal: {msg}. Adjusting API timeouts and autonomous edge caches.",
+                    urgency=0.90 if sev == "HIGH" else 0.65,
+                    impact=0.85,
+                    feasibility=0.98,
+                    risk_tier="LOW_RISK",
+                    target_agent="security_governor",
+                    action_directive="Toggle sovereign offline local fallback caches and activate airgap security perimeter."
+                )
+                candidates.append(g)
+
+            else:
+                # Open-Ended Autonomous Goal Synthesis for novel/unmapped environmental signals
+                self.goal_counter += 1
+                g = StrategicGoal(
+                    goal_id=f"strat_{self.goal_counter:04d}",
+                    title=f"Autonomous Investigation: {ind}",
+                    rationalization=f"Novel signal detected in domain '{dom}': {msg}. Evaluating operational implications.",
+                    urgency=0.70,
+                    impact=0.80,
+                    feasibility=0.90,
+                    risk_tier="LOW_RISK",
+                    target_agent="z4",
+                    action_directive=f"Formulate hypothesis, run diagnostic probe, and assimilate insights for {ind}."
+                )
+                candidates.append(g)
+
         # Sort candidates by composite priority score
         candidates.sort(key=lambda x: x.priority_score, reverse=True)
         self.active_strategic_goals = candidates

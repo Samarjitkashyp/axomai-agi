@@ -9,6 +9,7 @@ from axomai.supervision.agent_watchdog import AgentWatchdog, agent_watchdog
 from axomai.supervision.capability_guard import Capability, CapabilityToken, CapabilityGuard, capability_guard
 from axomai.supervision.sovereign_governor import SovereignGovernor, sovereign_governor
 from axomai.supervision.immunity_guard import ImmunityGuard, immunity_guard
+from axomai.supervision.autonomy_governor import AutonomyGovernor, autonomy_governor, AutonomyTier
 
 __all__ = [
     "CircuitBreaker",
@@ -22,5 +23,8 @@ __all__ = [
     "SovereignGovernor",
     "sovereign_governor",
     "ImmunityGuard",
-    "immunity_guard"
+    "immunity_guard",
+    "AutonomyGovernor",
+    "autonomy_governor",
+    "AutonomyTier"
 ]

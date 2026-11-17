@@ -164,7 +164,34 @@ class CapabilityAcquisitionEngine:
                 "message": f"Tool '{tool_name}' already active in runtime registry."
             }
 
-        # Code synthesis logic
+        # 1. Attempt High-Fidelity Z4 Nexus Tool Forge with Z Sentinel AST Verification
+        try:
+            from axomai.agents.z4_nexus.tools.tool_forge import ToolForge
+            forge = ToolForge()
+            forge_res = forge.forge_tool(tool_intent=directive, requested_name=tool_name)
+            if forge_res.get("success"):
+                cap_def = CapabilityDefinition(
+                    name=tool_name,
+                    description=f"Z4 Nexus AST-verified synthesized tool for: {directive}",
+                    category=category,
+                    handler=lambda **kwargs: forge.execute_tool(tool_name, kwargs),
+                    security_level="LOW",
+                    acquired_dynamically=True
+                )
+                capability_registry.register(cap_def)
+                self_model.register_capability(tool_name, source="Z4_TOOL_FORGE_AST_VERIFIED")
+                return {
+                    "status": "CAPABILITY_ACQUIRED_AND_OPERATIONAL",
+                    "capability_name": tool_name,
+                    "category": category,
+                    "synthesizer": "Z4_NEXUS_TOOL_FORGE",
+                    "ast_audit": "PASSED",
+                    "description": directive
+                }
+        except Exception:
+            pass
+
+        # 2. Resilient Deterministic Sandboxed Analytical Tool Synthesis Fallback
         safe_directive = directive.replace('"', '\\"')
         python_code = f"""def execute(**kwargs) -> dict:
     \"\"\"Autonomously synthesized handler for: {safe_directive}\"\"\"

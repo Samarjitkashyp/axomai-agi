@@ -55,18 +55,27 @@ class ContinuousLearner:
 
         # 4. Extract ontological knowledge triples
         triples = self.sanitizer.extract_candidate_triples(cleaned_text)
-        # In case regex was conservative, generate structured key domain facts
+        
+        # Epistemic Honesty: If no verifiable relations are discovered, do NOT hallucinate fake correlations!
         if not triples:
-            words = [w for w in topic.split() if len(w) > 3]
-            subject = " ".join(words[:2]).title()
-            predicate = "CORRELATED_WITH"
-            obj = "Regional Economic Resilience"
-            triples.append((subject, predicate, obj))
+            return {
+                "status": "INSUFFICIENT_EVIDENCE",
+                "topic": topic,
+                "epistemic_state": "UNKNOWN",
+                "confidence": 0.0,
+                "source_authority": source,
+                "facts_ingested_count": 0,
+                "reason": "No verifiable subject-predicate-object relations extracted from raw content with sufficient empirical confidence.",
+                "research_target_queued": True,
+                "cycle_index": self.cycle_count,
+                "timestamp": now
+            }
 
-        # 5. Ingest into Semantic Knowledge Graph
+        # 5. Ingest into Semantic Knowledge Graph with calibrated confidence
         ingested = []
         for s, p, o in triples:
-            res = self.semantic.add_fact(s, p, o, confidence=0.96, source_ref=source)
+            calibrated_confidence = 0.88 if "RSS" in source or "Wire" in source else 0.92
+            res = self.semantic.add_fact(s, p, o, confidence=calibrated_confidence, source_ref=source)
             ingested.append(res)
             self.total_facts_learned += 1
 

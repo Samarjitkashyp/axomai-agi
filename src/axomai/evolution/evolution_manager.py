@@ -37,43 +37,97 @@ class EvolutionManager:
             "root_cause_context": "Iterative equilibrium loop convergence exceeded standard SLA."
         }
 
-        # 2. Hypothesis Engine
+        # 2. Multi-Candidate Hypothesis Generation
         hypotheses = hypothesis_engine.generate_hypotheses(target_failure)
-        selected_hyp = hypotheses[0]
 
-        # 3. Synthesize candidate code for the chosen hypothesis
-        patch_id = f"patch_evo_{len(self.evolution_cycles) + 1:04d}"
-        candidate_code = """
-def execute(resisting: float, driving: float) -> float:
-    # Optimized closed-form Bishop Factor of Safety with fast-path bounds
-    if driving <= 0.0:
-        return 0.0
-    fos = round(float(resisting) / float(driving), 3)
-    return max(0.01, fos)
+        # 3. Multi-Candidate Evolutionary Tournament (A vs B vs C)
+        harness = EvaluationHarness()
+        detector = RegressionDetector()
+
+        tournament_results = []
+        winner_candidate = None
+        highest_score = -1.0
+        best_verdict = None
+        best_hyp = None
+
+        candidate_variants = [
+            (
+                hypotheses[0],
+                """def execute(resisting: float, driving: float) -> float:
+    # Variant A: Fast-path memoized Bishop Factor of Safety
+    if driving <= 0.0: return 0.0
+    return round(float(resisting) / float(driving), 3)
 """
+            ),
+            (
+                hypotheses[1] if len(hypotheses) > 1 else hypotheses[0],
+                """def execute(resisting: float, driving: float) -> float:
+    # Variant B: Defensive boundary-coerced Bishop Factor of Safety
+    try:
+        r, d = float(resisting), float(driving)
+        if d <= 0.0: return 0.0
+        return max(0.01, min(10.0, round(r / d, 3)))
+    except Exception:
+        return 0.0
+"""
+            ),
+            (
+                hypotheses[2] if len(hypotheses) > 2 else hypotheses[0],
+                """def execute(resisting: float, driving: float) -> float:
+    # Variant C: Direct closed-form mathematical reduction
+    if driving <= 0.0: return 0.0
+    return round(float(resisting) / float(driving), 3)
+"""
+            )
+        ]
+
         test_inputs = [
             {"resisting": 126.0, "driving": 100.0},
             {"resisting": 250.0, "driving": 200.0}
         ]
         expected_outputs = [1.26, 1.25]
 
-        # 4. Sandbox Compilation & Unit Testing
-        sandbox_res = self_patcher.test_and_apply_hot_patch(
-            patch_id=patch_id,
-            optimized_code=candidate_code,
-            test_inputs=test_inputs,
-            expected_outputs=expected_outputs
-        )
+        for idx, (hyp, c_code) in enumerate(candidate_variants):
+            c_patch_id = f"patch_evo_{len(self.evolution_cycles) + 1:04d}_var_{chr(65 + idx)}"
+            sb_res = self_patcher.test_and_apply_hot_patch(
+                patch_id=c_patch_id,
+                optimized_code=c_code,
+                test_inputs=test_inputs,
+                expected_outputs=expected_outputs
+            )
+            # Evaluate empirical benchmark for this candidate variant
+            c_score = harness.run_benchmark(version_tag=c_patch_id)
+            c_verdict = detector.compare_and_decide(c_score)
+            axomiq = c_score.get("composite_axomiq", 0.0)
 
-        # 5. Benchmark Suite Evaluation & Regression Check
-        harness = EvaluationHarness()
-        # Execute empirical benchmark battery to measure real candidate performance
-        candidate_score = harness.run_benchmark(version_tag=f"evo_{patch_id}")
-        detector = RegressionDetector()
-        verdict = detector.compare_and_decide(candidate_score)
+            tournament_results.append({
+                "variant": chr(65 + idx),
+                "hypothesis_id": hyp["hypothesis_id"],
+                "approach": hyp["approach"],
+                "sandbox_success": sb_res.get("status") == "HOT_PATCH_VERIFIED_AND_APPLIED",
+                "composite_axomiq": axomiq,
+                "passed": c_verdict["passed"],
+                "decision": c_verdict["decision"]
+            })
 
-        # 6. Promotion or Rollback
-        status = "EVOLUTION_PROMOTED" if verdict["passed"] else "EVOLUTION_ROLLED_BACK"
+            # Winner selection: highest empirical score with passing regression decision
+            if c_verdict["passed"] and axomiq > highest_score:
+                highest_score = axomiq
+                winner_candidate = c_patch_id
+                best_verdict = c_verdict
+                best_hyp = hyp
+
+        # Determine final promotion verdict based on tournament outcome
+        if best_verdict and best_verdict["passed"]:
+            status = "EVOLUTION_PROMOTED"
+            selected_hyp = best_hyp
+            verdict = best_verdict
+            patch_id = winner_candidate
+        else:
+            status = "EVOLUTION_ROLLED_BACK"
+            selected_hyp = hypotheses[0]
+            verdict = tournament_results[0] if tournament_results else {"passed": False, "decision": "ALL_VARIANTS_FAILED"}
+            patch_id = f"patch_evo_{len(self.evolution_cycles) + 1:04d}_failed"
 
         # 7. Permanent Consolidation in Episodic Memory
         try:

@@ -28,15 +28,16 @@ class CognitiveCore:
         self.deliberation_count: int = 0
         self.last_deliberation: Optional[Dict[str, Any]] = None
 
-    def deliberate_and_act(self, signals: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    def deliberate_and_act(self, signals: Optional[List[Dict[str, Any]]] = None, auto_execute_top_mission: bool = True) -> Dict[str, Any]:
         """
         Executes a complete cognitive deliberation cycle:
         1. Observe Environment (Perception Radar)
         2. Update World Model Entities & Trends
         3. Check Self Model & Boundaries
         4. Deliberate and Formulate Strategic Goals
-        5. Check Required Capabilities (Acquire dynamically if missing)
-        6. Return High-Fidelity Executive Synthesis.
+        5. Check Required Capabilities (Acquire dynamically if missing via Tool Forge)
+        6. Dispatch Top Strategic Goal to Autonomous Mission Manager
+        7. Return High-Fidelity Executive Synthesis.
         """
         self.deliberation_count += 1
         now = datetime.now(timezone.utc).isoformat()
@@ -75,6 +76,44 @@ class CognitiveCore:
                 if acq_res.get("status") == "CAPABILITY_ACQUIRED_AND_OPERATIONAL":
                     acquired_tools.append(acq_res)
 
+        # 5. Autonomous Mission Dispatch & Execution Loop
+        executed_mission = None
+        if strategic_goals and auto_execute_top_mission:
+            top_goal = strategic_goals[0]
+            try:
+                from axomai.agents.mission_control.planner import mission_planner
+                from axomai.memory.episodic_memory import episodic_memory
+                mission_title = top_goal.get("title", "Autonomous Strategic Objective")
+                directive = top_goal.get("action_directive", mission_title)
+                plan = mission_planner.plan_mission(directive)
+                executed_mission = {
+                    "mission_id": plan.mission_id,
+                    "title": plan.title,
+                    "strategic_objective": plan.strategic_objective,
+                    "total_steps": plan.total_steps,
+                    "milestones": [m.model_dump() for m in plan.milestones],
+                    "status": "DISPATCHED_AND_PLANNED"
+                }
+                # Update World Model with newly dispatched mission
+                self.world_model.update_entity("active_mission", {
+                    "mission_id": plan.mission_id,
+                    "title": plan.title,
+                    "status": "IN_PROGRESS",
+                    "total_steps": plan.total_steps
+                })
+                # Record mission activation in episodic memory
+                episodic_memory.record_episode(
+                    query=f"Autonomous Strategic Mission: {plan.title}",
+                    agent_id="mission_controller",
+                    outcome_status="IN_PROGRESS",
+                    reward_score=0.9,
+                    reflection=f"Planned {plan.total_steps}-milestone autonomous roadmap for strategic goal '{top_goal.get('goal_id')}'.",
+                    lesson_learned=f"Decomposed objective into multi-agent milestones across specialized agents.",
+                    metadata={"mission_id": plan.mission_id, "goal_id": top_goal.get("goal_id")}
+                )
+            except Exception as m_err:
+                executed_mission = {"status": "DISPATCH_ERROR", "error": str(m_err)}
+
         result = {
             "cycle_index": self.deliberation_count,
             "timestamp": now,
@@ -84,6 +123,7 @@ class CognitiveCore:
             "strategic_goals": strategic_goals,
             "acquired_tools_count": len(acquired_tools),
             "acquired_tools": acquired_tools,
+            "active_mission": executed_mission,
             "world_model_entities": len(self.world_model.entities),
             "capabilities_active": len(self.capability_registry.list_all()),
             "self_state": self.self_model.get_self_state()

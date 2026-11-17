@@ -57,13 +57,13 @@ class SelfModel:
             "code_hot_patching": 0.93,
             "unseen_domain_synthesis": 0.88
         }
-        # Longitudinal performance telemetry across domains
+        # Longitudinal performance telemetry across domains (updated dynamically at runtime)
         self.performance_stats: Dict[str, Dict[str, Any]] = {
-            "python_coding": {"success": 48, "total": 51, "total_latency_sec": 128.4},
-            "web_research": {"success": 39, "total": 45, "total_latency_sec": 142.1},
-            "document_vision": {"success": 32, "total": 35, "total_latency_sec": 98.7},
-            "tool_generation": {"success": 18, "total": 21, "total_latency_sec": 52.3},
-            "quantitative_math": {"success": 42, "total": 43, "total_latency_sec": 65.0}
+            "python_coding": {"success": 0, "total": 0, "total_latency_sec": 0.0},
+            "web_research": {"success": 0, "total": 0, "total_latency_sec": 0.0},
+            "document_vision": {"success": 0, "total": 0, "total_latency_sec": 0.0},
+            "tool_generation": {"success": 0, "total": 0, "total_latency_sec": 0.0},
+            "quantitative_math": {"success": 0, "total": 0, "total_latency_sec": 0.0}
         }
 
     def can_execute_task(self, required_capabilities: List[str]) -> Tuple[bool, List[str]]:

@@ -76,6 +76,23 @@ class CognitiveCore:
                 if acq_res.get("status") == "CAPABILITY_ACQUIRED_AND_OPERATIONAL":
                     acquired_tools.append(acq_res)
 
+        # 4b. World Model 2.0: Counterfactual Branch Simulation across top candidates
+        counterfactual_eval = None
+        if len(strategic_goals) >= 2:
+            candidate_actions = [
+                {
+                    "action_id": g.get("goal_id"),
+                    "name": g.get("title"),
+                    "description": g.get("action_directive"),
+                    "predicted_reward": g.get("priority_score", 0.75),
+                    "estimated_cost": 0.10,
+                    "estimated_latency_ms": 150.0,
+                    "risk_score": 0.10 if g.get("risk_tier") == "LOW_RISK" else 0.35
+                }
+                for g in strategic_goals[:3]
+            ]
+            counterfactual_eval = self.world_model.simulate_counterfactual(candidate_actions)
+
         # 5. Autonomous Mission Dispatch & Chained Execution Loop
         executed_mission = None
         if strategic_goals and auto_execute_top_mission:
@@ -92,6 +109,15 @@ class CognitiveCore:
                     action_directive=directive,
                     target_agent=target_agent
                 )
+
+                # Post-execution Counterfactual Regret Evaluation
+                if counterfactual_eval and executed_mission:
+                    actual_reward = 1.0 if executed_mission.get("status") == "COMPLETED" else 0.40
+                    self.world_model.evaluate_action_regret(
+                        chosen_action_id=top_goal.get("goal_id"),
+                        actual_reward=actual_reward,
+                        simulation_record=counterfactual_eval
+                    )
             except Exception as m_err:
                 executed_mission = {"status": "EXECUTION_ERROR", "error": str(m_err)}
 
@@ -126,6 +152,7 @@ class CognitiveCore:
             "strategic_goals": strategic_goals,
             "acquired_tools_count": len(acquired_tools),
             "acquired_tools": acquired_tools,
+            "counterfactual_simulation": counterfactual_eval,
             "active_mission": executed_mission,
             "empirical_prediction": active_prediction,
             "world_model_entities": len(self.world_model.entities),

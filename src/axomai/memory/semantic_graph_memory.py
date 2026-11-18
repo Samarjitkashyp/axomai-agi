@@ -199,22 +199,23 @@ class SemanticGraphMemory:
                     """, (now, old["triple_id"]))
                     superseded_count += 1
 
-            # Check if this exact triple already exists actively
+            # Check if this exact triple already exists (active or prior)
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT triple_id, confidence, source_ref, epistemic_status FROM semantic_triples 
                 WHERE LOWER(subject_name) = LOWER(?) 
                   AND predicate = ? 
                   AND LOWER(object_name) = LOWER(?)
-                  AND epistemic_status NOT IN ('SUPERSEDED', 'REFUTED')
             """, (norm_subj, norm_pred, norm_obj))
             existing = cursor.fetchone()
 
             if existing:
-                # Corroborate existing fact if a new independent source confirms it
+                # Reactivate or corroborate existing fact
                 old_status = existing["epistemic_status"]
                 new_status = old_status
-                if old_status in ["EXTRACTED", "SOURCE_REPORTED"] and source_ref != existing["source_ref"]:
+                if old_status in ["SUPERSEDED", "REFUTED"]:
+                    new_status = "ACTIVE"
+                elif old_status in ["EXTRACTED", "SOURCE_REPORTED"] and source_ref != existing["source_ref"]:
                     new_status = "CORROBORATED"
                     is_verified = 1
 
@@ -223,10 +224,12 @@ class SemanticGraphMemory:
                     SET confidence = MIN(0.99, MAX(confidence, ?) + 0.05), 
                         source_ref = source_ref || ' | ' || ?, 
                         session_origin = COALESCE(session_origin, ?),
+                        valid_from = ?,
+                        valid_to = NULL,
                         epistemic_status = ?,
                         verified = ?
                     WHERE triple_id = ?
-                """, (float(confidence), source_ref, session_id, new_status, is_verified, existing["triple_id"]))
+                """, (float(confidence), source_ref, session_id, v_from, new_status, is_verified, existing["triple_id"]))
                 triple_id = existing["triple_id"]
                 epistemic_status = new_status
             else:

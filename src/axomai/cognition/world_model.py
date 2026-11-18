@@ -28,33 +28,33 @@ class WorldModel:
                 "disk_trend_mb_per_hour": 1.2
             },
             "database_cluster": {
-                "type": "POSTGRESQL",
+                "type": "PERSISTENT_MEMORY_STORE",
                 "name": settings.DB_NAME,
                 "host": settings.DB_HOST,
                 "port": settings.DB_PORT,
                 "status": "ONLINE",
                 "replication_mode": "PRIMARY"
             },
-            "changsari_logistics_hub": {
-                "type": "CORRIDOR_NODE",
-                "location": "Kamrup Assam",
-                "railhead_status": "OPERATIONAL",
-                "buffer_stock_capacity_pct": 94.2,
-                "throughput_teu_daily": 850
+            "global_network_backbone": {
+                "type": "HIGH_SPEED_DATA_CARRIER",
+                "status": "OPERATIONAL",
+                "bandwidth_gbps": 100.0,
+                "latency_p99_ms": 18.5,
+                "packet_loss_pct": 0.001
             },
-            "brahmaputra_hydrology_network": {
-                "type": "GEOTECHNICAL_SENSOR",
-                "embankment_sector": "Dibrugarh - Majuli",
-                "pore_pressure_fos": 1.26,
-                "water_elevation_trend": "STABLE",
-                "flood_risk_level": "LOW_SEASONAL"
+            "sovereign_compute_cluster": {
+                "type": "DISTRIBUTED_COMPUTE",
+                "node_count": 32,
+                "status": "READY",
+                "utilization_pct": 42.0,
+                "active_swarms": 4
             },
-            "guwahati_tea_auction_mandi": {
-                "type": "COMMODITY_EXCHANGE",
-                "spot_index_inr_kg": 248.50,
-                "export_differential_pct": -3.2,
-                "hedged_currency_pair": "EUR/INR",
-                "volatility_index": "MODERATE"
+            "global_liquidity_gateway": {
+                "type": "CAPITAL_MARKETS",
+                "status": "ONLINE",
+                "settlement_protocol": "ISO20022_REALTIME",
+                "currency_reserves_tracked": ["USD", "EUR", "INR", "GBP", "SGD"],
+                "volatility_index": "NOMINAL"
             }
         }
 
@@ -160,6 +160,27 @@ class WorldModel:
             "counterfactual_prediction": "Zero destructive impact on world state.",
             "safe_to_proceed_autonomously": True
         }
+
+    def simulate_counterfactual(self, candidate_actions: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        World Model 2.0: Deliberatively simulates parallel futures for candidate actions.
+        Projects consequences, side-effects, latency, cost, and selects optimal branch.
+        """
+        from axomai.cognition.counterfactual_engine import counterfactual_engine
+        return counterfactual_engine.simulate_counterfactual_branches(candidate_actions, self.entities)
+
+    def evaluate_action_regret(
+        self,
+        chosen_action_id: str,
+        actual_reward: float,
+        simulation_record: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Post-execution counterfactual analysis:
+        Detects if an unchosen alternative would have yielded superior utility and logs remedial policy.
+        """
+        from axomai.cognition.counterfactual_engine import counterfactual_engine
+        return counterfactual_engine.evaluate_counterfactual_regret(chosen_action_id, actual_reward, simulation_record)
 
     def get_world_snapshot(self) -> Dict[str, Any]:
         """Returns full structured snapshot of the world model."""

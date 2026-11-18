@@ -11,6 +11,7 @@ from axomai.cognition.capability_acquisition import CapabilityAcquisitionEngine,
 from axomai.cognition.belief_manager import Belief, BeliefManager, belief_manager
 from axomai.cognition.goal_formation import StrategicGoal, CognitiveGoalFormation, cognitive_goal_formation
 from axomai.cognition.war_game_simulator import WarGameSimulator, war_game_simulator
+from axomai.cognition.counterfactual_engine import CounterfactualEngine, counterfactual_engine
 from axomai.cognition.cognitive_core import CognitiveCore, cognitive_core
 
 __all__ = [
@@ -31,6 +32,8 @@ __all__ = [
     "cognitive_goal_formation",
     "WarGameSimulator",
     "war_game_simulator",
+    "CounterfactualEngine",
+    "counterfactual_engine",
     "CognitiveCore",
     "cognitive_core"
 ]

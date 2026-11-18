@@ -1,12 +1,13 @@
 """
 AxomAI Proactive Engine - Autonomous Goal Generator.
 Detects latent environmental triggers (system health, commodity swings, logistics delays, weather warnings)
-and proactively synthesizes strategic mission directives without human prompts.
+and proactively synthesizes strategic mission directives through deliberative cognitive goal formation.
 """
 
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from axomai.proactive.perception_radar import perception_radar, PerceptionRadar
+from axomai.cognition.goal_formation import cognitive_goal_formation
 
 class GoalGenerator:
     """Proactive mission generator formulating goals from autonomous environmental signals."""
@@ -21,104 +22,49 @@ class GoalGenerator:
     ) -> List[Dict[str, Any]]:
         """
         Analyzes active real-world signals (or scans via radar if none provided)
-        and synthesizes prioritized autonomous mission goals.
+        and synthesizes prioritized autonomous mission goals via deliberative cognitive goal formation.
         """
         now = datetime.now(timezone.utc).isoformat()
 
         # If no explicit signals provided, activate perception radar to scan environment live!
-        if signals is None:
-            active_signals = self.radar.scan_environment()
-        else:
-            active_signals = signals
+        active_signals = signals if signals is not None else self.radar.scan_environment()
 
         # Fallback if radar returned clean environment with no alerts
         if not active_signals:
             active_signals = [
                 {
-                    "domain": "commodity_markets",
-                    "indicator": "Tea Export Mandi Volatility",
-                    "value": -4.2,
+                    "domain": "global_supply_chain",
+                    "indicator": "Multimodal Freight Volatility",
+                    "value": -3.5,
                     "unit": "%",
-                    "severity": "HIGH",
-                    "message": "Spot export auction prices in Guwahati declined 4.2% while Hamburg freight rates rose."
+                    "severity": "ELEVATED",
+                    "message": "Global container dwell times and freight rates rose across primary maritime corridors."
                 }
             ]
 
+        # Formulate goals through deliberative cognitive goal formation
+        deliberated_goals = cognitive_goal_formation.deliberate_and_formulate_goals(active_signals)
+
         generated_goals = []
-        for sig in active_signals:
-            dom = sig.get("domain")
-            severity = sig.get("severity")
-            indicator = sig.get("indicator")
-
-            if dom == "system_infrastructure" and severity in ["CRITICAL", "ELEVATED"]:
-                goal = {
-                    "goal_id": f"goal_{len(self.proactive_goals_history) + 1:04d}",
-                    "title": "Autonomous Host Resource Rebalance & Storage Cleansing",
-                    "priority": "P0_CRITICAL",
-                    "trigger_indicator": indicator,
-                    "target_agent": "system_janitor",
-                    "autonomous_action": "Execute memory cache purge, prune orphaned ephemeral artifacts, and adjust process thread limits.",
-                    "created_at": now,
-                    "status": "PROACTIVELY_DISPATCHED"
-                }
-                generated_goals.append(goal)
-                self.proactive_goals_history.append(goal)
-
-            elif dom == "workspace_intelligence" and severity == "OPPORTUNITY":
-                goal = {
-                    "goal_id": f"goal_{len(self.proactive_goals_history) + 1:04d}",
-                    "title": "Autonomous Ingestion & Semantic Graph Embedding of New Artifacts",
-                    "priority": "P2_OPTIMIZATION",
-                    "trigger_indicator": indicator,
-                    "target_agent": "z9_cortex",
-                    "autonomous_action": "Parse newly detected workspace documents and update semantic graph knowledge nodes.",
-                    "created_at": now,
-                    "status": "PROACTIVELY_DISPATCHED"
-                }
-                generated_goals.append(goal)
-                self.proactive_goals_history.append(goal)
-
-            elif dom == "commodity_markets" and severity in ["HIGH", "CRITICAL"]:
-                goal = {
-                    "goal_id": f"goal_{len(self.proactive_goals_history) + 1:04d}",
-                    "title": "Autonomous Cross-Border FX Collar & Export Mandi Re-hedging",
-                    "priority": "P0_CRITICAL",
-                    "trigger_indicator": indicator,
-                    "target_agent": "revenue_syndicate",
-                    "autonomous_action": "Execute Garman-Kohlhagen zero-cost option collar and rebalance tea lot allocations to Hamburg.",
-                    "created_at": now,
-                    "status": "PROACTIVELY_DISPATCHED"
-                }
-                generated_goals.append(goal)
-                self.proactive_goals_history.append(goal)
-
-            elif dom == "infrastructure_geotechnical" and severity in ["ELEVATED", "HIGH"]:
-                goal = {
-                    "goal_id": f"goal_{len(self.proactive_goals_history) + 1:04d}",
-                    "title": "Autonomous Seismic Slope Stabilization & FIDIC Extension of Time Protocol",
-                    "priority": "P1_HIGH",
-                    "trigger_indicator": indicator,
-                    "target_agent": "infra_shield",
-                    "autonomous_action": "Simulate Bishop slope reinforcement with geotextile tubes and draft FIDIC Clause 20.1 time-extension claim.",
-                    "created_at": now,
-                    "status": "PROACTIVELY_DISPATCHED"
-                }
-                generated_goals.append(goal)
-                self.proactive_goals_history.append(goal)
-
-            elif dom == "energy_arbitrage" and severity == "OPPORTUNITY":
-                goal = {
-                    "goal_id": f"goal_{len(self.proactive_goals_history) + 1:04d}",
-                    "title": "Industrial Clean Energy Transition & Carbon Credit Arbitrage",
-                    "priority": "P2_OPTIMIZATION",
-                    "trigger_indicator": indicator,
-                    "target_agent": "y2",
-                    "autonomous_action": "Optimize 250kWp rooftop solar sizing and compute Verra VCS carbon monetization revenue.",
-                    "created_at": now,
-                    "status": "PROACTIVELY_DISPATCHED"
-                }
-                generated_goals.append(goal)
-                self.proactive_goals_history.append(goal)
+        for g in deliberated_goals:
+            priority_label = "P0_CRITICAL" if g.get("priority_score", 0.0) >= 0.80 else (
+                "P1_HIGH" if g.get("priority_score", 0.0) >= 0.65 else "P2_OPTIMIZATION"
+            )
+            goal_entry = {
+                "goal_id": g.get("goal_id", f"goal_{len(self.proactive_goals_history) + 1:04d}"),
+                "title": g.get("title", "Autonomous Strategic Directive"),
+                "priority": priority_label,
+                "priority_score": g.get("priority_score", 0.70),
+                "trigger_indicator": g.get("rationalization", "")[:60],
+                "target_agent": g.get("target_agent", "action_runner"),
+                "autonomous_action": g.get("action_directive", ""),
+                "rationalization": g.get("rationalization", ""),
+                "risk_tier": g.get("risk_tier", "LOW_RISK"),
+                "created_at": g.get("created_at", now),
+                "status": "PROACTIVELY_DISPATCHED"
+            }
+            generated_goals.append(goal_entry)
+            self.proactive_goals_history.append(goal_entry)
 
         return generated_goals
 

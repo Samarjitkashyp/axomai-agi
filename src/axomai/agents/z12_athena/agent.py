@@ -41,11 +41,17 @@ class Z12AthenaAgent:
             "message": "👥 Z12 Athena: Modeling staffing headcounts, regional compensation bands & EPF/ESIC payroll..."
         }
 
-        # Analyze target districts
+        # Dynamically determine target commercial hubs
+        target_market = "Target Commercial Market"
+        for kw in ["mumbai", "delhi", "bengaluru", "kolkata", "hyderabad", "chennai", "pune", "guwahati", "jaipur", "ahmedabad"]:
+            if kw in query.lower():
+                target_market = kw.title()
+                break
+
         districts = [
-            ("Guwahati (Kamrup Metro)", 2500),
-            ("Dibrugarh", 1800),
-            ("Nagaon", 1500)
+            (f"{target_market} (Flagship)", 2500),
+            (f"{target_market} (Commercial Center)", 1800),
+            (f"{target_market} (Growth Hub)", 1500)
         ]
         models = [salary_benchmark.get_district_staffing_model(d, sqft=s) for d, s in districts]
         total_hc = sum(m["total_headcount"] for m in models)
@@ -78,7 +84,7 @@ class Z12AthenaAgent:
             "- Present District Staffing Breakdown as a clean GitHub Markdown Table with blank lines before and after:\n"
             "| District | Store Area (sq.ft) | Total Headcount | Monthly Wage Budget (₹) | Key Roles Hired |\n"
             "| :--- | :--- | :--- | :--- | :--- |\n"
-            "- Outline statutory compliance (Assam Minimum Wages, EPF 12%, ESIC 0.75%, Assam PT) and bilingual customer service training protocols.\n"
+            "- Outline statutory compliance (Statutory Minimum Wages, EPF 12%, ESIC 0.75%, Professional Tax) and customer service training protocols.\n"
             "- Ensure every table row ends with a newline."
         )
 
@@ -104,11 +110,11 @@ class Z12AthenaAgent:
                 f"\n#### 📑 Statutory Deductions & Take-Home (Sample ₹20,000 Gross Salary):\n\n"
                 f"- **Employee EPF (12% of Basic):** ₹1,200.00\n"
                 f"- **Employee ESIC (0.75%):** ₹150.00\n"
-                f"- **Assam Professional Tax (PT):** ₹150.00\n"
+                f"- **Professional Tax (PT):** ₹150.00\n"
                 f"- **Net Take-Home Salary:** `₹18,500.00 / month`\n"
                 f"- **Employer Contribution (EPF 12% + ESIC 3.25%):** ₹1,850.00 (Total CTC: ₹21,850.00)\n\n"
                 f"#### 🎯 Workforce Onboarding Protocol:\n"
-                f"1. **Bilingual Fluency Mandate:** 100% customer-facing staff must be fluent in Assamese and Hindi/English.\n"
+                f"1. **Language Fluency Mandate:** 100% customer-facing staff trained in local regional languages and English/Hindi.\n"
                 f"2. **POS & DPDP Training:** 3-day intensive workshop on digital billing, inventory barcode scanning, and customer data consent.\n"
             )
             for tok in full_answer.split(" "):

@@ -222,7 +222,7 @@ class AutonomousBrowserNavigator:
         """Returns mock DOM inspection for testing."""
         return {
             "url": url,
-            "title": "Assam State Electricity Discom Portal",
+            "title": "Enterprise Commercial & Public Services Portal",
             "status_code": 200,
             "forms_detected_count": 1,
             "forms": [{

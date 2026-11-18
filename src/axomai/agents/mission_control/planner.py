@@ -37,7 +37,7 @@ AGENT_NAME_MAP = {
     "z8": "Z8 Apex (Legal Contracts & Statutory Compliance)",
     "z9": "Z9 Cortex (Knowledge Graph & Episodic Memory)",
     "z10": "Z10 Matrix (Logistics & Fleet Optimization)",
-    "z11": "Z11 Pragati (Assam Governance & MSME Policy)",
+    "z11": "Z11 Pragati (Public Policy, Statutory Incentives & Sovereign Governance)",
     "z12": "Z12 Athena (Talent & Workforce Strategy)",
     "z13": "Z13 Quantum (Market Surveillance & Dynamic Pricing)",
     "z14": "Z14 Horizon (Global Cross-Border Trade & FX)",
@@ -58,21 +58,21 @@ class MissionPlanner:
         mission_id = str(uuid.uuid4())[:8]
         g_lower = user_goal.lower()
 
-        # FAST PATH: High-Speed Instant Domain Recognition (<5ms) for Retail Expansion & Business Strategy
-        if any(k in g_lower for k in ["retail", "branch", "outlet", "store", "district", "assam", "expansion"]) and any(k in g_lower for k in ["plan", "top 3", "strategy", "open", "kholne"]):
+        # FAST PATH: High-Speed Instant Domain Recognition (<5ms) for Commercial Expansion & Business Strategy
+        if any(k in g_lower for k in ["retail", "branch", "outlet", "store", "district", "expansion", "market entry"]) and any(k in g_lower for k in ["plan", "top 3", "strategy", "open", "kholne", "launch"]):
             return MissionPlan(
                 mission_id=mission_id,
-                title="Assam Top-3 Districts Retail Branch Expansion Master Plan",
-                strategic_objective="Formulate an end-to-end 360-degree commercial expansion strategy across Kamrup Metro, Nagaon, and Dibrugarh with market teardown, predictive unit economics, statutory compliance, and executive boardroom deck.",
+                title="Global Commercial Branch & Market Expansion Master Plan",
+                strategic_objective="Formulate an end-to-end 360-degree commercial expansion strategy across target markets with market teardown, predictive unit economics, statutory compliance, and executive boardroom deck.",
                 total_steps=4,
                 milestones=[
                     MissionMilestone(
                         step_id=1,
-                        title="Market Demographics, Footfall & Competitor Teardown",
+                        title="Target Market Demographics, Footfall & Competitor Teardown",
                         target_agent="z2",
                         agent_name=AGENT_NAME_MAP["z2"],
-                        objective="Identify and benchmark top 3 commercial hubs in Assam (Kamrup Metro, Nagaon, Dibrugarh) covering purchasing power, retail footfall, and competitor presence.",
-                        prompt=f"Perform deep market research on Assam top 3 commercial districts (Kamrup Metro/Guwahati, Nagaon, Dibrugarh) for retail branch expansion: analyze consumer demographics, retail density, purchasing power parity, and key retail competitor dynamics: {user_goal}",
+                        objective="Identify and benchmark high-yield commercial hubs in target markets covering purchasing power, footfall density, and competitor presence.",
+                        prompt=f"Perform deep market research on target commercial districts and markets for commercial expansion: analyze consumer demographics, retail density, purchasing power parity, and key commercial competitor dynamics: {user_goal}",
                         deliverable_type="MARKET_INTELLIGENCE"
                     ),
                     MissionMilestone(
@@ -80,17 +80,17 @@ class MissionPlanner:
                         title="Financial Modeling, Capex & 12-Month Trajectory",
                         target_agent="z3",
                         agent_name=AGENT_NAME_MAP["z3"],
-                        objective="Compute initial store capex, recurring opex, monthly revenue trajectory, and break-even horizon per branch.",
-                        prompt=f"Model the financial viability and forecasting for opening 3 retail branches in Assam: estimate capex (₹45-60 Lakh per branch), monthly sales trajectory with R² confidence score, and projected break-even timeline: {user_goal}",
+                        objective="Compute initial capex, recurring opex, monthly revenue trajectory, and break-even horizon per branch.",
+                        prompt=f"Model the financial viability and forecasting for commercial branch expansion: estimate unit capex, monthly sales trajectory with R² confidence score, and projected break-even timeline: {user_goal}",
                         deliverable_type="FINANCIAL_PROJECTIONS"
                     ),
                     MissionMilestone(
                         step_id=3,
-                        title="Statutory Licensing, Lease Safeguards & DPDP Audit",
+                        title="Statutory Licensing, Lease Safeguards & Regulatory Audit",
                         target_agent="z8",
                         agent_name=AGENT_NAME_MAP["z8"],
-                        objective="Audit Assam Shops & Establishments Act, municipal trade licenses, fire safety NOC, commercial lease lock-in clauses, and DPDP Act compliance.",
-                        prompt=f"Conduct comprehensive statutory legal and compliance audit for retail commercial branches in Assam: review Assam Shops and Establishments Act, municipal trade licensing, GST registration, commercial lease indemnity clauses, and DPDP Act 2023 compliance. Output clean Markdown with well-formatted tables: {user_goal}",
+                        objective="Audit applicable commercial licensing, municipal trade authorizations, fire safety NOC, commercial lease lock-in clauses, and data protection compliance.",
+                        prompt=f"Conduct comprehensive statutory legal and compliance audit for commercial branches in target jurisdictions: review applicable commercial licensing, municipal trade registration, tax registration, commercial lease indemnity clauses, and statutory privacy/data protection compliance. Output clean Markdown with well-formatted tables: {user_goal}",
                         deliverable_type="LEGAL_COMPLIANCE_AUDIT"
                     ),
                     MissionMilestone(
@@ -99,7 +99,7 @@ class MissionPlanner:
                         target_agent="z7",
                         agent_name=AGENT_NAME_MAP["z7"],
                         objective="Synthesize master strategic brief and generate downloadable 16:9 widescreen PowerPoint deck.",
-                        prompt=f"Generate an executive presentation deck (.pptx) titled 'Assam Retail Branch Expansion Plan' summarizing the 3 selected districts, financial projections, statutory checklist, and roadmap: {user_goal}",
+                        prompt=f"Generate an executive presentation deck (.pptx) titled 'Commercial Branch Expansion Plan' summarizing the selected commercial markets, financial projections, statutory checklist, and roadmap: {user_goal}",
                         deliverable_type="EXECUTIVE_PRESENTATION_DECK"
                     )
                 ]
@@ -212,7 +212,7 @@ class MissionPlanner:
                     deliverable_type="POWERPOINT_PRESENTATION"
                 )
             ]
-            title = "Assam & Regional Strategic Expansion Mission"
+            title = "Global Commercial & Market Expansion Strategic Mission"
         else:
             # General Enterprise Project Roadmap
             milestones = [

@@ -20,7 +20,7 @@ class ExcelModelBuilder:
         self.output_dir = settings.STORAGE_DIR / "generated"
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    def generate_retail_expansion_model(self, project_name: str = "Assam Retail Expansion") -> Dict[str, Any]:
+    def generate_retail_expansion_model(self, project_name: str = "Commercial Retail Expansion") -> Dict[str, Any]:
         """Creates an executive-grade 3-tab financial model for retail branch expansion."""
         wb = openpyxl.Workbook()
 
@@ -67,9 +67,9 @@ class ExcelModelBuilder:
         ws1.row_dimensions[3].height = 25
 
         data_1 = [
-            ["Kamrup Metro (Guwahati)", "Flagship Experiential", 2500, 12.0, 22.0, 8.0, "=SUM(D4:F4)"],
-            ["Dibrugarh", "Commercial Trade Center", 1800, 8.0, 15.0, 5.0, "=SUM(D5:F5)"],
-            ["Nagaon", "Agro-Consumer Hub", 1500, 6.0, 12.0, 4.0, "=SUM(D6:F6)"],
+            ["Primary Metro Market", "Flagship Experiential", 2500, 12.0, 22.0, 8.0, "=SUM(D4:F4)"],
+            ["Secondary Commercial Hub", "Commercial Trade Center", 1800, 8.0, 15.0, 5.0, "=SUM(D5:F5)"],
+            ["Emerging Growth Center", "Regional Consumer Hub", 1500, 6.0, 12.0, 4.0, "=SUM(D6:F6)"],
         ]
 
         for r_idx, row_values in enumerate(data_1, start=4):

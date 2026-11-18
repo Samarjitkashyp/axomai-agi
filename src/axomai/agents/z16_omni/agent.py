@@ -46,12 +46,12 @@ class Z16OmniAgent:
         }
 
         # 1. Optical Multispectral Indices
-        sat_indices = satellite_analytics.evaluate_satellite_indices(region_name="Guwahati-Brahmaputra Basin")
+        sat_indices = satellite_analytics.evaluate_satellite_indices(region_name="Global Strategic River Basin")
         ports = geospatial_engine.get_port_telemetry()
 
         # 2. Cloud-Penetrating Sentinel-1 SAR Radar Analysis
         sar_flood = sar_radar_analytics.analyze_sar_flood_inundation(
-            region_name="Brahmaputra Valley (Guwahati - Nagaon Corridor)", cloud_cover_pct=100.0
+            region_name="Major Freight Corridor & River Basin", cloud_cover_pct=100.0
         )
 
         # 3. Satellite Computer Vision Container / Tank Counting
@@ -59,10 +59,10 @@ class Z16OmniAgent:
         oil_tank = satellite_cv_counter.compute_oil_tank_fill_level("numaligarh_refinery_crude_tanks")
 
         # 4. Real-time Marine AIS Tracking
-        ais_data = maritime_ais_tracker.track_vessel_telemetry("msc_assam_express")
+        ais_data = maritime_ais_tracker.track_vessel_telemetry("ever_given_sister")
 
         # 5. Thermal Infrared Evaporative Stress (Pre-Drought)
-        thermal_data = thermal_stress_engine.compute_evaporative_stress("upper_assam_tea_belt")
+        thermal_data = thermal_stress_engine.compute_evaporative_stress("global_grain_belt")
 
         meta_event = {
             "type": "meta",
@@ -111,14 +111,14 @@ class Z16OmniAgent:
                 f"#### 🌍 Remote Sensing Telemetry & Computer Vision Matrix\n\n"
                 f"| Sensor Platform | Spectral / Radar Band | Target Asset / Region | Metric Observed | Strategic Operational Implication |\n"
                 f"| :--- | :--- | :--- | :--- | :--- |\n"
-                f"| **Sentinel-1 C-SAR** | Microwave Dual-Pol (VV/VH) | Brahmaputra Basin | Backscatter Δ: {sar_flood['backscatter_change_ratio_db']} | 100% cloud-penetrating flood mapping; {sar_flood['net_submerged_land_sqkm']} sq km inundated |\n"
+                f"| **Sentinel-1 C-SAR** | Microwave Dual-Pol (VV/VH) | Strategic Freight Basin | Backscatter Δ: {sar_flood['backscatter_change_ratio_db']} | 100% cloud-penetrating flood mapping; {sar_flood['net_submerged_land_sqkm']} sq km inundated |\n"
                 f"| **PlanetScope 30cm** | Optical RGB/NIR | Pasir Panjang, Singapore | {port_cv['detected_teu_count']:,} TEUs ({port_cv['yard_utilization_pct']}) | High yard congestion; container dwell time +36.5h |\n"
-                f"| **Shadow Trig CV** | Optical Shadow Geometry | Numaligarh Crude Tanks | {oil_tank['tank_fill_level_pct']} Fill ({oil_tank['estimated_crude_stored_barrels']}) | Strategic energy inventory abundant at 80.9% capacity |\n"
-                f"| **NASA ECOSTRESS** | Thermal Infrared (TIRS) | Upper Assam Tea Belt | LST: {thermal_data['derived_land_surface_temp']} (ESI: {thermal_data['evaporative_stress_index']}) | 15-day pre-drought root zone early warning; deploy drip irrigation |\n\n"
+                f"| **Shadow Trig CV** | Optical Shadow Geometry | Strategic Energy Reservoirs | {oil_tank['tank_fill_level_pct']} Fill ({oil_tank['estimated_crude_stored_barrels']}) | Strategic energy inventory abundant at 80.9% capacity |\n"
+                f"| **NASA ECOSTRESS** | Thermal Infrared (TIRS) | Global Grain Agricultural Belt | LST: {thermal_data['derived_land_surface_temp']} (ESI: {thermal_data['evaporative_stress_index']}) | 15-day pre-drought root zone early warning; deploy proactive irrigation |\n\n"
                 f"#### 🚢 Marine AIS Vessel Tracking & Maritime Corridors\n\n"
                 f"- **Monitored Vessel:** `{ais_data['vessel_name']}` ({ais_data['vessel_class']}) at `{ais_data['navigational_location']}`.\n"
                 f"- **Speed Over Ground:** `{ais_data['speed_over_ground']}` | **ETA Drift:** `{ais_data['eta_drift_delay_hours']}` to `{ais_data['destination_port']}`.\n"
-                f"- **Flood Logistics Alert:** SAR confirms water encroachment on low-lying culverts near NH-27 Nagaon-Raha corridor; traffic routed via Changsari high-ground hub.\n"
+                f"- **Freight Logistics Alert:** Multimodal corridors monitored via SAR radar with automatic high-ground route reallocation for low-lying stretches.\n"
             )
             for tok in full_answer.split(" "):
                 yield {"type": "token", "content": tok + " "}

@@ -219,7 +219,7 @@ class MissionExecutor:
                         step_output = event.get("answer", "")
 
             elif m.target_agent == "z11":
-                # Assam Governance & MSME Policy
+                # Public Policy & Sovereign Governance Intelligence
                 for event in self.z11.policy_stream(query=enriched_prompt, session_id=session_id):
                     if event.get("type") == "token":
                         step_output += event.get("content", "")

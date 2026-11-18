@@ -22,14 +22,15 @@ class WeatherMicroclimateEngine:
 
     def forecast_agronomic_weather(
         self,
-        district: str = "dibrugarh",
+        district: str = "Central Agronomic Basin",
         forecast_horizon_days: int = 7
     ) -> Dict[str, Any]:
         """
         Derives rainfall anomaly, hailstorm index, and micro-climate crop spray suitability.
         """
         dist_key = district.lower().strip()
-        base = self.district_microclimates.get(dist_key, self.district_microclimates["dibrugarh"])
+        default_base = {"annual_rainfall_mm": 1250, "elevation_m": 180, "monsoon_intensity": "MODERATE"}
+        base = self.district_microclimates.get(dist_key, default_base)
 
         # Simulated 7-day quantitative precipitation forecast (QPF) in mm
         qpf_rainfall_7d_mm = 68.5 if base["monsoon_intensity"] in ["HIGH", "VERY_HIGH"] else 34.0

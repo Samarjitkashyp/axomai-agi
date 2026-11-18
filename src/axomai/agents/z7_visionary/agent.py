@@ -104,8 +104,8 @@ class Z7VisionaryAgent:
 
         # Check if financial/retail expansion model is also needed
         excel_res = None
-        if any(k in q_lower for k in ["retail", "branch", "expansion", "district", "capex", "financial model", "assam"]):
-            excel_res = excel_model_builder.generate_retail_expansion_model("Assam Retail Branch Expansion")
+        if any(k in q_lower for k in ["retail", "branch", "expansion", "district", "capex", "financial model"]):
+            excel_res = excel_model_builder.generate_retail_expansion_model("Commercial Branch Expansion")
 
         meta_event = {
             "type": "meta",
@@ -134,9 +134,9 @@ class Z7VisionaryAgent:
             f"{excel_link_text}\n"
             "#### 📋 Slide Structure Overview:\n"
             "1. **Title Slide:** Executive Boardroom Theme with Cyan Accents\n"
-            "2. **Market Opportunity:** High-growth regional Assam retail catchment\n"
-            "3. **Competitive Benchmark:** District-by-district unit economics\n"
-            "4. **Execution Roadmap:** 90-Day phased rollout across Kamrup Metro, Dibrugarh & Nagaon\n\n"
+            "2. **Market Opportunity:** High-growth commercial market catchment\n"
+            "3. **Competitive Benchmark:** Market-by-market unit economics & capex\n"
+            "4. **Execution Roadmap:** 90-Day phased rollout across target commercial hubs\n\n"
             "> Files generated and verified on disk. Click the download links above to open in PowerPoint or Excel."
         )
 

@@ -1,7 +1,7 @@
 """
-Z11 Pragati - Assam Governance, Policy & MSME Scheme Agent.
-Delivers authoritative guidance on Assam state policies, capital subsidies,
-Mission Basundhara land governance, and government procurement rules.
+Z11 Pragati - Global Public Policy, Statutory Incentives & Sovereign Governance Agent.
+Delivers authoritative guidance on National, Provincial/State, and Global industrial policies,
+capital subsidies, single-window clearances, and public procurement frameworks.
 """
 
 import re
@@ -22,11 +22,11 @@ def normalize_markdown(text: str) -> str:
     return text
 
 class Z11PragatiAgent:
-    """Enterprise Chief Public Policy Officer & Assam State Governance Specialist."""
+    """Enterprise Chief Public Policy Officer & Sovereign Governance Specialist."""
 
     def __init__(self):
         self.name = "Z11 Pragati"
-        self.role = "Assam Governance, Policy & MSME Scheme Agent"
+        self.role = "Public Policy, Statutory Incentives & Sovereign Governance Specialist"
 
     def policy_stream(
         self,
@@ -37,7 +37,7 @@ class Z11PragatiAgent:
         yield {
             "type": "status",
             "stage": "policy_matching",
-            "message": "🏛️ Z11 Pragati: Matching venture profile with Assam State Subsidies & Mission Basundhara guidelines..."
+            "message": "🏛️ Z11 Pragati: Matching commercial profile with National, Provincial & Global Public Policy Incentives..."
         }
 
         matched = scheme_matcher.match_schemes(query)
@@ -45,51 +45,51 @@ class Z11PragatiAgent:
         meta_event = {
             "type": "meta",
             "agent": self.name,
-            "task_type": "ASSAM_POLICY_AND_SCHEMES",
+            "task_type": "PUBLIC_POLICY_AND_INCENTIVES",
             "matched_schemes_count": len(matched),
-            "top_scheme": matched[0]["scheme_name"] if matched else "CMAAA",
+            "top_scheme": matched[0]["scheme_name"] if matched else "National Policy Framework",
             "schemes": matched,
             "tools_used": ["scheme_matcher"]
         }
         yield meta_event
 
         prompt = (
-            f"You are Z11 Pragati, Chief Advisor on Assam State Policy & MSME Industrial Subsidies.\n"
+            f"You are Z11 Pragati, Chief Public Policy & Sovereign Governance Advisor.\n"
             f"User Goal: '{query}'\n\n"
-            f"Matched Assam Government Schemes & Land Frameworks:\n{str(matched)}\n\n"
-            "Formulate an authoritative, official-grade State Policy & Incentives Dossier in clean GitHub Markdown.\n\n"
+            f"Matched Policy Subsidies & Regulatory Incentives:\n{str(matched)}\n\n"
+            "Formulate an authoritative, official-grade Public Policy & Incentives Dossier in clean GitHub Markdown.\n\n"
             "CRITICAL FORMATTING INSTRUCTIONS:\n"
             "- Always place a blank line (\\n\\n) before every heading (##, ###).\n"
             "- Present Scheme Comparison as a clean GitHub Markdown Table with blank lines before and after:\n"
-            "| Scheme Name | Department | Financial Benefit | Eligibility Criteria | Portal |\n"
+            "| Scheme Name | Jurisdiction / Department | Financial Benefit | Eligibility Criteria | Portal |\n"
             "| :--- | :--- | :--- | :--- | :--- |\n"
-            "- Outline procedural step-by-step guidance for applying via Single Window Clearance / Ease of Doing Business Assam.\n"
+            "- Outline procedural step-by-step guidance for applying via Single Window Clearance / Official Portals.\n"
             "- Ensure every table row ends with a newline."
         )
 
         full_answer = ""
         if llm_brain.is_available:
-            for chunk in llm_brain.stream_generate("You are Z11 Pragati, Assam Policy Specialist.", prompt):
+            for chunk in llm_brain.stream_generate("You are Z11 Pragati, Global Public Policy Specialist.", prompt):
                 full_answer += chunk
                 yield {"type": "token", "content": chunk}
         else:
             full_answer = (
-                f"### 🏛️ Z11 Pragati: Assam Policy & MSME Subsidies Dossier\n\n"
-                f"**Jurisdiction:** Government of Assam • Department of Industries & Commerce\n\n"
-                f"#### 📜 Matched State Schemes & Industrial Incentives\n\n"
-                f"| Scheme Name | Department | Financial Benefit | Eligibility Criteria | Portal |\n"
+                f"### 🏛️ Z11 Pragati: Sovereign Public Policy & Industrial Incentives Dossier\n\n"
+                f"**Scope:** Multi-Jurisdiction National & Global Statutory Incentives Framework\n\n"
+                f"#### 📜 Matched Policy Subsidies & Industrial Capital Frameworks\n\n"
+                f"| Scheme Name | Jurisdiction / Department | Financial Benefit | Eligibility Criteria | Portal |\n"
                 f"| :--- | :--- | :--- | :--- | :--- |\n"
             )
             for s in matched:
                 full_answer += (
-                    f"| **{s['scheme_name']}** | {s['department']} | {s['financial_benefit']} | "
+                    f"| **{s['scheme_name']}** | {s.get('jurisdiction', '')} • {s['department']} | {s['financial_benefit']} | "
                     f"{s['eligibility']} | `{s['application_portal']}` |\n"
                 )
             full_answer += (
                 f"\n#### 📑 Procedural Application Protocol:\n\n"
-                f"1. **Single Window Clearance (Ease of Doing Business):** Register on `easeofdoingbusiness.assam.gov.in` to obtain composite commercial business clearance.\n"
-                f"2. **Mission Basundhara Land Clearance:** Verify periodic patta status and execute registered commercial lease on `basundhara.assam.gov.in`.\n"
-                f"3. **Capital Subsidy Claim:** File subsidy claim with General Manager, District Industries Centre (DIC) within 90 days of commercial commencement.\n"
+                f"1. **National Single Window Clearance (NSWS):** Onboard via `nsws.gov.in` to obtain composite commercial business approvals across central and provincial line ministries.\n"
+                f"2. **Statutory Land & Lease Verification:** Verify land zoning, master plan compliance, and execute registered commercial lease agreements.\n"
+                f"3. **Incentive Claim Filing:** Submit audited capital expenditure statements and commercial commencement certificate within the statutory notice window.\n"
             )
             for tok in full_answer.split(" "):
                 yield {"type": "token", "content": tok + " "}
@@ -97,4 +97,3 @@ class Z11PragatiAgent:
         yield {"type": "done", "answer": normalize_markdown(full_answer)}
 
 z11_pragati_agent = Z11PragatiAgent()
-

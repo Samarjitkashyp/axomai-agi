@@ -9,7 +9,7 @@ class WarehouseAllocator:
     """Manages central staging inventory and satellite branch replenishment."""
 
     def __init__(self):
-        self.central_depot = "Changsari Integrated Logistics Park (Kamrup Metro)"
+        self.central_depot = "Central Multi-Modal Distribution Gateway"
 
     def calculate_branch_inventory_allocation(
         self,
@@ -21,8 +21,8 @@ class WarehouseAllocator:
         """Calculates safety stock, cycle stock, and reorder point."""
         daily_sales = monthly_sales_units / 30.0
 
-        # Lead time in days from Changsari Hub
-        lead_time_days = 1.0 if "guwahati" in district.lower() else (2.0 if "nagaon" in district.lower() else 3.5)
+        # Lead time in days based on distance tier
+        lead_time_days = 1.0 if any(k in district.lower() for k in ["metro", "primary", "central", "hub"]) else 2.5
 
         # Buffer days: Standard 10 days vs Monsoon 21 days
         buffer_days = 21 if monsoon_mode else 10

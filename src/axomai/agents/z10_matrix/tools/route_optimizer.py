@@ -7,6 +7,39 @@ and monsoon weather risk across Assam and Northeast logistics corridors.
 from typing import Dict, Any, List, Optional
 
 CORRIDOR_DATA = {
+    ("mumbai", "delhi"): {
+        "corridor": "Western Dedicated Freight Corridor / NE-4 Expressway",
+        "distance_km": 1380,
+        "transit_time_hrs": 18.5,
+        "lane_profile": "8-Lane Access Controlled Expressway",
+        "toll_charges_inr": 2150,
+        "terrain": "High-Speed Commercial Grade Plains",
+        "monsoon_flood_risk": "VERY LOW",
+        "recommended_vehicle": "28-Ton Multi-Axle Container Carrier",
+        "speed_limit_kmh": 100
+    },
+    ("bengaluru", "chennai"): {
+        "corridor": "Bengaluru-Chennai Expressway (NE-7)",
+        "distance_km": 260,
+        "transit_time_hrs": 3.5,
+        "lane_profile": "4-Lane Access-Controlled Highway",
+        "toll_charges_inr": 420,
+        "terrain": "South Industrial Spine Corridor",
+        "monsoon_flood_risk": "LOW",
+        "recommended_vehicle": "16-Ton High-Density Cargo Carrier",
+        "speed_limit_kmh": 90
+    },
+    ("delhi", "kolkata"): {
+        "corridor": "Eastern Dedicated Freight Corridor / NH-19",
+        "distance_km": 1490,
+        "transit_time_hrs": 24.0,
+        "lane_profile": "6-Lane Golden Quadrilateral Highway",
+        "toll_charges_inr": 2400,
+        "terrain": "Indo-Gangetic Industrial Spine",
+        "monsoon_flood_risk": "LOW-MODERATE",
+        "recommended_vehicle": "Heavy Multi-Axle Trailer",
+        "speed_limit_kmh": 80
+    },
     ("guwahati", "nagaon"): {
         "corridor": "NH-27 (East-West Expressway)",
         "distance_km": 124,

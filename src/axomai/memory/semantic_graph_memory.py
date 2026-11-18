@@ -109,12 +109,12 @@ class SemanticGraphMemory:
     def _seed_default_graph(self, conn):
         now = datetime.now(timezone.utc).isoformat()
         entities = [
-            ("ent_assam_tea", "Orthodox Tea", "COMMODITY", json.dumps({"origin": "Upper Assam", "hscode": "090210", "grade": "FTGFOP1"})),
-            ("ent_hamburg", "Port of Hamburg", "LOCATION", json.dumps({"country": "Germany", "type": "Maritime Terminal", "eu_entry": True})),
-            ("ent_siliguri", "Siliguri Corridor", "CHOKEPOINT", json.dumps({"width_km": 22, "strategic_significance": "Northeast Lifeline"})),
-            ("ent_changsari", "Changsari Logistics Hub", "INFRASTRUCTURE", json.dumps({"storage_sqft": 150000, "buffer_role": "High-velocity Railhead"})),
-            ("ent_solar_ppa", "Solar Rooftop PPA", "ENERGY_CONTRACT", json.dumps({"fixed_tariff": 4.45, "discom": "APDCL", "vcs_verified": True})),
-            ("ent_fidic_20", "FIDIC Clause 20.1", "LEGAL_PROTOCOL", json.dumps({"notice_window_days": 28, "jurisdiction": "International EPC"}))
+            ("ent_semiconductor", "Advanced Semiconductor Fab", "CRITICAL_TECHNOLOGY", json.dumps({"node_nm": 3, "supply_chokepoint": "EUV Lithography", "strategic_significance": "Sovereign Compute Anchor"})),
+            ("ent_transpacific", "Trans-Pacific Maritime Corridor", "GLOBAL_INFRASTRUCTURE", json.dumps({"throughput_teu": 25000000, "status": "Active International Gateway"})),
+            ("ent_suez", "Suez Canal Maritime Gateway", "MARITIME_CHOKEPOINT", json.dumps({"transit_share_pct": 12.0, "significance": "Global Energy & Freight Lifeline"})),
+            ("ent_grid_storage", "Grid Scale Battery Storage", "CLEAN_ENERGY_ASSET", json.dumps({"capacity_mwh": 2000, "role": "Intermittent Renewable Firming"})),
+            ("ent_clean_ppa", "Renewable Power Purchase Agreement", "ENERGY_CONTRACT", json.dumps({"tenor_years": 25, "carbon_neutral": True, "vcs_verified": True})),
+            ("ent_fidic_epc", "FIDIC Silver Book EPC Framework", "LEGAL_PROTOCOL", json.dumps({"dispute_adjudication_window_days": 28, "jurisdiction": "International Chamber of Commerce"}))
         ]
         conn.executemany("""
             INSERT OR IGNORE INTO semantic_entities (entity_id, entity_name, entity_type, attributes_json, created_at, updated_at)
@@ -122,11 +122,11 @@ class SemanticGraphMemory:
         """, [(e[0], e[1], e[2], e[3], now, now) for e in entities])
 
         triples = [
-            ("Orthodox Tea", "EXPORTS_TO", "Port of Hamburg", 0.99, "Commerce Ministry Data"),
-            ("Orthodox Tea", "TRANSITS_THROUGH", "Changsari Logistics Hub", 0.98, "Multimodal Freight Radar"),
-            ("Changsari Logistics Hub", "BYPASSES_CHOKEPOINT", "Siliguri Corridor", 0.95, "Z10 Contingency Route"),
-            ("Solar Rooftop PPA", "OFFSETS_GRID_COST_FROM", "Changsari Logistics Hub", 0.96, "Y2 Energy Audit"),
-            ("FIDIC Clause 20.1", "PROTECTS_DISPUTES_FOR", "Changsari Logistics Hub", 0.99, "Y4 Civil Audit")
+            ("Advanced Semiconductor Fab", "DEPENDS_ON", "Trans-Pacific Maritime Corridor", 0.99, "Sovereign High-Tech Supply Chain Audit"),
+            ("Trans-Pacific Maritime Corridor", "CONNECTS_TO", "Suez Canal Maritime Gateway", 0.98, "International Maritime Organization"),
+            ("Grid Scale Battery Storage", "STABILIZES_GRID_FOR", "Advanced Semiconductor Fab", 0.97, "Global Energy Intelligence"),
+            ("Renewable Power Purchase Agreement", "OFFSETS_CARBON_FOR", "Advanced Semiconductor Fab", 0.96, "ESG Sovereign Framework"),
+            ("FIDIC Silver Book EPC Framework", "PROTECTS_CAPEX_FOR", "Grid Scale Battery Storage", 0.99, "International Arbitration Precedent")
         ]
         conn.executemany("""
             INSERT INTO semantic_triples (subject_name, predicate, object_name, confidence, source_ref, verified, created_at, valid_from, epistemic_status)

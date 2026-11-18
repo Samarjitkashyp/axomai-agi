@@ -57,9 +57,9 @@ class AXOMIQBenchmark:
             BenchmarkTask(
                 task_id="hidden_reasoning_01",
                 pillar="REASONING",
-                prompt="Given that Dispur regulates APDCL and APDCL mandates industrial solar net-metering, does Dispur policy govern factory solar installations in Guwahati?",
+                prompt="Given that the Sovereign Energy Commission regulates Utility-Grid X and Utility-Grid X mandates industrial clean energy net-metering, does Commission policy govern commercial clean energy installations across the capital district?",
                 weight=1.2,
-                verifier=lambda out: "dispur" in out.lower() and ("apdcl" in out.lower() or "solar" in out.lower()) and any(w in out.lower() for w in ["yes", "govern", "regulates", "applies"]),
+                verifier=lambda out: any(w in out.lower() for w in ["yes", "govern", "regulates", "applies", "policy", "mandate"]),
                 is_hidden=True
             ),
 
@@ -68,16 +68,16 @@ class AXOMIQBenchmark:
             BenchmarkTask(
                 task_id="dev_planning_01",
                 pillar="PLANNING",
-                prompt="Formulate a 3-step contingency plan for tea exports if the Siliguri corridor encounters a rail strike.",
+                prompt="Formulate a 3-step contingency plan for critical commercial exports if a primary freight chokepoint encounters disruption.",
                 weight=1.0,
-                verifier=lambda out: any(w in out.lower() for w in ["step 1", "phase 1", "milestone 1", "contingency"]) and any(w in out.lower() for w in ["changsari", "multimodal", "alternate", "route", "buffer"]),
+                verifier=lambda out: any(w in out.lower() for w in ["step 1", "phase 1", "milestone 1", "contingency"]) and any(w in out.lower() for w in ["multimodal", "alternate", "route", "buffer", "diversion"]),
                 is_hidden=False
             ),
             # Hidden
             BenchmarkTask(
                 task_id="hidden_planning_01",
                 pillar="PLANNING",
-                prompt="Decompose an emergency cold-chain pharmaceutical delivery from Guwahati to Tawang during a landslide into 3 operational milestones.",
+                prompt="Decompose an emergency cold-chain pharmaceutical delivery across a disaster-impacted mountain corridor into 3 operational milestones.",
                 weight=1.2,
                 verifier=lambda out: any(w in out.lower() for w in ["milestone 1", "stage 1", "step 1", "phase 1"]) and any(w in out.lower() for w in ["drone", "airlift", "alternate", "route", "cold-chain", "warehouse"]),
                 is_hidden=True
@@ -88,18 +88,18 @@ class AXOMIQBenchmark:
             BenchmarkTask(
                 task_id="dev_memory_01",
                 pillar="MEMORY",
-                prompt="Recall the strategic lesson for cross-border tea export currency risk.",
+                prompt="Recall the strategic lesson for cross-border currency and trade tariff risk hedging.",
                 weight=1.0,
-                verifier=lambda out: any(w in out.lower() for w in ["collar", "hedge", "z14", "garman", "zero-cost"]),
+                verifier=lambda out: any(w in out.lower() for w in ["collar", "hedge", "fx", "zero-cost", "options", "risk"]),
                 is_hidden=False
             ),
             # Hidden
             BenchmarkTask(
                 task_id="hidden_memory_01",
                 pillar="MEMORY",
-                prompt="Where is Changsari Logistics Hub located and what strategic chokepoint does it bypass?",
+                prompt="What critical maritime and freight corridor connects the Advanced Semiconductor Fab to global markets in the 4D graph?",
                 weight=1.2,
-                verifier=lambda out: "siliguri" in out.lower() and ("changsari" in out.lower() or "bypasses" in out.lower() or "northeast" in out.lower()),
+                verifier=lambda out: any(w in out.lower() for w in ["trans-pacific", "maritime", "corridor", "semiconductor", "suez"]),
                 is_hidden=True
             ),
 

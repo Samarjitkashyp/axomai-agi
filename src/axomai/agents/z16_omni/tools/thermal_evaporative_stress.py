@@ -10,15 +10,17 @@ class ThermalEvaporativeStressEngine:
     """Processes thermal infrared satellite bands for pre-drought crop stress detection."""
 
     def __init__(self):
-        # Baseline reference evapotranspiration indices for tea and paddy biomes
+        # Baseline reference evapotranspiration indices for key agricultural biomes
         self.reference_biomes = {
-            "upper_assam_tea_belt": {"optimal_lst_kelvin": 298.15, "potential_et_mm_day": 4.8}, # ~25°C
-            "lower_assam_paddy_plains": {"optimal_lst_kelvin": 301.15, "potential_et_mm_day": 5.2}, # ~28°C
+            "global_grain_belt": {"optimal_lst_kelvin": 296.15, "potential_et_mm_day": 5.0},
+            "subtropical_agricultural_biome": {"optimal_lst_kelvin": 298.15, "potential_et_mm_day": 4.8},
+            "upper_assam_tea_belt": {"optimal_lst_kelvin": 298.15, "potential_et_mm_day": 4.8},
+            "lower_assam_paddy_plains": {"optimal_lst_kelvin": 301.15, "potential_et_mm_day": 5.2},
         }
 
     def compute_evaporative_stress(
         self,
-        biome_id: str = "upper_assam_tea_belt",
+        biome_id: str = "global_grain_belt",
         thermal_band_radiance: float = 10.45,  # W/(m^2 * sr * um)
         atmospheric_transmissivity: float = 0.88
     ) -> Dict[str, Any]:
@@ -26,7 +28,7 @@ class ThermalEvaporativeStressEngine:
         Computes Land Surface Temperature (LST) and Evaporative Stress Index (ESI = 1 - Actual_ET / Potential_ET).
         High ESI (> 0.6) signals root-zone moisture depletion 15 days prior to optical NDVI discoloration.
         """
-        biome = self.reference_biomes.get(biome_id, self.reference_biomes["upper_assam_tea_belt"])
+        biome = self.reference_biomes.get(biome_id, self.reference_biomes["global_grain_belt"])
 
         # Invert Planck equation to derive Land Surface Temperature (LST) in Kelvin and Celsius
         # Using standard Landsat TIRS calibration constants K1=774.88, K2=1321.07

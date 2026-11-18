@@ -422,33 +422,34 @@ class MasterOrchestrator:
         # Check for Z10 Matrix Intent (Logistics, Freight, Fleet, Corridor, Warehouse Staging)
         z10_explicit_keywords = [
             "logistics", "freight", "fleet", "highway corridor", "freight corridor", "truck route",
-            "warehouse staging", "changsari", "transit time", "truck", "toll", "nh-27", "nh-715", "kaziranga corridor"
+            "warehouse staging", "transit time", "trucking", "toll charges", "fleet route", "distribution hub"
         ]
         if any(k in q for k in z10_explicit_keywords):
             return {
                 "agent": "z10",
                 "name": "Z10 Matrix",
-                "reason": "Regional freight logistics, highway corridor optimization, or warehouse staging detected",
+                "reason": "Freight logistics, multimodal corridor optimization, or warehouse staging detected",
                 "confidence": 0.96
             }
 
-        # Check for Z11 Pragati Intent (Assam Governance, CMAAA, MSME Schemes, Basundhara)
+        # Check for Z11 Pragati Intent (Public Policy, Statutory Incentives, Sovereign Subsidies)
         z11_explicit_keywords = [
-            "cmaaa", "atmanirbhar asom", "mission basundhara", "biponi", "patta", "assam subsidy",
-            "assam scheme", "assam tender", "single window clearance", "ease of doing business assam"
+            "public policy", "government subsidy", "msme scheme", "industrial incentive",
+            "capital subsidy", "state tender", "statutory scheme", "land patta", "single window clearance",
+            "ease of doing business", "cmaaa", "mission basundhara", "pmegp", "pli scheme", "sisfs", "cgtmse"
         ]
         if any(k in q for k in z11_explicit_keywords):
             return {
                 "agent": "z11",
                 "name": "Z11 Pragati",
-                "reason": "Assam public policy, state subsidy schemes, or Mission Basundhara land rules detected",
+                "reason": "Public policy, statutory industrial incentives, government subsidies, or land governance detected",
                 "confidence": 0.97
             }
 
         # Check for Z12 Athena Intent (Talent, Headcount, Salary Benchmark, EPF, ESIC, Payroll)
         z12_explicit_keywords = [
-            "hiring", "salary benchmark", "payroll", "headcount", "minimum wages assam",
-            "epf", "esic", "staff salary", "store manager salary", "recruitment", "workforce"
+            "hiring", "salary benchmark", "payroll", "headcount", "minimum wages",
+            "epf", "esic", "staff salary", "store manager salary", "recruitment", "workforce", "statutory wage"
         ]
         if any(k in q for k in z12_explicit_keywords):
             return {
@@ -595,17 +596,17 @@ class MasterOrchestrator:
                 "confidence": 0.98
             }
 
-        # Check for Y5 Chanakya Intent (Geopolitics, OSINT, OFAC SDN Sanctions, Siliguri Chokepoint, Sovereign Advisory)
+        # Check for Y5 Chanakya Intent (Geopolitics, OSINT, OFAC SDN Sanctions, Maritime Chokepoints, Sovereign Advisory)
         y5_explicit_keywords = [
             "chanakya", "geopolitics", "osint", "ofac", "sdn list", "sanctions screening",
-            "siliguri corridor", "chicken's neck", "kaladan", "dawki", "sutarkandi",
-            "strategic intelligence", "diplomatic advisory", "bimstec"
+            "maritime chokepoint", "strait of hormuz", "malacca strait", "suez canal", "siliguri corridor",
+            "strategic intelligence", "diplomatic advisory", "trade sanctions", "multilateral treaties"
         ]
         if any(k in q for k in y5_explicit_keywords):
             return {
                 "agent": "y5",
                 "name": "Y5 Chanakya",
-                "reason": "Sovereign geopolitics, OFAC sanctions compliance, Siliguri chokepoint defense, or OSINT intelligence detected",
+                "reason": "Sovereign geopolitics, OFAC sanctions compliance, strategic chokepoint defense, or OSINT intelligence detected",
                 "confidence": 0.98
             }
 
@@ -1333,7 +1334,7 @@ class MasterOrchestrator:
             )
 
         elif chosen_agent == "z11":
-            # Delegate to Z11 Pragati (Assam Governance & MSME Policy)
+            # Delegate to Z11 Pragati (Public Policy, Statutory Incentives & Sovereign Governance)
             yield from self._execute_with_sentinel_guard(
                 self.z11.policy_stream(query=query, session_id=session_id, doc_id=document_id),
                 query=query,

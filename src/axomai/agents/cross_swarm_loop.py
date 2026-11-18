@@ -30,8 +30,8 @@ class CrossSwarmLoopEngine:
 
     def execute_swarm_loop(
         self,
-        event_trigger: str = "brahmaputra_flood_disruption",
-        region: str = "Guwahati - Nagaon Corridor"
+        event_trigger: str = "severe_weather_supply_chain_disruption",
+        region: str = "Primary Commercial Freight Corridor"
     ) -> Dict[str, Any]:
         """
         Executes an end-to-end multi-agent crisis detection, adaptation, and mitigation loop.
@@ -44,10 +44,10 @@ class CrossSwarmLoopEngine:
 
         # Step 2: Z10 Matrix Logistics Route Divert & Inventory Buffer
         route_decision = route_optimizer.optimize_route(
-            origin="Guwahati", destination="Dibrugarh", payload_tons=5.0
+            origin="Mumbai", destination="Delhi", payload_tons=5.0
         )
         warehouse_plan = warehouse_allocator.calculate_branch_inventory_allocation(
-            district="Nagaon", monthly_sales_units=15000, monsoon_mode=True
+            district="Central Distribution Hub", monthly_sales_units=15000, monsoon_mode=True
         )
 
         # Step 3: Z13 Quantum Mandi Shortage & Price Elasticity Dynamic Markup
@@ -95,12 +95,12 @@ class CrossSwarmLoopEngine:
                 {
                     "step": 1,
                     "agent": "Z16 Omni (Geospatial SAR)",
-                    "action": f"Penetrated 100% cloud cover via Sentinel-1 SAR. Detected {water_expansion_pct} water surface expansion threatening NH-27 culverts."
+                    "action": f"Penetrated 100% cloud cover via Sentinel-1 SAR. Detected {water_expansion_pct} water surface expansion threatening critical freight corridor culverts."
                 },
                 {
                     "step": 2,
                     "agent": "Z10 Matrix (Fleet Logistics)",
-                    "action": f"Auto-diverted fleet to {route_decision['corridor']} ({route_decision['transit_time_hrs']}h transit). Reallocated {warehouse_plan['buffer_days']}-day inventory buffer to Changsari hub."
+                    "action": f"Auto-diverted fleet to {route_decision['corridor']} ({route_decision['transit_time_hrs']}h transit). Reallocated {warehouse_plan['buffer_days']}-day inventory buffer to central multi-modal hub."
                 },
                 {
                     "step": 3,

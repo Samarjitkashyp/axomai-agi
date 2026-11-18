@@ -26,7 +26,7 @@ class PayrollCalculator:
             employee_esic = 0.0
             employer_esic = 0.0
 
-        # Assam Professional Tax (PT)
+        # Statutory Professional Tax (PT) - Standard Slabs
         if gross_salary > 25000:
             pt = 208.0
         elif gross_salary > 15000:
@@ -49,7 +49,8 @@ class PayrollCalculator:
             "employer_epf": employer_epf,
             "employee_esic": employee_esic,
             "employer_esic": employer_esic,
-            "assam_professional_tax": pt,
+            "professional_tax": pt,
+            "assam_professional_tax": pt, # backward-compatible alias
             "total_employee_deductions": total_deductions,
             "net_in_hand_salary": net_in_hand,
             "total_monthly_ctc": total_ctc

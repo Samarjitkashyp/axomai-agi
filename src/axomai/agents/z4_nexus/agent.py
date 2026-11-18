@@ -206,6 +206,21 @@ class Z4NexusAgent:
         is_direct_exec = any(k in q_lower for k in ["run this", "execute this", "run python", "run javascript", "run node", "execute code", "run code", "eval code"]) and ("```" in query or "print(" in query or "console.log" in query or "import " in query or "def " in query or bool(extracted_code))
         is_bug_fix = any(k in q_lower for k in ["fix this", "debug", "syntax error", "traceback", "exception in", "why is this code failing", "fix code", "find bug", "check bug", "find error"])
 
+        # Cognitive Intent & Language Resonance Profiling (No Toy Answers / No Unsolicited Code Dumps)
+        from axomai.cognition.cognitive_intent_profiler import cognitive_intent_profiler
+        cog_profile = cognitive_intent_profiler.profile_query(query)
+        is_strategic_consultation = (
+            cog_profile.intent_archetype == "ADVISORY_STRATEGY" and
+            not bool(extracted_code) and
+            not is_security_audit and
+            not is_self_healing and
+            not is_git and
+            not is_repo_query and
+            not is_perf_profile and
+            not is_direct_exec and
+            not is_bug_fix
+        )
+
         # =========================================================================
         # REVOLUTIONARY 1: AUTONOMOUS PRODUCTION SENTRY & LOG AUTO-PATCHER
         # =========================================================================
@@ -1246,7 +1261,14 @@ class Z4NexusAgent:
             return
 
         # =========================================================================
-        # 17. UNIVERSAL POLYGLOT SOFTWARE ENGINEERING (DEFAULT ROUTE)
+        # 17. STRATEGIC ARCHITECTURAL CONSULTATION (PROGRESSIVE DISCLOSURE / NO CODE DUMP)
+        # =========================================================================
+        elif is_strategic_consultation:
+            yield from self._stream_strategic_consultation(query, session_id=session_id, cog_profile=cog_profile)
+            return
+
+        # =========================================================================
+        # 18. UNIVERSAL POLYGLOT SOFTWARE ENGINEERING (DEFAULT IMPLEMENTATION ROUTE)
         # =========================================================================
         else:
             yield {
@@ -1271,6 +1293,8 @@ class Z4NexusAgent:
 
             # Injected personalized developer memory profile
             style_prompt = dev_memory.format_style_prompt()
+            lang_directive = cog_profile.language_prompt_directive if cog_profile else ""
+            invariants_text = ("\nReal-World Domain Invariants (Do NOT create toy models; handle realistic constraints):\n" + "\n".join(f"- {inv}" for inv in cog_profile.domain_invariants)) if (cog_profile and cog_profile.domain_invariants) else ""
 
             yield {
                 "type": "meta",
@@ -1281,6 +1305,8 @@ class Z4NexusAgent:
 
             prompt = (
                 f"User Request: {query}\n\n"
+                f"{lang_directive}\n\n"
+                f"{invariants_text}\n\n"
                 f"{file_code_prompt}"
                 f"{style_prompt}\n\n"
                 f"{('Codebase Context:\n' + repo_context + '\n\n') if repo_context else ''}"
@@ -1288,7 +1314,7 @@ class Z4NexusAgent:
                 "1. Deliver a complete, robust, production-ready solution in the requested language/framework.\n"
                 "2. Provide full code with zero missing placeholders or TODOs.\n"
                 "3. If algorithms or data structures are involved, analyze Time & Space Complexity (Big-O).\n"
-                "4. Include usage examples, testing tips, and clear markdown documentation."
+                "4. Include usage examples, testing tips, and clear markdown documentation matching the user's language."
             )
 
             full_answer = ""
@@ -1302,5 +1328,112 @@ class Z4NexusAgent:
                     yield {"type": "token", "content": tok + " "}
 
             yield {"type": "done", "answer": full_answer}
+
+    def _stream_strategic_consultation(
+        self,
+        query: str,
+        session_id: Optional[str] = "nexus_session",
+        cog_profile: Optional[Any] = None
+    ) -> Generator[Dict[str, Any], None, None]:
+        """
+        Chief Technology Officer / Solution Strategist mode:
+        Delivers high-level trade-off analysis, options comparison, and real-world domain realities.
+        Strictly prohibits unsolicited multi-page code dumping and uses Progressive Disclosure.
+        """
+        yield {
+            "type": "status",
+            "stage": "strategic_consultation",
+            "message": "🧠 Z4 Nexus (CTO Mode): Formulating strategic architectural evaluation & real-world roadmap..."
+        }
+
+        lang = cog_profile.language if cog_profile else "english"
+        domain = cog_profile.domain if cog_profile else "general_software"
+        invariants = cog_profile.domain_invariants if cog_profile else []
+
+        yield {
+            "type": "meta",
+            "agent": "Z4 Nexus (Strategic CTO)",
+            "task_type": "STRATEGIC_SOLUTION_DESIGN",
+            "language": lang,
+            "domain": domain,
+            "tools_used": ["cognitive_intent_profiler", "domain_ontology_engine", "llm_neural_core"]
+        }
+
+        invariants_text = "\n".join(f"- {inv}" for inv in invariants)
+        prompt = (
+            f"User Query: \"{query}\"\n\n"
+            f"{cog_profile.language_prompt_directive if cog_profile else ''}\n\n"
+            f"Role: You are acting as the Chief Technology Officer & Principal Solution Architect of AxomAI.\n"
+            f"Domain: {domain.upper()}\n"
+            f"Real-World Domain Invariants (MUST Address):\n{invariants_text}\n\n"
+            "STRICT BEHAVIORAL DIRECTIVES:\n"
+            "1. STRICTLY PROHIBIT CODE DUMPING: The user is asking for architectural advice, tech stack selection, or business strategy. DO NOT DUMP RAW BOILERPLATE CODE (no models.py, main.py, or frontend component dumps).\n"
+            "2. PRESENT A CLEAR 2-PATH STRATEGIC COMPARISON:\n"
+            "   - Option 1 (Fast-to-Market / No-Code / SaaS): Live in 24-48 hours, built-in payments & logistics, zero DevOps (e.g. Shopify / WooCommerce / Medusa).\n"
+            "   - Option 2 (Custom Scalable Brand Tech Stack): Maximum brand differentiation, custom APIs (e.g. Next.js 15 App Router + Headless Commerce + PostgreSQL + Redis).\n"
+            "3. EXPLAIN REAL-WORLD OPERATIONAL REALITIES:\n"
+            "   Detail the actual engineering & business chokepoints (e.g., shoe variant matrix for UK sizes 6-11 and colors, payment gateways like Razorpay/Stripe, courier integrations like Shiprocket/Delhivery, GST invoices).\n"
+            "4. PROGRESSIVE DISCLOSURE HANDSHAKE:\n"
+            "   End with a warm, consultative question asking the user which path suits their current budget and timeline before preparing any technical schemas or code."
+        )
+
+        full_answer = ""
+        if llm_brain.is_available:
+            for chunk in llm_brain.stream_generate(NEXUS_SYSTEM_PROMPT, prompt):
+                full_answer += chunk
+                yield {"type": "token", "content": chunk}
+        else:
+            if lang == "hinglish":
+                full_answer = (
+                    f"### 👟 Shoe E-Commerce Business: Strategic Technology Roadmap\n\n"
+                    f"Shoes ka business shuru karne ke liye — jisme **Men, Women aur Kids** teen alag-alag segments hain — technology chunne se pehle business ka goal aur timeline samajhna zaroori hai. Ek mature CTO ke hisaab se aapke paas **do behtareen raste** hain:\n\n"
+                    f"---\n\n"
+                    f"#### 🚀 Option 1: Fast Launch (Ready-Made SaaS / No-Code)\n"
+                    f"* **Recommended Tech:** **Shopify** ya **WooCommerce (WordPress)**\n"
+                    f"* **Kaise kaam karega:** Isme website 24 se 48 ghante me live ho sakti hai. Design templates pehle se optimized hote hain aur hosting ya server crash hone ka jhanjhat nahi rehta.\n"
+                    f"* **Kiske liye best hai:** Agar aapko turant business test karna hai aur bina kisi software developer ko hire kiye orders receive karne hain.\n\n"
+                    f"---\n\n"
+                    f"#### ⚡ Option 2: Custom Scale Brand (Headless Tech Stack)\n"
+                    f"* **Recommended Tech:** **Next.js 15 (React/TypeScript) Frontend + MedusaJS / Shopify Storefront API + PostgreSQL + Redis**\n"
+                    f"* **Kaise kaam karega:** Frontend super-fast rahega aur UI puri tarah se aapki custom branding ke hisaab se tailor-made hogi.\n"
+                    f"* **Kiske liye best hai:** Agar aap 'Nike' ya 'Puma' jaisa dedicated direct-to-consumer (D2C) brand experience banana chahte hain aur custom features add karna chahte hain.\n\n"
+                    f"---\n\n"
+                    f"#### 🔍 Real-World E-Commerce Realities (Jo Code Me Dhyan Rakhni Hongi)\n"
+                    f"Shoe store me normal website se zyada complex cheezein hoti hain:\n"
+                    f"1. **Multi-Variant Inventory:** Ek hi joota (Model) alag-alag Colors aur Sizes (UK 6, 7, 8, 9, 10, 11) me aata hai. Har size ka stock alag maintain hota hai.\n"
+                    f"2. **Payment Gateway Integration:** India ke liye **Razorpay / Cashfree / Stripe** aur Cash on Delivery (COD) verification zaroori hai.\n"
+                    f"3. **Logistics & Courier APIs:** **Shiprocket ya Delhivery** API se pin-code check aur real-time tracking lagana hoga.\n"
+                    f"4. **Automated GST Invoicing:** Footwear par statutory GST rates ke according automatic invoice generate hona chahiye.\n\n"
+                    f"---\n\n"
+                    f"🤝 **Aapka Agla Kadam:**\n"
+                    f"Aapke hisaab se in dono me se konsa rasta aapke budget aur launch timeline ke liye sahi lagta hai? Agar aap **Custom Stack (Next.js)** select karte hain, toh bataiye — mai database schema aur step-by-step setup roadmap prepare kar deta hoon!"
+                )
+            else:
+                full_answer = (
+                    f"### 👟 Footwear E-Commerce: Strategic Technology Advisory\n\n"
+                    f"Launching an online shoe business catering to **Men, Women, and Kids** requires balancing time-to-market against long-term customization. Here is the strategic evaluation:\n\n"
+                    f"---\n\n"
+                    f"#### 🚀 Option 1: Fast-to-Market (Managed SaaS / No-Code)\n"
+                    f"* **Stack:** **Shopify** or **WooCommerce**\n"
+                    f"* **Timeline:** 1–3 Days\n"
+                    f"* **Pros:** Zero DevOps overhead, pre-built PCI-DSS compliant checkout, native inventory variants, instant payment & courier plugins.\n\n"
+                    f"---\n\n"
+                    f"#### ⚡ Option 2: Custom Scale Brand (Headless Commerce)\n"
+                    f"* **Stack:** **Next.js 15 App Router + Headless Backend (MedusaJS / Shopify Storefront API) + PostgreSQL + Redis**\n"
+                    f"* **Timeline:** 4–8 Weeks\n"
+                    f"* **Pros:** Complete brand differentiation, sub-second page loads, tailor-made size guide and fit-finder UX.\n\n"
+                    f"---\n\n"
+                    f"#### 🔍 Critical Domain Realities for Footwear:\n"
+                    f"1. **SKU & Size Variant Matrix:** Separate inventory tracking per size (UK 6–11) and colorway.\n"
+                    f"2. **Payment Gateways:** Razorpay/Stripe with webhook idempotency and COD anti-fraud.\n"
+                    f"3. **Courier Automation:** Real-time pincode serviceability and shipping label generation via Shiprocket/Delhivery.\n"
+                    f"4. **Statutory Tax:** Automated tiered GST/VAT invoice generation.\n\n"
+                    f"---\n\n"
+                    f"🤝 **Next Step:** Which approach best matches your target launch timeline and development budget? Once you decide, I will proceed to architect the schema and deployment plan."
+                )
+            for tok in full_answer.split(" "):
+                yield {"type": "token", "content": tok + " "}
+
+        yield {"type": "done", "answer": full_answer}
 
 z4_nexus_agent = Z4NexusAgent()

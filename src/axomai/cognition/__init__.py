@@ -13,6 +13,7 @@ from axomai.cognition.goal_formation import StrategicGoal, CognitiveGoalFormatio
 from axomai.cognition.war_game_simulator import WarGameSimulator, war_game_simulator
 from axomai.cognition.counterfactual_engine import CounterfactualEngine, counterfactual_engine
 from axomai.cognition.cognitive_core import CognitiveCore, cognitive_core
+from axomai.cognition.cognitive_intent_profiler import CognitiveIntentProfiler, CognitiveProfile, cognitive_intent_profiler
 
 __all__ = [
     "SelfModel",
@@ -35,5 +36,8 @@ __all__ = [
     "CounterfactualEngine",
     "counterfactual_engine",
     "CognitiveCore",
-    "cognitive_core"
+    "cognitive_core",
+    "CognitiveIntentProfiler",
+    "CognitiveProfile",
+    "cognitive_intent_profiler"
 ]

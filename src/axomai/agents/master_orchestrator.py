@@ -1616,27 +1616,34 @@ class MasterOrchestrator:
             "message": "AxomAI Assistant formulating response..."
         }
 
+        # Cognitive Intent & Language Profiling
+        from axomai.cognition.cognitive_intent_profiler import cognitive_intent_profiler
+        cog_profile = cognitive_intent_profiler.profile_query(query)
+
         meta_event = {
             "type": "meta",
             "agent": "AxomAI Assistant",
             "task_type": "CONVERSATIONAL_ASSISTANT",
+            "language": cog_profile.language,
+            "archetype": cog_profile.intent_archetype,
             "auto_routed": True,
             "routing_reason": "Natural language conversation & general intelligence assistance",
-            "tools_used": ["llm_neural_core"]
+            "tools_used": ["cognitive_intent_profiler", "llm_neural_core"]
         }
         yield meta_event
 
         system_prompt = (
             "You are AxomAI, a sovereign enterprise visual intelligence and autonomous multi-agent AI assistant.\n"
-            "You communicate warmly, intelligently, clearly, and helpfully in English, Hinglish, Assamese, or Hindi according to user preference.\n\n"
+            f"{cog_profile.language_prompt_directive}\n\n"
             "Key Behaviors:\n"
-            "1. For greetings (e.g. 'hello', 'hi', 'kaise ho', 'namaste'): Respond warmly and politely, acknowledge the greeting, and offer ready assistance.\n"
+            "1. For greetings (e.g. 'hello', 'hi', 'kaise ho', 'namaste'): Respond warmly and politely, acknowledge the greeting, and offer ready assistance in the user's preferred language.\n"
             "2. For general questions (e.g. science, math, explanations, coding, general knowledge): Give thorough, accurate, beautifully formatted markdown answers.\n"
-            "3. For questions about your capabilities: Explain that you are AxomAI and can:\n"
+            "3. For advisory questions: Offer clear trade-offs, practical options, and domain realities instead of premature code dumping.\n"
+            "4. For questions about your capabilities: Explain that you are AxomAI and can:\n"
             "   - Analyze and extract data from documents, PDFs, Excel sheets, and images (with OCR & visual grounding).\n"
             "   - Perform live autonomous web research, portal crawling, and market intelligence.\n"
             "   - Query enterprise databases, forecast trends, and simulate business scenarios.\n"
-            "   - Assist with coding, writing, brainstorming, and any general inquiry.\n"
+            "   - Assist with coding, software architecture, writing, brainstorming, and any general inquiry.\n"
             "Always provide clean, accurate, and beautifully structured responses with GitHub markdown."
         )
 
@@ -1655,7 +1662,26 @@ class MasterOrchestrator:
             prior_session = session_conversation_memory.get_or_create_session(session_id)
             active_facts = hyper_ctx.get("active_facts", [])
 
-            if any(g in q_lower for g in ["hi", "hello", "hey", "namaste", "pranam"]):
+            if cog_profile.language == "hinglish":
+                if any(g in q_lower for g in ["hi", "hello", "hey", "namaste", "pranam", "kaise ho", "kya haal"]):
+                    full_answer = "Namaste! Main AxomAI hoon, aapka autonomous AI partner. Main aapki kya madad kar sakta hoon? Aap mujhse koi bhi business, technology, coding ya market research ka sawal pooch sakte hain!"
+                elif active_facts and any(k in q_lower for k in ["where", "kaha", "price", "budget", "strategy", "location", "relocate", "export", "status", "target", "cost"]):
+                    fact_lines = [f"- **{f['subject_name']}** {f['predicate'].replace('_', ' ').lower()}: `{f['object_name']}`" for f in active_facts[:3]]
+                    full_answer = (
+                        f"AxomAI 4D Temporal Knowledge Graph ke anusaar verified jankari:\n\n" +
+                        "\n".join(fact_lines) + "\n\n"
+                        "Yeh data verified aur memory network me synchronized hai."
+                    )
+                elif prior_session.turns and any(k in q_lower for k in ["topic", "iss baare", "aur batao", "pehle", "previous", "continue", "elaborate", "isse related"]):
+                    last_turn = prior_session.turns[-1]
+                    full_answer = (
+                        f"Pichle topic '{last_turn.content[:140]}...' ko continue karte hue:\n\n"
+                        f"AxomAI session memory me yeh context surakshit hai ({prior_session.total_tokens:,} tokens tracked). "
+                        "Aap is topic ke kis specific aspect ko aur detail me samajhna chahte hain?"
+                    )
+                else:
+                    full_answer = f"Mujhe aapka sawal mila: \"{query}\". Main is par aapki kaise madad kar sakta hoon?"
+            elif any(g in q_lower for g in ["hi", "hello", "hey", "namaste", "pranam"]):
                 full_answer = "Hello! I am AxomAI, your autonomous AI assistant. How can I help you today? You can ask me any question, attach documents or spreadsheets for analysis, or request live web research."
             elif active_facts and any(k in q_lower for k in ["where", "price", "budget", "strategy", "location", "relocate", "export", "status", "target", "cost"]):
                 fact_lines = [f"- **{f['subject_name']}** {f['predicate'].replace('_', ' ').lower()}: `{f['object_name']}`" for f in active_facts[:3]]

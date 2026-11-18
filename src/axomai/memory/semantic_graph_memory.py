@@ -8,10 +8,21 @@ autonomous triple extraction from raw dialogue, and multi-hop relational pathfin
 import sqlite3
 import json
 import re
+from enum import Enum
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Set, Tuple
 from axomai.config import settings
+
+class EpistemicStatus(str, Enum):
+    EXTRACTED = "EXTRACTED"
+    SOURCE_REPORTED = "SOURCE_REPORTED"
+    CORROBORATED = "CORROBORATED"
+    VERIFIED = "VERIFIED"
+    ACTIVE = "ACTIVE"
+    DISPUTED = "DISPUTED"
+    SUPERSEDED = "SUPERSEDED"
+    REFUTED = "REFUTED"
 
 # Predicates where an entity can have only one active state at a given time
 FUNCTIONAL_EXCLUSIVE_PREDICATES: Set[str] = {
@@ -147,10 +158,13 @@ class SemanticGraphMemory:
         confidence: float = 1.0,
         source_ref: str = "Autonomous Ingestion",
         session_id: Optional[str] = None,
-        valid_from: Optional[str] = None
+        valid_from: Optional[str] = None,
+        epistemic_status: str = "ACTIVE",
+        verified: Optional[int] = None
     ) -> Dict[str, Any]:
         """
-        Inserts an ontological fact triple with 4D temporal tracking.
+        Inserts an ontological fact triple with 4D temporal tracking and explicit epistemic status.
+        Epistemic States: EXTRACTED, SOURCE_REPORTED, CORROBORATED, VERIFIED, ACTIVE, DISPUTED, SUPERSEDED, REFUTED.
         Automatically resolves contradictions by superseding prior exclusive facts.
         """
         now = datetime.now(timezone.utc).isoformat()
@@ -158,6 +172,7 @@ class SemanticGraphMemory:
         norm_subj = subject.strip()
         norm_pred = predicate.upper().strip().replace(" ", "_")
         norm_obj = obj.strip()
+        is_verified = verified if verified is not None else (1 if epistemic_status in ["ACTIVE", "CORROBORATED", "VERIFIED"] else 0)
 
         # Ensure entities exist
         self.add_entity(norm_subj, "UNKNOWN_CONCEPT")
@@ -172,7 +187,7 @@ class SemanticGraphMemory:
                     SELECT triple_id, object_name FROM semantic_triples 
                     WHERE LOWER(subject_name) = LOWER(?) 
                       AND predicate = ? 
-                      AND epistemic_status = 'ACTIVE'
+                      AND epistemic_status IN ('ACTIVE', 'CORROBORATED', 'VERIFIED')
                       AND LOWER(object_name) != LOWER(?)
                 """, (norm_subj, norm_pred, norm_obj))
                 old_rows = cursor.fetchall()
@@ -187,28 +202,39 @@ class SemanticGraphMemory:
             # Check if this exact triple already exists actively
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT triple_id FROM semantic_triples 
+                SELECT triple_id, confidence, source_ref, epistemic_status FROM semantic_triples 
                 WHERE LOWER(subject_name) = LOWER(?) 
                   AND predicate = ? 
                   AND LOWER(object_name) = LOWER(?)
-                  AND epistemic_status = 'ACTIVE'
+                  AND epistemic_status NOT IN ('SUPERSEDED', 'REFUTED')
             """, (norm_subj, norm_pred, norm_obj))
             existing = cursor.fetchone()
 
             if existing:
-                # Update confidence and source
+                # Corroborate existing fact if a new independent source confirms it
+                old_status = existing["epistemic_status"]
+                new_status = old_status
+                if old_status in ["EXTRACTED", "SOURCE_REPORTED"] and source_ref != existing["source_ref"]:
+                    new_status = "CORROBORATED"
+                    is_verified = 1
+
                 conn.execute("""
                     UPDATE semantic_triples 
-                    SET confidence = MAX(confidence, ?), source_ref = ?, session_origin = COALESCE(session_origin, ?)
+                    SET confidence = MIN(0.99, MAX(confidence, ?) + 0.05), 
+                        source_ref = source_ref || ' | ' || ?, 
+                        session_origin = COALESCE(session_origin, ?),
+                        epistemic_status = ?,
+                        verified = ?
                     WHERE triple_id = ?
-                """, (float(confidence), source_ref, session_id, existing["triple_id"]))
+                """, (float(confidence), source_ref, session_id, new_status, is_verified, existing["triple_id"]))
                 triple_id = existing["triple_id"]
+                epistemic_status = new_status
             else:
                 cursor.execute("""
                     INSERT INTO semantic_triples 
                     (subject_name, predicate, object_name, confidence, source_ref, verified, created_at, valid_from, valid_to, session_origin, epistemic_status)
-                    VALUES (?, ?, ?, ?, ?, 1, ?, ?, NULL, ?, 'ACTIVE')
-                """, (norm_subj, norm_pred, norm_obj, float(confidence), source_ref, now, v_from, session_id))
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)
+                """, (norm_subj, norm_pred, norm_obj, float(confidence), source_ref, is_verified, now, v_from, session_id, epistemic_status))
                 triple_id = cursor.lastrowid
 
             conn.commit()
@@ -219,10 +245,23 @@ class SemanticGraphMemory:
             "predicate": norm_pred,
             "object": norm_obj,
             "confidence": confidence,
-            "epistemic_status": "ACTIVE",
+            "epistemic_status": epistemic_status,
+            "verified": bool(is_verified),
             "superseded_prior_facts": superseded_count,
             "valid_from": v_from
         }
+
+    def corroborate_fact(self, subject: str, predicate: str, obj: str, source_ref: str = "Secondary Corroboration") -> Dict[str, Any]:
+        """Upgrades an unverified or extracted fact to CORROBORATED/VERIFIED status upon secondary evidence."""
+        return self.add_temporal_fact(
+            subject=subject,
+            predicate=predicate,
+            obj=obj,
+            confidence=0.95,
+            source_ref=source_ref,
+            epistemic_status="CORROBORATED",
+            verified=1
+        )
 
     def add_fact(
         self,
@@ -233,7 +272,7 @@ class SemanticGraphMemory:
         source_ref: str = "Autonomous Ingestion"
     ) -> Dict[str, Any]:
         """Backward-compatible wrapper for legacy callers."""
-        return self.add_temporal_fact(subject, predicate, obj, confidence, source_ref)
+        return self.add_temporal_fact(subject, predicate, obj, confidence, source_ref, epistemic_status="ACTIVE")
 
     def extract_and_ingest_triples_from_text(self, text: str, session_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
@@ -278,9 +317,11 @@ class SemanticGraphMemory:
                                     subject=subj,
                                     predicate=pred,
                                     obj=obj,
-                                    confidence=0.92,
+                                    confidence=0.85,
                                     source_ref="Autonomous Dialogue Ingestion",
-                                    session_id=session_id
+                                    session_id=session_id,
+                                    epistemic_status="EXTRACTED",
+                                    verified=0
                                 )
                                 extracted.append(res)
                             except Exception:
@@ -308,7 +349,7 @@ class SemanticGraphMemory:
 
     def query_temporal_subgraph(self, entity_name: str, active_only: bool = True) -> Dict[str, Any]:
         """Retrieves active vs superseded facts for an entity."""
-        status_filter = "AND epistemic_status = 'ACTIVE'" if active_only else ""
+        status_filter = "AND epistemic_status NOT IN ('SUPERSEDED', 'REFUTED')" if active_only else ""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM semantic_entities WHERE LOWER(entity_name) = LOWER(?)", (entity_name,))
@@ -341,13 +382,13 @@ class SemanticGraphMemory:
         }
 
     def find_multi_hop_path(self, start_entity: str, target_entity: str, max_depth: int = 3) -> Optional[List[Dict[str, Any]]]:
-        """Discovers relational reasoning paths connecting two concepts across ACTIVE facts."""
+        """Discovers relational reasoning paths connecting two concepts across valid facts."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT subject_name, predicate, object_name 
                 FROM semantic_triples 
-                WHERE epistemic_status = 'ACTIVE'
+                WHERE epistemic_status NOT IN ('SUPERSEDED', 'REFUTED')
             """)
             edges = cursor.fetchall()
 
@@ -382,7 +423,7 @@ class SemanticGraphMemory:
     def search_knowledge(self, keyword: str, limit: int = 5, active_only: bool = True) -> List[Dict[str, Any]]:
         """Searches across entities and facts matching the keyword."""
         kw = f"%{keyword.lower()}%"
-        status_filter = "AND epistemic_status = 'ACTIVE'" if active_only else ""
+        status_filter = "AND epistemic_status NOT IN ('SUPERSEDED', 'REFUTED')" if active_only else ""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(f"""
@@ -393,6 +434,7 @@ class SemanticGraphMemory:
                 ORDER BY confidence DESC, created_at DESC
                 LIMIT ?
             """, (kw, kw, kw, limit))
+            return [dict(r) for r in cursor.fetchall()]
             return [dict(r) for r in cursor.fetchall()]
 
     def get_stats(self) -> Dict[str, Any]:

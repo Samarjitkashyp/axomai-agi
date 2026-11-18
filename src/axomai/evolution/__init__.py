@@ -1,7 +1,7 @@
 """
 AxomAI Evolution Engine package.
 Provides Reflexion Engine, Autonomous Developer, Failure Detector, Hypothesis Engine,
-Active Researcher, and Master Evolution Manager.
+Active Researcher, Master Evolution Manager, and Domain-Agnostic Experiment Manager.
 """
 
 from axomai.evolution.reflexion_engine import ReflexionEngine, reflexion_engine
@@ -10,6 +10,7 @@ from axomai.evolution.failure_detector import FailureDetector, failure_detector
 from axomai.evolution.hypothesis_engine import HypothesisEngine, hypothesis_engine
 from axomai.evolution.active_researcher import ActiveResearcher, active_researcher
 from axomai.evolution.evolution_manager import EvolutionManager, evolution_manager
+from axomai.evolution.experiment_manager import ExperimentManager, experiment_manager, EvolutionTarget
 
 __all__ = [
     "ReflexionEngine",
@@ -23,5 +24,8 @@ __all__ = [
     "ActiveResearcher",
     "active_researcher",
     "EvolutionManager",
-    "evolution_manager"
+    "evolution_manager",
+    "ExperimentManager",
+    "experiment_manager",
+    "EvolutionTarget"
 ]

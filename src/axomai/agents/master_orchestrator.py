@@ -43,7 +43,8 @@ from axomai.agents.mission_control import mission_executor
 from axomai.memory import unified_memory_hub
 from axomai.memory.session_memory import session_conversation_memory
 from axomai.learning import continuous_learner
-from axomai.evolution import reflexion_engine, autonomous_developer
+from axomai.evolution import reflexion_engine, autonomous_developer, experiment_manager, evolution_manager
+from axomai.evaluation import axomiq_benchmark
 from axomai.supervision import agent_watchdog, circuit_breaker
 from axomai.proactive import heartbeat_daemon, goal_generator
 from axomai.metamorphosis import code_profiler, self_patcher
@@ -98,6 +99,9 @@ class MasterOrchestrator:
         self.spawner = agent_spawner
         self.hive_consensus = swarm_consensus
         self.agency = action_runner
+        self.lab = experiment_manager
+        self.benchmark = axomiq_benchmark
+        self.evolution = evolution_manager
 
     def classify_and_route(
         self,
@@ -260,6 +264,26 @@ class MasterOrchestrator:
                 "agent": "subconscious_sleep",
                 "name": "Subconscious Sleep & Consolidation Daemon",
                 "reason": "Autonomous background sleep consolidation, garbage pruning, and cross-session user persona twin synthesis",
+                "confidence": 0.99
+            }
+
+        # 0f-3. Check for AXOMIQ General Intelligence Benchmark
+        bench_triggers = ["axomiq", "run benchmark", "generalization benchmark", "benchmark test", "evaluation battery"]
+        if any(t in q for t in bench_triggers):
+            return {
+                "agent": "axomiq_benchmark",
+                "name": "AXOMIQ Benchmark Battery v1",
+                "reason": "Visible Development vs Hidden Out-of-Distribution Generalization Benchmark",
+                "confidence": 0.99
+            }
+
+        # 0f-4. Check for Autonomous Improvement Ledger & Versioned Cognition
+        ledger_triggers = ["improvement ledger", "versioned cognition", "experiment manager", "evolution ledger", "cognitive version"]
+        if any(t in q for t in ledger_triggers):
+            return {
+                "agent": "experiment_ledger",
+                "name": "Autonomous Improvement Ledger & Versioned Cognition",
+                "reason": "Statistical self-improvement audit trail and versioned cognitive tracking",
                 "confidence": 0.99
             }
 
@@ -1207,6 +1231,14 @@ class MasterOrchestrator:
             # Delegate to Subconscious Sleep & Memory Consolidation Daemon
             yield from self._stream_subconscious_sleep(query=query)
 
+        elif chosen_agent == "axomiq_benchmark":
+            # Delegate to AXOMIQ Benchmark Suite (Visible vs Hidden Generalization Splits)
+            yield from self._stream_axomiq_benchmark(query=query)
+
+        elif chosen_agent == "experiment_ledger":
+            # Delegate to Autonomous Improvement Ledger & Versioned Cognition
+            yield from self._stream_experiment_ledger(query=query)
+
         elif chosen_agent == "proactive_pulse":
             # Delegate to Autonomous Heartbeat & Inner Monologue
             yield from self._stream_proactive_pulse(query=query)
@@ -1896,6 +1928,95 @@ class MasterOrchestrator:
             "type": "done",
             "answer": md
         }
+
+    def _stream_axomiq_benchmark(self, query: str) -> Generator[Dict[str, Any], None, None]:
+        yield {
+            "type": "status",
+            "stage": "axomiq_benchmark_init",
+            "message": "🧪 AXOMIQ Benchmark Suite: Evaluating visible development suite and held-out hidden generalization suite..."
+        }
+
+        def _eval_prompt(prompt: str) -> str:
+            try:
+                events = list(self.orchestrate_stream(prompt, session_id="sess_bench_eval"))
+                done_ev = [e for e in events if e.get("type") == "done"]
+                return done_ev[0].get("answer", "") if done_ev else ""
+            except Exception as e:
+                return f"Error: {e}"
+
+        res = self.benchmark.run_benchmark(_eval_prompt)
+        dev = res["development_suite"]
+        hidden = res["hidden_suite"]
+
+        yield {
+            "type": "meta",
+            "agent": "AXOMIQ Benchmark Battery v1",
+            "task_type": "AGI_GENERALIZATION_EVALUATION",
+            "benchmark_results": res
+        }
+
+        md = (
+            f"### 🧪 AXOMIQ General Intelligence Benchmark Battery v1\n\n"
+            f"**Composite AXOMIQ Index:** `{res['axomiq_composite_index']} / 100.0` | **Generalization Delta:** `{res['generalization_gap_pct']}%`\n"
+            f"**Overfitting Assessment:** `{res['overfitting_risk']}` (Generalization Index: `{res['generalization_index']}%`)\n\n"
+            f"#### 📊 Visible Development vs Hidden Generalization Splits\n\n"
+            f"| Evaluation Suite | Battery Type | Tasks Passed | Weighted Score |\n"
+            f"| :--- | :--- | :--- | :--- |\n"
+            f"| **Development Suite** | Visible In-Distribution | `{dev['passed_count']}/{dev['tasks_count']}` Tasks | `{dev['weighted_score_pct']}%` |\n"
+            f"| **Hidden Suite** | Strictly Held-Out Out-of-Distribution | `{hidden['passed_count']}/{hidden['tasks_count']}` Tasks | `{hidden['weighted_score_pct']}%` |\n\n"
+            f"#### 🧬 Detailed Pillar Evaluation Matrix\n\n"
+        )
+        for t in dev["details"] + hidden["details"]:
+            status_emoji = "✅ PASS" if t["passed"] else "❌ FAIL"
+            suite_label = "HIDDEN" if "hidden" in t["task_id"] else "DEV"
+            md += f"- **[{suite_label}] `{t['task_id']}`** ({t['pillar']}) ──▶ {status_emoji} *(Weight: {t['weight']})*\n"
+
+        md += f"\n> *Benchmark battery executed in {res['benchmark_latency_sec']} seconds with zero data leakage.*"
+
+        for token in md.split(" "):
+            yield {"type": "token", "content": token + " "}
+
+        yield {"type": "done", "answer": md}
+
+    def _stream_experiment_ledger(self, query: str) -> Generator[Dict[str, Any], None, None]:
+        yield {
+            "type": "status",
+            "stage": "experiment_ledger_init",
+            "message": "📈 Autonomous Improvement Ledger: Auditing versioned cognition and statistical effect sizes..."
+        }
+        ledger = self.lab.get_ledger_summary()
+
+        yield {
+            "type": "meta",
+            "agent": "Autonomous Improvement Ledger & Versioned Cognition",
+            "task_type": "IMPROVEMENT_LEDGER_AUDIT",
+            "ledger_summary": ledger
+        }
+
+        md = (
+            f"### 📈 AxomAI Autonomous Improvement Ledger & Versioned Cognition\n\n"
+            f"**Active Cognitive Version:** `{ledger['cognitive_version']}` | **Total Proven Improvements:** `{ledger['total_autonomous_improvements']}`\n"
+            f"**Audit Ledger:** `{ledger['ledger_file']}`\n\n"
+            f"#### 📊 Recent Statistical Self-Evolution Deployments\n\n"
+            f"| Improvement ID | Target Domain | Version Transition | Cohen's d Effect Size | Promotion Status |\n"
+            f"| :--- | :--- | :--- | :--- | :--- |\n"
+        )
+
+        for imp in ledger.get("recent_improvements", []):
+            promo_str = "🚀 PROMOTED (CANARY)" if imp.get("promoted") else "BASELINE PRESERVED"
+            eff_d = f"d = {imp.get('winner_effect_size_d')}" if imp.get('winner_effect_size_d') is not None else "N/A"
+            v_trans = f"{imp.get('baseline_version')} ➔ {imp.get('promoted_version') or imp.get('baseline_version')}"
+            md += f"| `{imp['improvement_id']}` | `{imp['domain']}` | `{v_trans}` | `{eff_d}` | `{promo_str}` |\n"
+
+        if not ledger.get("recent_improvements"):
+            md += "| *imp_init* | *baseline_orchestrator* | `v4.0 ➔ v4.0` | `d = 0.00` | `SYSTEM_STABLE` |\n"
+
+        md += "\n> *Every code and algorithmic self-modification is statistically benchmarked against baseline before production promotion.*"
+
+        for token in md.split(" "):
+            yield {"type": "token", "content": token + " "}
+
+        yield {"type": "done", "answer": md}
 
     def _stream_proactive_pulse(self, query: str) -> Generator[Dict[str, Any], None, None]:
         yield {

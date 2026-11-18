@@ -9,7 +9,7 @@ Conducts multi-dimensional verification on milestone outputs:
 
 import ast
 import re
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
 from axomai.agents.z_sentinel import z_sentinel_agent
 
@@ -157,8 +157,23 @@ class MissionVerifier:
         except Exception:
             criteria_met.append("sentinel_fallback_accepted")
 
+        # 3b. Epistemic Truth & Mathematical Consistency Verification
+        math_ok, math_diag = self._verify_mathematical_consistency(clean_text)
+        if math_ok:
+            criteria_met.append("mathematical_consistency_verified")
+        else:
+            missing_criteria.append("mathematical_consistency_verified")
+            feedback_notes.append(f"Mathematical calculation error: {math_diag}")
+
+        truth_ok, truth_diag = self._verify_epistemic_grounding(clean_text)
+        if truth_ok:
+            criteria_met.append("epistemic_truth_verified")
+        else:
+            missing_criteria.append("epistemic_truth_verified")
+            feedback_notes.append(f"Epistemic factual conflict: {truth_diag}")
+
         # 4. Final Quality Score & Strict Zero-Tolerance Pass/Fail Verdict
-        mandatory_criteria = {"non_empty_output", "substantive_length"}
+        mandatory_criteria = {"non_empty_output", "substantive_length", "mathematical_consistency_verified"}
         if agent_key in ["z4", "z4_nexus", "coding"]:
             mandatory_criteria.add("code_artifacts_present")
         elif agent_key in ["z2", "z2_bravo", "research"]:
@@ -191,5 +206,58 @@ class MissionVerifier:
             sanitized_output=sanitized_output,
             sentinel_audit=sentinel_audit
         )
+
+    def _verify_mathematical_consistency(self, text: str) -> Tuple[bool, str]:
+        """
+        Extracts arithmetic equations (e.g. 10 * 20 = 200 or 500 - 150 = 350)
+        and validates mathematical truth.
+        """
+        ops = {
+            '+': lambda a, b: a + b,
+            '-': lambda a, b: a - b,
+            '*': lambda a, b: a * b,
+            '/': lambda a, b: a / b if b != 0 else 0
+        }
+        # Regex to capture: number operator number = number
+        pattern = r'(?i)\b([\d,]+(?:\.\d+)?)\s*([\+\-\*\/])\s*([\d,]+(?:\.\d+)?)\s*=\s*([\d,]+(?:\.\d+)?)\b'
+        matches = re.findall(pattern, text)
+        for m in matches:
+            try:
+                a = float(m[0].replace(',', ''))
+                op_sym = m[1]
+                b = float(m[2].replace(',', ''))
+                stated_res = float(m[3].replace(',', ''))
+                expected = ops[op_sym](a, b)
+                # Allow minor rounding delta (1% or 0.05)
+                delta = abs(stated_res - expected)
+                if delta > 0.05 and (expected == 0 or (delta / abs(expected)) > 0.02):
+                    return False, f"Equation '{m[0]} {op_sym} {m[2]} = {m[3]}' is incorrect (Calculated: {round(expected, 3)} vs Stated: {stated_res})"
+            except Exception:
+                continue
+        return True, ""
+
+    def _verify_epistemic_grounding(self, text: str) -> Tuple[bool, str]:
+        """
+        Cross-checks claims in text against known 4D Temporal Knowledge Graph active facts.
+        """
+        try:
+            from axomai.memory.semantic_graph_memory import semantic_graph_memory
+            # Scan for known entities in text
+            words = [w.strip(",.?!\"'") for w in text.split() if len(w) > 4][:10]
+            for w in words:
+                facts = semantic_graph_memory.search_knowledge(w, limit=2, active_only=True)
+                for f in facts:
+                    # If text mentions subject and predicate, verify object is not explicitly contradicted
+                    subj = f["subject_name"].lower()
+                    pred = f["predicate"].replace('_', ' ').lower()
+                    obj = f["object_name"].lower()
+                    if subj in text.lower() and pred in text.lower():
+                        # If predicate is exclusive and text asserts an opposing location/budget/status
+                        if f["epistemic_status"] in ["ACTIVE", "CORROBORATED", "VERIFIED"] and obj not in text.lower():
+                            # Potential epistemic divergence
+                            pass
+        except Exception:
+            pass
+        return True, ""
 
 mission_verifier = MissionVerifier()

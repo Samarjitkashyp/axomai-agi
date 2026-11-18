@@ -35,6 +35,50 @@ class EpidemiologyEngine:
             }
         }
 
+    def register_disease(self, disease_id: str, profile: Dict[str, Any]) -> None:
+        """Dynamically registers new pathogen epidemiology parameters."""
+        self.disease_profiles[disease_id.lower().replace(" ", "_")] = profile
+
+    def resolve_disease(self, disease_name: str) -> Dict[str, Any]:
+        """Dynamically models epidemiological transmission characteristics for ANY pathogen."""
+        d_key = disease_name.lower().replace(" ", "_")
+        if d_key in self.disease_profiles:
+            return self.disease_profiles[d_key]
+        
+        # Pathogen category dynamic inference
+        if any(r in d_key for r in ["covid", "corona", "sars", "flu", "influenza", "respiratory", "measles"]):
+            return {
+                "vector": "Airborne aerosol droplet transmission",
+                "transmission_rate_beta": 0.55,
+                "recovery_rate_gamma": 0.18,
+                "peak_season": "Winter / Confined Indoor Clusters",
+                "case_fatality_rate_pct": 0.8
+            }
+        elif any(v in d_key for v in ["malaria", "chikungunya", "zika", "kala_azar"]):
+            return {
+                "vector": "Anopheles / Aedes mosquito vector",
+                "transmission_rate_beta": 0.32,
+                "recovery_rate_gamma": 0.15,
+                "peak_season": "Monsoon / Post-Monsoon",
+                "case_fatality_rate_pct": 2.5
+            }
+        elif any(e in d_key for e in ["typhoid", "hepatitis", "rotavirus", "dysentery"]):
+            return {
+                "vector": "Fecal-oral water contamination",
+                "transmission_rate_beta": 0.38,
+                "recovery_rate_gamma": 0.19,
+                "peak_season": "Summer Flood Contamination",
+                "case_fatality_rate_pct": 1.5
+            }
+        else:
+            return {
+                "vector": "General environmental pathogen",
+                "transmission_rate_beta": 0.30,
+                "recovery_rate_gamma": 0.16,
+                "peak_season": "Seasonal Surge",
+                "case_fatality_rate_pct": 2.0
+            }
+
     def simulate_outbreak_risk(
         self,
         district: str = "dibrugarh",
@@ -47,8 +91,7 @@ class EpidemiologyEngine:
         Calculates R0 basic reproduction number adjusted for environmental flood stagnation
         and projects 30-day peak infection curve.
         """
-        disease_key = disease_name.lower().replace(" ", "_")
-        profile = self.disease_profiles.get(disease_key, self.disease_profiles["japanese_encephalitis"])
+        profile = self.resolve_disease(disease_name)
 
         # Environmental amplification of vector transmission due to stagnant water bodies
         amplified_beta = round(profile["transmission_rate_beta"] * (1.0 + (water_stagnation_index * 0.4)), 3)

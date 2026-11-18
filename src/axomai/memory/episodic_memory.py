@@ -95,6 +95,12 @@ class EpisodicMemory:
         """, defaults)
         conn.commit()
 
+    def clear_all_memory(self) -> None:
+        """Purges all stored episodic experiences to allow clean dynamic operation."""
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM episodic_episodes")
+            conn.commit()
+
     def _tokenize(self, text: str) -> List[str]:
         words = re.findall(r'\b[a-zA-Z0-9_\-]{3,}\b', text.lower())
         stopwords = {"the", "and", "for", "with", "from", "that", "this", "our", "are", "was", "were", "into"}

@@ -3,7 +3,7 @@ Z12 Athena - Global & National Salary Benchmarking & Workforce Sizing Tool.
 Maintains structured compensation bands and headcount models across Tier 1, Tier 2, and Tier 3 markets.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 TIER_SALARY_BANDS = {
     "tier_1_metro": {
@@ -32,8 +32,77 @@ TIER_SALARY_BANDS = {
     }
 }
 
+# Cross-Industry Dynamic Compensation Multipliers
+INDUSTRY_SALARY_FACTORS = {
+    "tech_software": {"entry": 45000, "mid": 95000, "senior": 185000, "lead": 280000, "director": 420000},
+    "data_ai": {"entry": 55000, "mid": 115000, "senior": 210000, "lead": 320000, "director": 500000},
+    "healthcare_pharma": {"entry": 35000, "mid": 75000, "senior": 140000, "lead": 220000, "director": 380000},
+    "civil_epc": {"entry": 30000, "mid": 65000, "senior": 125000, "lead": 195000, "director": 350000},
+    "finance_accounting": {"entry": 32000, "mid": 70000, "senior": 135000, "lead": 210000, "director": 380000},
+    "logistics_supply_chain": {"entry": 25000, "mid": 50000, "senior": 95000, "lead": 150000, "director": 260000},
+    "general_commercial": {"entry": 20000, "mid": 40000, "senior": 75000, "lead": 120000, "director": 200000}
+}
+
 class SalaryBenchmarkEngine:
     """Computes staffing model, headcounts, and monthly wage budgets across market tiers."""
+
+    def benchmark_role(self, role_title: str, location: str = "Tier 2 Hub") -> Dict[str, Any]:
+        """Dynamically benchmarks compensation for ANY professional job role across any location."""
+        r_lower = role_title.lower()
+        loc_lower = location.lower()
+        
+        # Location tier factor
+        if any(c in loc_lower for c in ["mumbai", "delhi", "bengaluru", "bangalore", "london", "singapore", "new york", "san francisco", "tier 1"]):
+            tier_multiplier = 1.35
+            tier_name = "Tier 1 Metro / Global Hub"
+        elif any(c in loc_lower for c in ["rural", "town", "tier 3", "district"]):
+            tier_multiplier = 0.75
+            tier_name = "Tier 3 Regional Market"
+        else:
+            tier_multiplier = 1.0
+            tier_name = "Tier 2 Growth Hub"
+
+        # Industry category matching
+        if any(k in r_lower for k in ["ai", "machine learning", "data scientist", "nlp"]):
+            base_curve = INDUSTRY_SALARY_FACTORS["data_ai"]
+        elif any(k in r_lower for k in ["software", "developer", "engineer", "devops", "cloud", "backend", "frontend"]):
+            base_curve = INDUSTRY_SALARY_FACTORS["tech_software"]
+        elif any(k in r_lower for k in ["doctor", "physician", "pharmacist", "nurse", "medical", "clinical"]):
+            base_curve = INDUSTRY_SALARY_FACTORS["healthcare_pharma"]
+        elif any(k in r_lower for k in ["civil", "structural", "project manager", "site", "epc", "embankment"]):
+            base_curve = INDUSTRY_SALARY_FACTORS["civil_epc"]
+        elif any(k in r_lower for k in ["finance", "accountant", "audit", "treasury", "cfo", "controller"]):
+            base_curve = INDUSTRY_SALARY_FACTORS["finance_accounting"]
+        elif any(k in r_lower for k in ["fleet", "logistics", "supply chain", "warehouse", "freight"]):
+            base_curve = INDUSTRY_SALARY_FACTORS["logistics_supply_chain"]
+        else:
+            base_curve = INDUSTRY_SALARY_FACTORS["general_commercial"]
+
+        # Seniority level detection
+        if any(k in r_lower for k in ["chief", "c-level", "vp", "director", "head"]):
+            base_val = base_curve["director"]
+        elif any(k in r_lower for k in ["lead", "principal", "manager", "staff"]):
+            base_val = base_curve["lead"]
+        elif any(k in r_lower for k in ["senior", "sr", "expert"]):
+            base_val = base_curve["senior"]
+        elif any(k in r_lower for k in ["junior", "associate", "intern", "entry", "fresher"]):
+            base_val = base_curve["entry"]
+        else:
+            base_val = base_curve["mid"]
+
+        median = round(base_val * tier_multiplier)
+        min_salary = round(median * 0.80)
+        max_salary = round(median * 1.30)
+
+        return {
+            "role": role_title.title(),
+            "location": location.title(),
+            "tier_classification": tier_name,
+            "monthly_min_inr": min_salary,
+            "monthly_median_inr": median,
+            "monthly_max_inr": max_salary,
+            "annual_ctc_median_inr": median * 12
+        }
 
     def get_district_staffing_model(self, district: str, sqft: int = 2000) -> Dict[str, Any]:
         d_lower = district.lower()

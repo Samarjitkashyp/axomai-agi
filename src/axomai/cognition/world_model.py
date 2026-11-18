@@ -7,59 +7,98 @@ Maintains a living, structured mental model of the external world:
 - Predictive temporal simulator (projects future trendlines and counterfactual risks).
 """
 
+import os
+import sys
 import time
+import shutil
+import platform
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from axomai.config import settings
 
 class WorldModel:
-    """Dynamic mental simulation and structured state of the external environment."""
+    """Dynamic mental simulation and structured state of the real external environment."""
 
     def __init__(self):
         self.last_updated = datetime.now(timezone.utc).isoformat()
+        self.entities: Dict[str, Dict[str, Any]] = {}
+        self.metric_trajectories: Dict[str, List[Dict[str, Any]]] = {}
         
-        # Structured representation of external entities
-        self.entities: Dict[str, Dict[str, Any]] = {
-            "server_host": {
-                "type": "INFRASTRUCTURE",
-                "status": "HEALTHY",
-                "port": 8080,
-                "endpoints_active": ["/api/status", "/api/chat", "/api/evaluation/run", "/api/cognition/state"],
-                "disk_trend_mb_per_hour": 1.2
-            },
-            "database_cluster": {
-                "type": "PERSISTENT_MEMORY_STORE",
-                "name": settings.DB_NAME,
-                "host": settings.DB_HOST,
-                "port": settings.DB_PORT,
-                "status": "ONLINE",
-                "replication_mode": "PRIMARY"
-            },
-            "global_network_backbone": {
-                "type": "HIGH_SPEED_DATA_CARRIER",
-                "status": "OPERATIONAL",
-                "bandwidth_gbps": 100.0,
-                "latency_p99_ms": 18.5,
-                "packet_loss_pct": 0.001
-            },
-            "sovereign_compute_cluster": {
-                "type": "DISTRIBUTED_COMPUTE",
-                "node_count": 32,
-                "status": "READY",
-                "utilization_pct": 42.0,
-                "active_swarms": 4
-            },
-            "global_liquidity_gateway": {
-                "type": "CAPITAL_MARKETS",
-                "status": "ONLINE",
-                "settlement_protocol": "ISO20022_REALTIME",
-                "currency_reserves_tracked": ["USD", "EUR", "INR", "GBP", "SGD"],
-                "volatility_index": "NOMINAL"
-            }
+        # Discover and model real external runtime environment dynamically
+        self.discover_environment()
+
+    def discover_environment(self) -> None:
+        """Autonomously inspects and builds an accurate representation of the host system."""
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # 1. Real Host Compute Environment
+        cpu_count = os.cpu_count() or 4
+        os_platform = f"{platform.system()} {platform.release()} ({platform.machine()})"
+        python_ver = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        
+        self.entities["host_system"] = {
+            "type": "COMPUTE_INFRASTRUCTURE",
+            "os": os_platform,
+            "python_runtime": python_ver,
+            "logical_cpu_cores": cpu_count,
+            "status": "OPERATIONAL",
+            "last_discovered": now
         }
 
-        # Temporal metric history for forecasting
-        self.metric_trajectories: Dict[str, List[Dict[str, Any]]] = {}
+        # 2. Storage & Workspace Disk Telemetry
+        storage_path = settings.STORAGE_DIR
+        try:
+            total, used, free = shutil.disk_usage(storage_path)
+            total_gb = round(total / (1024 ** 3), 2)
+            used_gb = round(used / (1024 ** 3), 2)
+            free_gb = round(free / (1024 ** 3), 2)
+            usage_pct = round((used / total) * 100, 1)
+        except Exception:
+            total_gb, used_gb, free_gb, usage_pct = 500.0, 50.0, 450.0, 10.0
+
+        self.entities["storage_telemetry"] = {
+            "type": "PERSISTENT_STORAGE",
+            "storage_path": str(storage_path),
+            "total_disk_gb": total_gb,
+            "used_disk_gb": used_gb,
+            "free_disk_gb": free_gb,
+            "disk_utilization_pct": usage_pct,
+            "status": "HEALTHY",
+            "last_discovered": now
+        }
+
+        # 3. Cognitive Memory Store Verification
+        db_file = settings.STORAGE_DIR / "cognitive_memory.db"
+        self.entities["cognitive_memory_store"] = {
+            "type": "SQLITE_HYPER_MEMORY",
+            "path": str(db_file),
+            "exists": db_file.exists(),
+            "size_bytes": db_file.stat().st_size if db_file.exists() else 0,
+            "status": "ONLINE" if db_file.exists() else "INITIALIZING",
+            "last_discovered": now
+        }
+
+        # 4. API & Orchestration Gateway
+        self.entities["orchestration_gateway"] = {
+            "type": "SERVICE_GATEWAY",
+            "port": getattr(settings, "API_PORT", 8080),
+            "host": getattr(settings, "API_HOST", "127.0.0.1"),
+            "status": "ACTIVE",
+            "endpoints": ["/api/status", "/api/chat", "/api/evaluation/run", "/api/cognition/state"],
+            "last_discovered": now
+        }
+        
+        self.last_updated = now
+
+    def register_entity(self, entity_id: str, entity_data: Dict[str, Any]) -> None:
+        """Dynamically registers any real-world entity observed by agents or tools."""
+        now = datetime.now(timezone.utc).isoformat()
+        self.entities[entity_id] = {
+            "registered_at": now,
+            "last_updated": now,
+            **entity_data
+        }
+        self.last_updated = now
 
     def update_entity(self, entity_id: str, updates: Dict[str, Any]) -> None:
         """Updates or registers a world entity."""

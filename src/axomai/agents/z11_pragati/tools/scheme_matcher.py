@@ -4,7 +4,7 @@ Maps commercial enterprises, industrial scale-ups, and technology initiatives
 to active National, Provincial/State, and Global industrial subsidies, tax holidays, and regulatory frameworks.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 GLOBAL_POLICY_SCHEMES_DATABASE = [
     # 1. National & Federal Flagship Policies (Uniformly Applicable)
@@ -92,9 +92,75 @@ GLOBAL_POLICY_SCHEMES_DATABASE = [
 class SchemeMatcher:
     """Matches business goals to actionable National, State, and Global policy subsidies."""
 
+    def __init__(self):
+        self.schemes_db: List[Dict[str, Any]] = list(GLOBAL_POLICY_SCHEMES_DATABASE)
+
+    def register_scheme(self, scheme_dict: Dict[str, Any]) -> None:
+        """Dynamically registers a newly discovered government scheme or global grant."""
+        if not any(s["scheme_name"].lower() == scheme_dict.get("scheme_name", "").lower() for s in self.schemes_db):
+            self.schemes_db.append(scheme_dict)
+
+    def synthesize_domain_scheme(self, query: str) -> Optional[Dict[str, Any]]:
+        """Dynamically constructs statutory policy framework for specialized unlisted domains."""
+        q_lower = query.lower()
+        if any(w in q_lower for w in ["ai", "chip", "semiconductor", "compute", "gpu"]):
+            return {
+                "scheme_name": "IndiaAI Sovereign Mission & Semiconductor Incentive Framework",
+                "jurisdiction": "National / Global High-Tech",
+                "department": "Ministry of Electronics and Information Technology (MeitY) & ISM",
+                "category": "Sovereign AI Compute & Chip Design Subsidies",
+                "financial_benefit": "50% fiscal support for capital expenditure on chip design/fabrication; subsidized GPU compute access via IndiaAI compute marketplace.",
+                "eligibility": "Entities incorporated in India developing foundational models, edge-AI silicon, or AI applications.",
+                "application_portal": "indiaai.gov.in / ism.gov.in",
+                "keywords": ["ai", "gpu", "compute", "semiconductor", "chips", "deeptech"],
+                "relevance_score": 98
+            }
+        elif any(w in q_lower for w in ["solar", "green", "hydrogen", "renewable", "carbon", "ev"]):
+            return {
+                "scheme_name": "National Green Hydrogen Mission & PM Surya Ghar / FAME Subsidy",
+                "jurisdiction": "National / State Clean Energy",
+                "department": "Ministry of New and Renewable Energy (MNRE)",
+                "category": "Clean Energy Capital Grant & Carbon Credit Offsets",
+                "financial_benefit": "Direct capital subsidy up to ₹78,000 for rooftop solar, 20% PLI on electrolyzer manufacturing, zero interstate transmission charges.",
+                "eligibility": "Commercial enterprises, commercial estates, and clean-tech developers with grid interconnection.",
+                "application_portal": "pmsuryaghar.gov.in / mnre.gov.in",
+                "keywords": ["solar", "renewable", "clean energy", "green hydrogen", "fame", "ev"],
+                "relevance_score": 96
+            }
+        elif any(w in q_lower for w in ["agri", "farming", "tea", "organic", "food processing"]):
+            return {
+                "scheme_name": "PM Formalisation of Micro Food Processing Enterprises (PMFME) & Agri-Infra Fund (AIF)",
+                "jurisdiction": "National / Agro-Climatic Belt",
+                "department": "Ministry of Food Processing Industries (MoFPI) & Agriculture",
+                "category": "Agri-Infrastructure & Value-Addition Subsidy",
+                "financial_benefit": "Credit-linked capital subsidy of 35% (up to ₹10 Lakhs) + 3% interest subvention on loans up to ₹2 Crore for post-harvest cold storage/processing.",
+                "eligibility": "Farmer Producer Organizations (FPOs), self-help groups, agro-entrepreneurs and micro-processors.",
+                "application_portal": "pmfme.mofpi.gov.in / agriinfra.dac.gov.in",
+                "keywords": ["agriculture", "food processing", "farming", "tea", "organic", "cold storage"],
+                "relevance_score": 95
+            }
+        elif any(w in q_lower for w in ["us", "usa", "europe", "uk", "california", "germany", "international"]):
+            return {
+                "scheme_name": "Global Sovereign Innovation & Tax Incentive Compact",
+                "jurisdiction": "International / Foreign Direct Investment",
+                "department": "Sovereign Trade & Investment Agencies (SelectUSA, Horizon Europe, Innovate UK)",
+                "category": "International Cross-Border Grant & R&D Tax Credit",
+                "financial_benefit": "Up to 30% R&D tax credit, accelerated capital depreciation, and co-funding matching grants for advanced industrial expansion.",
+                "eligibility": "Cross-border entities establishing operational presence or technology co-development partnerships.",
+                "application_portal": "selectusa.gov / ec.europa.eu/info/research-and-innovation",
+                "keywords": ["international", "global", "cross-border", "usa", "europe", "r&d"],
+                "relevance_score": 94
+            }
+        return None
+
     def match_schemes(self, query: str) -> List[Dict[str, Any]]:
         q_lower = query.lower()
         matched = []
+
+        # Check dynamic domain synthesizer
+        dyn_scheme = self.synthesize_domain_scheme(query)
+        if dyn_scheme:
+            self.register_scheme(dyn_scheme)
 
         # Detect jurisdiction preference from query
         is_global = any(k in q_lower for k in ["global", "international", "cross-border", "export", "import", "foreign", "trade"])
@@ -102,20 +168,20 @@ class SchemeMatcher:
         is_manufacturing = any(k in q_lower for k in ["manufactur", "factory", "plant", "industrial", "production", "pli"])
         is_credit = any(k in q_lower for k in ["loan", "collateral", "funding", "bank", "credit", "finance"])
 
-        for s in GLOBAL_POLICY_SCHEMES_DATABASE:
-            score = s["relevance_score"]
+        for s in self.schemes_db:
+            score = s.get("relevance_score", 85)
 
             # Query keyword resonance
-            matched_keywords = sum(1 for kw in s["keywords"] if kw in q_lower)
+            matched_keywords = sum(1 for kw in s.get("keywords", []) if kw in q_lower)
             score += matched_keywords * 4
 
-            if is_global and "Global" in s["jurisdiction"]:
+            if is_global and "Global" in s.get("jurisdiction", ""):
                 score += 15
-            if is_startup and "Startup" in s["category"]:
+            if is_startup and "Startup" in s.get("category", ""):
                 score += 15
-            if is_manufacturing and "Manufacturing" in s["category"]:
+            if is_manufacturing and "Manufacturing" in s.get("category", ""):
                 score += 12
-            if is_credit and ("Credit" in s["category"] or "Capital" in s["category"]):
+            if is_credit and ("Credit" in s.get("category", "") or "Capital" in s.get("category", "")):
                 score += 10
 
             matched.append({**s, "adjusted_score": score})

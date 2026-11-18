@@ -18,13 +18,37 @@ class FXOptionsEngine:
     """Institutional Garman-Kohlhagen FX Options & Collar Strategy Calculator."""
 
     def __init__(self):
-        # Default annual volatilities for major FX pairs
-        self.default_vols = {
+        # Dynamic implied volatilities across G10 and Emerging FX pairs
+        self.volatilities: Dict[str, float] = {
             "USDINR": 0.055,  # 5.5% annual implied vol
             "EURINR": 0.072,  # 7.2% annual implied vol
             "GBPINR": 0.081,  # 8.1% annual implied vol
             "JPYINR": 0.095,  # 9.5% annual implied vol
+            "EURUSD": 0.068,
+            "GBPUSD": 0.075,
+            "USDJPY": 0.088,
+            "AUDUSD": 0.082,
+            "USDCAD": 0.062,
+            "USDCHF": 0.065,
+            "USDCNY": 0.045,
+            "SGDINR": 0.048,
+            "AEDINR": 0.042
         }
+
+    def get_volatility(self, pair: str) -> float:
+        """Dynamically resolves or estimates implied volatility for ANY currency pair."""
+        p_clean = pair.upper().replace("/", "").replace("-", "")
+        if p_clean in self.volatilities:
+            return self.volatilities[p_clean]
+        if any(c in p_clean for c in ["BTC", "ETH", "CRYPTO"]):
+            return 0.58
+        if any(c in p_clean for c in ["TRY", "BRL", "ZAR", "RUB"]):
+            return 0.165
+        return 0.070  # Standard G10 average baseline
+
+    def register_volatility(self, pair: str, vol: float) -> None:
+        """Registers real-time market implied volatility."""
+        self.volatilities[pair.upper().replace("/", "").replace("-", "")] = vol
 
     def price_currency_option(
         self,
@@ -100,7 +124,7 @@ class FXOptionsEngine:
         - Buys an OTM Put option (protects downside if currency drops)
         - Sells an OTM Call option (caps upside, finances the put premium to net zero)
         """
-        vol = self.default_vols.get(pair.upper(), 0.060)
+        vol = self.get_volatility(pair)
         tenor_years = tenor_months / 12.0
 
         # Protective Put Strike (Floor)

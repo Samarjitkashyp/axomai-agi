@@ -134,6 +134,13 @@ class SemanticGraphMemory:
         """, [(t[0], t[1], t[2], t[3], t[4], now, now) for t in triples])
         conn.commit()
 
+    def clear_all_memory(self) -> None:
+        """Purges all entities and triples to allow clean dynamic operation."""
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM semantic_triples")
+            conn.execute("DELETE FROM semantic_entities")
+            conn.commit()
+
     def add_entity(self, name: str, entity_type: str = "UNKNOWN_CONCEPT", attributes: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         now = datetime.now(timezone.utc).isoformat()
         clean_name = name.strip()

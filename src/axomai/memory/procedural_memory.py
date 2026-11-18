@@ -80,6 +80,13 @@ class ProceduralMemory:
         """, skills)
         conn.commit()
 
+    def clear_all_skills(self) -> None:
+        """Purges all stored procedural skills to allow clean dynamic operation."""
+        self._runtime_cache.clear()
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM procedural_skills")
+            conn.commit()
+
     def register_skill(
         self,
         skill_name: str,

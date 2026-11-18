@@ -133,6 +133,21 @@ class MasterOrchestrator:
                 "confidence": 0.99
             }
 
+        # Check for Domain / Hosting / Business Roadmap & Advisory Guidance (Non-coding)
+        advisory_guidance_patterns = [
+            r'\b(domain|hosting|nameserver|nameservers|dns|cpanel|hpanel|wordpress|ssl)\b',
+            r'\b(ab kya karu|ab kya karna|agla step|next step|purchase kar liya|khareed liya|le liya)\b',
+            r'\b(kaha se lu|kaha se lena|kaise shuru karu|budget|suggest|recommend|guidance)\b'
+        ]
+        has_explicit_code = any(k in q for k in ["code", "script", "function", "syntax", "pip install", "npm install", "debug", "traceback", "write code", "code likh", "def ", "import "])
+        if any(re.search(p, q) for p in advisory_guidance_patterns) and not has_explicit_code:
+            return {
+                "agent": "assistant",
+                "name": "AxomAI Strategic Advisor",
+                "reason": "Business setup, domain/hosting onboarding & strategic guidance",
+                "confidence": 0.98
+            }
+
         # Check for Z4 Nexus Reverse Engineering & Web App Cloning Intent
         if any(k in q for k in ["reverse engineer", "clone website", "clone app", "app cloner", "reconstruct website"]):
             return {
@@ -788,8 +803,8 @@ class MasterOrchestrator:
             try:
                 classify_prompt = (
                     "You are the AxomAI Master Routing Engine. Classify this user query into exactly one agent:\n"
-                    "- 'assistant': General conversation, greetings, casual chat, Q&A, general knowledge, explanations, science, history, creative writing, advice.\n"
-                    "- 'z4': Software engineering, writing code in ANY programming language (Python, JavaScript, TypeScript, React, Next.js, C++, Java, Rust, Go, SQL, HTML/CSS, etc.), debugging, algorithms, architecture.\n"
+                    "- 'assistant': General conversation, greetings, casual chat, Q&A, general knowledge, explanations, advice, business setup, domain and hosting guidance, next steps roadmaps.\n"
+                    "- 'z4': EXPLICIT software programming, writing runnable source code in programming languages (Python, JavaScript, TypeScript, C++, Rust, SQL), debugging code errors, refactoring existing code, or writing scripts.\n"
                     "- 'z1': Analyzing uploaded documents, PDFs, Excel sheets, images, OCR, visual extraction.\n"
                     "- 'z2': Live web search, news, competitor market share, real-time current events.\n"
                     "- 'z3': Database SQL queries, sales tables, revenue forecasting, what-if sensitivity simulations, anomalies.\n"
@@ -1644,6 +1659,13 @@ class MasterOrchestrator:
             "   - Perform live autonomous web research, portal crawling, and market intelligence.\n"
             "   - Query enterprise databases, forecast trends, and simulate business scenarios.\n"
             "   - Assist with coding, software architecture, writing, brainstorming, and any general inquiry.\n"
+            "5. COMMON SENSE HUMAN REASONING (NEVER DUMP UNSOLICITED CODE):\n"
+            "   - NEVER assume the user wants code unless they explicitly ask to write code. Never dump boilerplate virtual environments, package installs, or Big-O complexity on non-coding queries.\n"
+            "   - When a user asks about next steps after buying a domain/hosting, provide human common-sense onboarding:\n"
+            "     * Step 1: Connect Domain to Hosting via Nameservers/DNS.\n"
+            "     * Step 2: Enable Free SSL Certificate (HTTPS).\n"
+            "     * Step 3: Choose Website Path (1-Click WordPress install for fast professional store OR File Manager/FTP upload for custom code).\n"
+            "   - Ask helpful, friendly questions to understand the user's specific provider and goals before recommending technical paths.\n"
             "Always provide clean, accurate, and beautifully structured responses with GitHub markdown."
         )
 
@@ -1665,6 +1687,24 @@ class MasterOrchestrator:
             if cog_profile.language == "hinglish":
                 if any(g in q_lower for g in ["hi", "hello", "hey", "namaste", "pranam", "kaise ho", "kya haal"]):
                     full_answer = "Namaste! Main AxomAI hoon, aapka autonomous AI partner. Main aapki kya madad kar sakta hoon? Aap mujhse koi bhi business, technology, coding ya market research ka sawal pooch sakte hain!"
+                elif any(k in q_lower for k in ["domain", "hosting", "purchase kar liya", "khareed liya", "le liya", "ab kya karu", "ab kya karna", "nameserver"]):
+                    full_answer = (
+                        "Badhai ho! Domain aur hosting purchase karne ke baad agla step seedhe coding karna nahi hota, balki pehle setup complete karna hota hai. Yahan aapka **step-by-step practical roadmap** hai:\n\n"
+                        "---\n\n"
+                        "### 1. Domain ko Hosting se Connect karein (DNS / Nameservers)\n"
+                        "- Agar aapne domain aur hosting **ek hi company** se li hai (jaise dono Hostinger se), toh yeh pehle se connected hoti hai.\n"
+                        "- Agar domain alag jagah se hai (e.g. GoDaddy/Namecheap) aur hosting alag (e.g. Hostinger): Domain dashboard ke DNS settings me jakar hosting ke **Nameservers** (jaise `ns1.hostinger.com`) update karein. Isme 15 se 30 minute lagte hain.\n\n"
+                        "### 2. Free SSL Certificate Active karein (HTTPS Lock)\n"
+                        "- Apne hosting dashboard (cPanel ya hPanel) me login karein.\n"
+                        "- **SSL** section me jakar 'Install Free Let's Encrypt SSL' active karein taaki website par secure green lock lag jaye.\n\n"
+                        "### 3. Website Setup Ka Rasta Chunein (Sabse Zaroori Step)\n"
+                        "Ab aapke paas **do simple options** hain:\n"
+                        "- **Option A (WordPress / No-Code — 90% logo ke liye best):** Hosting dashboard me jakar **'1-Click WordPress Install'** karein. Iske baad aap admin panel se theme aur plugins install karke bina coding ke store ready kar sakte hain.\n"
+                        "- **Option B (Custom Code Upload):** Agar aapne pehle se HTML/CSS ya React code banaya hua hai, toh hosting ke **File Manager** me jakar `public_html` folder me files upload karein.\n\n"
+                        "---\n\n"
+                        "🤝 **Aap mujhe batayein:**\n"
+                        "Aapne hosting kis provider se li hai (Hostinger, Bluehost, ya koi aur)? Aur aap website **WordPress** par banana chahte hain ya **khud code** karke? Uske hisaab se mai aapko exact click-by-click guide karta hoon!"
+                    )
                 elif active_facts and any(k in q_lower for k in ["where", "kaha", "price", "budget", "strategy", "location", "relocate", "export", "status", "target", "cost"]):
                     fact_lines = [f"- **{f['subject_name']}** {f['predicate'].replace('_', ' ').lower()}: `{f['object_name']}`" for f in active_facts[:3]]
                     full_answer = (

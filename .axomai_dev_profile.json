@@ -1,21 +1,16 @@
 {
-  "preferred_languages": [
-    "Python",
-    "TypeScript",
-    "JavaScript"
-  ],
-  "backend_framework": "FastAPI",
-  "frontend_framework": "React (Next.js App Router)",
-  "styling": "Tailwind CSS",
-  "architecture_pattern": "Modular Clean Architecture with Type Safety",
-  "naming_convention": "snake_case for Python, camelCase for JS/TS, PascalCase for Types/Classes",
-  "test_runner": "Pytest / Vitest",
-  "indentation": "4 spaces for Python, 2 spaces for JS/TS",
+  "preferred_languages": [],
+  "backend_framework": null,
+  "frontend_framework": null,
+  "styling": null,
+  "architecture_pattern": "Clean Modular Architecture",
+  "naming_convention": "Standard language idiomatic conventions",
+  "test_runner": "Standard test runner",
+  "indentation": "Standard",
   "strict_typing": true,
-  "docstrings": "Google / PEP 257 format",
+  "docstrings": "Standard docstrings",
   "custom_instructions": [
     "Never use placeholder TODOs.",
-    "Always write complete, production-ready code with error handling.",
-    "Include Big-O time and space complexity analysis for algorithms."
+    "Always write clean, complete, reliable code with proper error handling."
   ]
 }

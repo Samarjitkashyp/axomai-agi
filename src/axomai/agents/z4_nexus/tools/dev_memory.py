@@ -12,20 +12,19 @@ from typing import Dict, Any, Optional
 PROFILE_FILE = Path("e:/axomai_agi/.axomai_dev_profile.json")
 
 DEFAULT_PROFILE = {
-    "preferred_languages": ["Python", "TypeScript", "JavaScript"],
-    "backend_framework": "FastAPI",
-    "frontend_framework": "React (Next.js App Router)",
-    "styling": "Tailwind CSS",
-    "architecture_pattern": "Modular Clean Architecture with Type Safety",
-    "naming_convention": "snake_case for Python, camelCase for JS/TS, PascalCase for Types/Classes",
-    "test_runner": "Pytest / Vitest",
-    "indentation": "4 spaces for Python, 2 spaces for JS/TS",
+    "preferred_languages": [],
+    "backend_framework": None,
+    "frontend_framework": None,
+    "styling": None,
+    "architecture_pattern": "Clean Modular Architecture",
+    "naming_convention": "Standard language idiomatic conventions",
+    "test_runner": "Standard test runner",
+    "indentation": "Standard",
     "strict_typing": True,
-    "docstrings": "Google / PEP 257 format",
+    "docstrings": "Standard docstrings",
     "custom_instructions": [
         "Never use placeholder TODOs.",
-        "Always write complete, production-ready code with error handling.",
-        "Include Big-O time and space complexity analysis for algorithms."
+        "Always write clean, complete, reliable code with proper error handling."
     ]
 }
 
@@ -65,13 +64,22 @@ class DevMemory:
     def format_style_prompt(self) -> str:
         """Formats developer profile into system prompt injection string."""
         p = self.get_profile()
+        stack_parts = []
+        if p.get("backend_framework"):
+            stack_parts.append(p.get("backend_framework"))
+        if p.get("frontend_framework"):
+            stack_parts.append(p.get("frontend_framework"))
+        if p.get("styling"):
+            stack_parts.append(f"({p.get('styling')})")
+
+        stack_line = f"- Preferred Stack: {' + '.join(stack_parts)}\n" if stack_parts else ""
+        if not stack_line and not p.get("preferred_languages"):
+            return ""
+
         return (
             "--- User Personalized Developer Profile ---\n"
-            f"- Architecture: {p.get('architecture_pattern')}\n"
-            f"- Preferred Stack: {p.get('backend_framework')} + {p.get('frontend_framework')} ({p.get('styling')})\n"
-            f"- Style: {p.get('naming_convention')}, Indent: {p.get('indentation')}\n"
-            f"- Strict Typing: {p.get('strict_typing')}\n"
-            f"- Custom Directives: {'; '.join(p.get('custom_instructions', []))}\n"
+            f"{stack_line}"
+            f"- Architecture: {p.get('architecture_pattern', 'Clean Architecture')}\n"
             "-------------------------------------------"
         )
 

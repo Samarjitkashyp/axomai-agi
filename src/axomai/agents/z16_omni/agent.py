@@ -16,6 +16,7 @@ from axomai.agents.z16_omni.tools.geospatial_impact_and_routing import geospatia
 from axomai.agents.z16_omni.tools.disaster_telemetry_feed import disaster_telemetry_feed
 from axomai.agents.z16_omni.tools.multi_site_comparator import multi_site_comparator
 from axomai.agents.z16_omni.tools.river_discharge_and_elevation import river_discharge_elevation
+from axomai.agents.z16_omni.tools.solar_wind_and_energy_grid import solar_wind_energy_grid
 from axomai.agents.z16_omni.tools.geospatial_engine import geospatial_engine
 from axomai.agents.z16_omni.tools.satellite_analytics import satellite_analytics
 from axomai.agents.z16_omni.tools.sar_radar_analytics import sar_radar_analytics
@@ -101,6 +102,10 @@ class Z16OmniAgent:
         )
         disaster_feed = disaster_telemetry_feed.fetch_seismic_and_aqi(lat, lng, target_loc)
         hydro_elev = river_discharge_elevation.fetch_hydrology_and_elevation(lat, lng, target_loc)
+        energy_risk = solar_wind_energy_grid.evaluate_energy_and_composite_risk(
+            lat=lat, lng=lng, target_location=target_loc,
+            sar_flood=sar_flood, thermal_data=thermal_data, disaster_feed=disaster_feed
+        )
         multi_site = multi_site_comparator.compare_sites(query)
 
         # 7. Optional Uploaded Aerial/Satellite Image CV Analysis
@@ -137,6 +142,7 @@ class Z16OmniAgent:
             "operational_impact": impact_res,
             "seismic_and_aqi": disaster_feed,
             "river_discharge_and_elevation": hydro_elev,
+            "solar_wind_and_composite_risk": energy_risk,
             "multi_site_comparison": multi_site,
             "uploaded_image_cv": uploaded_cv,
             "optical_indices": sat_indices,
@@ -155,6 +161,7 @@ class Z16OmniAgent:
                 "geo_extractor_and_live_apis", "gis_map_export_builder",
                 "change_detection_engine", "geospatial_impact_routing",
                 "disaster_telemetry_feed", "multi_site_comparator", "river_discharge_elevation",
+                "solar_wind_energy_grid",
                 "geospatial_engine", "satellite_analytics", "sar_radar_analytics",
                 "satellite_cv_counter", "maritime_ais_tracker", "thermal_evaporative_stress"
             ]
@@ -184,6 +191,7 @@ class Z16OmniAgent:
             f"- 📊 **[Download 7-Day Telemetry & Port Workbook (.xlsx)]({excel_res['download_url']})**\n"
             f"- 🧭 **[Download QGIS / ArcGIS Vector Layer (.geojson)]({geojson_res['download_url']})**\n\n"
             f"#### ⚡ Operational, Hydrological, Seismic & Atmospheric Telemetry\n"
+            f"- **Composite Geo-Risk Score:** `{energy_risk['composite_geo_risk_score']}/100` (`{energy_risk['composite_risk_grade']}`) | **Solar PV Yield:** `{energy_risk['solar_pv_yield_kwh_kwp_day']} kWh/kWp/day` | **Wind Gusts:** `{energy_risk['wind_gusts_10m_kmh']} km/h` (`{energy_risk['wind_safety_tier']}`)\n"
             f"- **Terrain & River Discharge (GloFAS):** Elevation `{hydro_elev['elevation_meters_asl']} m ASL` | Discharge `{hydro_elev['river_discharge_today_m3s']} m³/s` (7D Max `{hydro_elev['river_discharge_7d_max_m3s']} m³/s` — `{hydro_elev['hydro_flood_tier']}`)\n"
             f"- **30D Rain Surge:** `{change_30d['precip_surge_pct']:+.1f}%` ({change_30d['change_verdict']})\n"
             f"- **Seismic (500km USGS):** `{disaster_feed['earthquake_count_500km']} events` (Max M`{disaster_feed['max_magnitude_500km']}` — `{disaster_feed['seismic_tier']}`)\n"

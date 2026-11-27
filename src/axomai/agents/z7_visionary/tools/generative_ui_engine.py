@@ -8,21 +8,67 @@ Generates self-contained interactive HTML/JS widgets tailored to the user's requ
 5. ROI_SIMULATOR (Enterprise Automation ROI Calculator)
 """
 
-from typing import Dict, Any
+import uuid
+from typing import Dict, Any, Optional
+from axomai.config import settings
+from axomai.core.llm import llm_brain
 
 
 class GenerativeUIEngine:
-    """Produces dynamic, executable HTML/JS micro-app components."""
+    """Produces dynamic, executable HTML/JS micro-app components & arbitrary prompt-to-code apps."""
 
-    def generate_widget(self, widget_type: str = "ROI_SIMULATOR", project_name: str = "AxomAI Interactive App") -> Dict[str, Any]:
+    def __init__(self):
+        self.output_dir = settings.STORAGE_DIR / "generated"
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+    def generate_widget(self, widget_type: str = "ROI_SIMULATOR", project_name: str = "AxomAI Interactive App", raw_query: str = "") -> Dict[str, Any]:
         if widget_type == "ASSAM_LAND_CONVERTER":
-            return self._assam_land_converter(project_name)
+            res = self._assam_land_converter(project_name)
         elif widget_type == "LOAN_SUBSIDY_EMI":
-            return self._loan_subsidy_emi_calculator(project_name)
+            res = self._loan_subsidy_emi_calculator(project_name)
         elif widget_type == "TEA_YIELD_SIMULATOR":
-            return self._tea_yield_simulator(project_name)
+            res = self._tea_yield_simulator(project_name)
         elif widget_type == "KPI_DASHBOARD":
-            return self._kpi_dashboard(project_name)
+            res = self._kpi_dashboard(project_name)
+        elif widget_type == "CUSTOM_DYNAMIC_APP" and raw_query:
+            res = self._compile_arbitrary_micro_app(raw_query, project_name)
+        else:
+            res = self.generate_roi_calculator(project_name)
+
+        # Save standalone downloadable HTML widget
+        fname = f"micro_app_{uuid.uuid4().hex[:8]}.html"
+        fpath = self.output_dir / fname
+        standalone_html = (
+            f"<!DOCTYPE html><html><head><meta charset='UTF-8'><title>{project_name}</title>"
+            f"<script src='https://cdn.tailwindcss.com'></script></head>"
+            f"<body class='bg-slate-950 min-h-screen flex items-center justify-center p-6'>{res['html']}</body></html>"
+        )
+        fpath.write_text(standalone_html, encoding="utf-8")
+        res["download_url"] = f"/api/download/generated/{fname}"
+        res["filename"] = fname
+        return res
+
+    def _compile_arbitrary_micro_app(self, raw_query: str, project_name: str) -> Dict[str, Any]:
+        """Uses LLM to compile an arbitrary custom interactive HTML/Tailwind/JS micro-app."""
+        if llm_brain.is_available:
+            prompt = (
+                f"Build a self-contained interactive HTML + TailwindCSS + inline <script> micro-app widget for:\n"
+                f"Request: '{raw_query}'\n"
+                "Requirements:\n"
+                "- Wrap inside a single <div class='p-4 rounded-xl bg-gray-900 border border-cyan-700 text-white max-w-xl'>.\n"
+                "- Include interactive <input> sliders or number fields with real-time JS calculation.\n"
+                "- Output ONLY raw HTML+JS code (no markdown fences, no explanation)."
+            )
+            try:
+                raw_html = llm_brain.generate("You are an expert Frontend Micro-App Compiler. Output raw HTML only.", prompt, temperature=0.2).strip()
+                if "```html" in raw_html:
+                    raw_html = raw_html.split("```html")[1].split("```")[0].strip()
+                elif "```" in raw_html:
+                    raw_html = raw_html.split("```")[1].split("```")[0].strip()
+                if "<div" in raw_html and "<script" in raw_html:
+                    return {"widget_type": "CUSTOM_DYNAMIC_APP", "html": raw_html, "project_name": project_name}
+            except Exception:
+                pass
         return self.generate_roi_calculator(project_name)
 
     def _assam_land_converter(self, project_name: str) -> Dict[str, Any]:

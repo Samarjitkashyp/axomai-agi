@@ -1,10 +1,8 @@
 """
-Z7 Visionary - Dynamic Presentation, DPR, Excel & Generative UI Extractor.
-Parses natural language prompts to extract project topic, target Assam/Indian district,
-sector theme (Tea, Silk/Handloom, Eco-Tourism, Tech/SaaS, Manufacturing/DPR),
-Govt scheme (CMAAA, UNNATI 2024, PMEGP, NABARD), bilingual Assamese flag,
-Capex/Investment INR amount, and specific UI widget type (Land Converter, EMI/Subsidy,
-Tea Yield, KPI Dashboard, or ROI Simulator).
+Z7 Visionary - Dynamic Presentation, DPR, Excel, White-Label & Generative UI Extractor.
+Extracts topic, Assam district, sector theme, Govt scheme, multi-script language
+(Assamese, Bodo, Bengali, English), Capex INR, White-Label Brand Name/UDYAM/CIN,
+and Generative UI mode (including arbitrary prompt-to-code micro-apps).
 """
 
 import re
@@ -12,31 +10,35 @@ from typing import Dict, Any, Optional
 
 
 class VisionaryQueryExtractor:
-    """Extracts structured presentation, DPR, spreadsheet, and UI app parameters."""
+    """Extracts structured presentation, DPR, spreadsheet, white-label, and UI parameters."""
 
     ASSAM_DISTRICTS = [
         "guwahati", "kamrup", "changsari", "boko", "dibrugarh", "jorhat", "silchar",
         "tinsukia", "nagaon", "tezpur", "sonitpur", "sivasagar", "majuli", "kaziranga",
-        "sualkuchi", "barpeta", "dhubri", "bongaigaon", "lakhimpur", "golaghat", "karimganj"
+        "sualkuchi", "barpeta", "dhubri", "bongaigaon", "lakhimpur", "golaghat", "karimganj",
+        "kokrajhar"
     ]
 
     def parse_visionary_query(self, query: str) -> Dict[str, Any]:
         q_lower = query.lower()
 
-        # 1. Detect Mode (UI Widget vs Deck/DPR/Excel)
+        # 1. Detect Mode (UI Widget vs Deck/DPR/Excel/Docx)
         is_ui_widget = any(k in q_lower for k in [
             "calculator", "roi", "simulator", "generative ui", "interactive widget",
-            "bigha", "katha", "lessa", "land converter", "emi", "dashboard", "micro-app"
+            "bigha", "katha", "lessa", "land converter", "emi", "dashboard", "micro-app",
+            "bill estimator", "yield calculator"
         ])
-        widget_type = "ROI_SIMULATOR"
+        widget_type = "CUSTOM_DYNAMIC_APP"
         if any(k in q_lower for k in ["bigha", "katha", "lessa", "land converter", "assam land"]):
             widget_type = "ASSAM_LAND_CONVERTER"
         elif any(k in q_lower for k in ["emi", "loan", "subsidy", "cmaaa", "pmegp", "dscr"]):
             widget_type = "LOAN_SUBSIDY_EMI"
-        elif any(k in q_lower for k in ["tea", "yield", "garden", "estate"]):
+        elif any(k in q_lower for k in ["tea yield", "tea estate", "plucking"]):
             widget_type = "TEA_YIELD_SIMULATOR"
-        elif any(k in q_lower for k in ["kpi", "dashboard", "metrics", "chart"]):
+        elif any(k in q_lower for k in ["kpi", "dashboard"]):
             widget_type = "KPI_DASHBOARD"
+        elif any(k in q_lower for k in ["roi calculator", "roi simulator"]):
+            widget_type = "ROI_SIMULATOR"
 
         # 2. Detect Sector Theme
         sector = "TECH_BOARDROOM"
@@ -60,14 +62,21 @@ class VisionaryQueryExtractor:
         elif "nabard" in q_lower:
             scheme = "NABARD Agri-Infrastructure & Cold-Chain Subsidy"
 
-        district = "Guwahati (Kamrup Metro)"
+        district = "Guwahati"
         for d in self.ASSAM_DISTRICTS:
             if d in q_lower:
                 district = d.title()
                 break
 
-        # 4. Bilingual Assamese Flag
-        is_bilingual_assamese = any(k in q_lower for k in ["assamese", "axomiya", "asomiya", "অসমীয়া", "bilingual"])
+        # 4. Multi-Script Language Detection (Assamese, Bodo, Bengali, English)
+        language_script = "english"
+        if any(k in q_lower for k in ["assamese", "axomiya", "asomiya", "অসমীয়া"]):
+            language_script = "assamese"
+        elif any(k in q_lower for k in ["bodo", "बड़ो", "btr"]):
+            language_script = "bodo"
+        elif any(k in q_lower for k in ["bengali", "bangla", "বাংলা"]):
+            language_script = "bengali"
+        is_bilingual = language_script != "english" or "bilingual" in q_lower
 
         # 5. Extract Capex / Project Investment (INR Lakhs)
         capex_lakhs = 50.0
@@ -78,7 +87,14 @@ class VisionaryQueryExtractor:
         elif m_lakh:
             capex_lakhs = float(m_lakh.group(1).replace(",", ""))
 
-        # 6. Extract Slide Count & Excel/HTML5 Need
+        # 6. White-Label Brand Kit & UDYAM/CIN Seal Extraction
+        brand_match = re.search(r'(?:brand|company|firm|prepared by|white-label)[:\s]+([A-Za-z0-9\s&\.\-]+?)(?:\s+with|\s+udyam|\s+cin|,|\.|$)', query, re.IGNORECASE)
+        white_label_brand = brand_match.group(1).strip() if brand_match else "AxomAI Sovereign Advisory"
+
+        udyam_match = re.search(r'\b(UDYAM-[A-Z]{2}-\d{2}-\d{7})\b', query, re.IGNORECASE)
+        udyam_seal = udyam_match.group(1).upper() if udyam_match else None
+
+        # 7. Output Formats Needed
         m_slides = re.search(r'(\d{1,2})\s*slides?\b', q_lower)
         target_slides = max(5, min(15, int(m_slides.group(1)))) if m_slides else 8
 
@@ -86,8 +102,10 @@ class VisionaryQueryExtractor:
             "excel", "xlsx", "spreadsheet", "financial model", "dpr", "capex",
             "retail", "branch", "expansion", "budget", "p&l", "dscr", "cmaaa", "unnati", "pmegp"
         ])
+        needs_docx = any(k in q_lower for k in [
+            "docx", "word", "project report", "dpr", "bankable", "sbi", "agvb", "nedfi", "cmaaa", "unnati", "pmegp"
+        ])
 
-        # Clean Topic Title
         clean_title = re.sub(r'^(create|build|make|generate|design|prepare)\s+(a|an|the)?\s*', '', query.strip(), flags=re.IGNORECASE)
         clean_title = clean_title[:70].strip().rstrip(".")
         if len(clean_title) < 5:
@@ -98,10 +116,15 @@ class VisionaryQueryExtractor:
             "sector": sector,
             "scheme": scheme,
             "district": district,
-            "is_bilingual_assamese": is_bilingual_assamese,
+            "language_script": language_script,
+            "is_bilingual": is_bilingual,
+            "is_bilingual_assamese": language_script == "assamese" or is_bilingual,
             "capex_lakhs": capex_lakhs,
+            "white_label_brand": white_label_brand,
+            "udyam_seal": udyam_seal,
             "target_slides": target_slides,
             "needs_excel": needs_excel,
+            "needs_docx": needs_docx,
             "is_ui_widget": is_ui_widget,
             "widget_type": widget_type,
             "raw_query": query

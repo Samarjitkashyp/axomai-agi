@@ -110,7 +110,11 @@ class PPTXBuilder:
         slides_data: List[Dict[str, Any]],
         sector: str = "TECH_BOARDROOM",
         dpr_data: Optional[Dict[str, Any]] = None,
-        bilingual_assamese: bool = False
+        bilingual_assamese: bool = False,
+        bep_chart_path: Optional[str] = None,
+        map_img_path: Optional[str] = None,
+        white_label_brand: str = "AxomAI Sovereign Advisory",
+        udyam_seal: Optional[str] = None
     ) -> Dict[str, Any]:
         theme = SECTOR_THEMES.get(sector, SECTOR_THEMES["TECH_BOARDROOM"])
         bg_rgb = RGBColor(*theme["bg_rgb"])
@@ -145,7 +149,8 @@ class PPTXBuilder:
 
         p2 = tf1.add_paragraph()
         assamese_line = f"\n{theme['assamese_subtitle']}" if bilingual_assamese else ""
-        p2.text = f"\n{subtitle}{assamese_line}\nAxomAI Z7 Visionary • {theme['name']}"
+        seal_txt = f" • UDYAM: {udyam_seal}" if udyam_seal else ""
+        p2.text = f"\n{subtitle}{assamese_line}\n{white_label_brand}{seal_txt} • {theme['name']}"
         p2.font.size = Pt(18)
         p2.font.color.rgb = RGBColor(203, 213, 225)
 
@@ -281,6 +286,23 @@ class PPTXBuilder:
                     p.text = val
                     p.font.size = Pt(14)
                     p.font.color.rgb = RGBColor(255, 255, 255)
+
+        # EMBEDDED HIGH-DPI CHARTS & ASSAM CATCHMENT MAP SLIDES
+        for img_path, slide_title in [
+            (bep_chart_path, "Break-Even Point (BEP) Crossover Chart"),
+            (map_img_path, "Assam Strategic Catchment & Highway Corridor Map")
+        ]:
+            if img_path:
+                s_img = prs.slides.add_slide(blank_layout)
+                s_img.background.fill.solid()
+                s_img.background.fill.fore_color.rgb = bg_rgb
+                ihdr = s_img.shapes.add_textbox(Inches(0.8), Inches(0.4), Inches(11.7), Inches(0.8))
+                ihp = ihdr.text_frame.paragraphs[0]
+                ihp.text = slide_title
+                ihp.font.bold = True
+                ihp.font.size = Pt(26)
+                ihp.font.color.rgb = accent_rgb
+                s_img.shapes.add_picture(img_path, Inches(0.9), Inches(1.3), width=Inches(11.5))
 
         filename = f"deck_{uuid.uuid4().hex[:8]}.pptx"
         file_path = self.output_dir / filename

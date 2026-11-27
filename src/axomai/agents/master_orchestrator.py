@@ -416,10 +416,12 @@ class MasterOrchestrator:
                 "confidence": 0.99
             }
 
-        # Check for Z7 Visionary Intent (PowerPoint, PPTX, Presentation, Generative UI, Calculator)
+        # Check for Z7 Visionary Intent (PowerPoint, PPTX, Assam DPR, Bilingual Slides, Generative UI, Land/EMI Calculators)
         z7_explicit_keywords = [
             "powerpoint", "presentation", "pptx", "create slides", "pitch deck", "slides on",
-            "roi calculator", "simulator widget", "generative ui", "interactive widget"
+            "roi calculator", "simulator widget", "generative ui", "interactive widget",
+            "bigha", "katha", "lessa", "land converter", "emi calculator", "tea yield simulator",
+            "html5 deck", "web deck", "dpr deck", "cmaaa dpr", "unnati dpr", "bankable dpr"
         ]
         if any(k in q for k in z7_explicit_keywords):
             return {

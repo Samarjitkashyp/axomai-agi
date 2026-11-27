@@ -1,158 +1,139 @@
 """
-Z7 Visionary - Autonomous Excel Financial Model Builder Tool.
-Generates styled, multi-tab Microsoft Excel (.xlsx) financial workbooks
-with formatted tables, formulas, and Capex/P&L breakdowns.
+Z7 Visionary - Dynamic Excel Financial & Bankable DPR Workbook Builder.
+Generates styled, multi-tab Microsoft Excel (.xlsx) workbooks with live Excel formulas
+(SUM, DSCR, Margin %) and embedded native openpyxl BarCharts.
 """
 
 import uuid
-from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
+from openpyxl.chart import BarChart, Reference
 
 from axomai.config import settings
 
+
 class ExcelModelBuilder:
-    """Builds styled multi-tab financial models in Microsoft Excel (.xlsx)."""
+    """Builds dynamic formula-driven .xlsx financial models and Bankable DPR spreadsheets."""
 
     def __init__(self):
         self.output_dir = settings.STORAGE_DIR / "generated"
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    def generate_retail_expansion_model(self, project_name: str = "Commercial Retail Expansion") -> Dict[str, Any]:
-        """Creates an executive-grade 3-tab financial model for retail branch expansion."""
+    def generate_bankable_dpr_excel(
+        self,
+        project_name: str,
+        dpr_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Creates a dynamic 3-tab Bankable DPR & Financial Model (.xlsx) with embedded BarChart."""
         wb = openpyxl.Workbook()
 
-        # Styles
-        navy_header_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
-        cyan_accent_fill = PatternFill(start_color="0284C7", end_color="0284C7", fill_type="solid")
-        gray_sub_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
-        zebra_fill = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
-        
+        navy_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+        accent_fill = PatternFill(start_color="0284C7", end_color="0284C7", fill_type="solid")
+        zebra_fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
         white_bold = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-        cyan_bold = Font(name="Calibri", size=11, bold=True, color="00E5FF")
         dark_bold = Font(name="Calibri", size=11, bold=True, color="0F172A")
-        dark_regular = Font(name="Calibri", size=11, color="1E293B")
-        
         thin_border = Border(
-            left=Side(style='thin', color="CBD5E1"),
-            right=Side(style='thin', color="CBD5E1"),
-            top=Side(style='thin', color="CBD5E1"),
-            bottom=Side(style='thin', color="CBD5E1")
+            left=Side(style="thin", color="CBD5E1"),
+            right=Side(style="thin", color="CBD5E1"),
+            top=Side(style="thin", color="CBD5E1"),
+            bottom=Side(style="thin", color="CBD5E1")
         )
 
-        # TAB 1: Capex & District Allocation
+        # TAB 1: Means of Finance & Capex Breakdown
         ws1 = wb.active
-        ws1.title = "Capex Allocation"
-        ws1.views.sheetView[0].showGridLines = True
-
-        ws1.merge_cells("A1:G1")
-        ws1["A1"] = f"{project_name} — District Capex & Setup Outlay (₹ Lakhs)"
-        ws1["A1"].font = Font(name="Calibri", size=14, bold=True, color="FFFFFF")
-        ws1["A1"].fill = navy_header_fill
+        ws1.title = "Means of Finance"
+        ws1.merge_cells("A1:D1")
+        ws1["A1"] = f"{project_name} — Bankable DPR Means of Finance ({dpr_data['district']})"
+        ws1["A1"].font = Font(name="Calibri", size=13, bold=True, color="FFFFFF")
+        ws1["A1"].fill = navy_fill
         ws1["A1"].alignment = Alignment(horizontal="center", vertical="center")
-        ws1.row_dimensions[1].height = 35
+        ws1.row_dimensions[1].height = 32
 
-        headers_1 = [
-            "District / City", "Format", "Carpet Area (sq.ft)", "Lease Deposit (₹L)",
-            "Interior Fit-Outs (₹L)", "IT & Hardware (₹L)", "Total Capex (₹L)"
+        headers1 = ["Funding Source / Component", "Scheme / Terms", "Amount (₹ Lakhs)", "Share (%)"]
+        for col, h in enumerate(headers1, 1):
+            c = ws1.cell(row=3, column=col, value=h)
+            c.font = white_bold
+            c.fill = accent_fill
+            c.border = thin_border
+
+        rows1 = [
+            ("Promoter Equity Margin", "15% Mandatory Promoter Contribution", dpr_data["promoter_equity_lakhs"]),
+            ("Government Capital Subsidy", dpr_data["scheme"], dpr_data["govt_subsidy_lakhs"]),
+            ("Bank Term Loan", "9.5% p.a. 5-Year Repayment", dpr_data["bank_term_loan_lakhs"]),
         ]
-        for col_idx, h in enumerate(headers_1, start=1):
-            cell = ws1.cell(row=3, column=col_idx, value=h)
-            cell.font = white_bold
-            cell.fill = cyan_accent_fill
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.border = thin_border
-        ws1.row_dimensions[3].height = 25
+        for idx, (src, desc, amt) in enumerate(rows1, 4):
+            ws1.cell(row=idx, column=1, value=src).border = thin_border
+            ws1.cell(row=idx, column=2, value=desc).border = thin_border
+            c_amt = ws1.cell(row=idx, column=3, value=amt)
+            c_amt.number_format = "#,##0.00"
+            c_amt.border = thin_border
+            c_pct = ws1.cell(row=idx, column=4, value=f"=C{idx}/$C$7")
+            c_pct.number_format = "0.0%"
+            c_pct.border = thin_border
 
-        data_1 = [
-            ["Primary Metro Market", "Flagship Experiential", 2500, 12.0, 22.0, 8.0, "=SUM(D4:F4)"],
-            ["Secondary Commercial Hub", "Commercial Trade Center", 1800, 8.0, 15.0, 5.0, "=SUM(D5:F5)"],
-            ["Emerging Growth Center", "Regional Consumer Hub", 1500, 6.0, 12.0, 4.0, "=SUM(D6:F6)"],
-        ]
+        ws1.cell(row=7, column=1, value="TOTAL PROJECT COST").font = dark_bold
+        ws1.cell(row=7, column=2, value="Verified Bankable Outlay").font = dark_bold
+        c_tot = ws1.cell(row=7, column=3, value="=SUM(C4:C6)")
+        c_tot.font = dark_bold
+        c_tot.number_format = "#,##0.00"
+        c_tot_pct = ws1.cell(row=7, column=4, value="=SUM(D4:D6)")
+        c_tot_pct.font = dark_bold
+        c_tot_pct.number_format = "0.0%"
 
-        for r_idx, row_values in enumerate(data_1, start=4):
-            for c_idx, val in enumerate(row_values, start=1):
-                cell = ws1.cell(row=r_idx, column=c_idx, value=val)
-                cell.font = dark_regular
-                cell.border = thin_border
-                cell.alignment = Alignment(horizontal="left" if c_idx <= 2 else "right", vertical="center")
-            ws1.row_dimensions[r_idx].height = 20
+        for col, w in enumerate([30, 38, 20, 14], 1):
+            ws1.column_dimensions[openpyxl.utils.get_column_letter(col)].width = w
 
-        # Totals Row
-        ws1.cell(row=7, column=1, value="Total Network Outlay").font = white_bold
-        ws1.cell(row=7, column=1).fill = navy_header_fill
-        ws1.cell(row=7, column=2, value="3 Branches").font = white_bold
-        ws1.cell(row=7, column=2).fill = navy_header_fill
-        ws1.cell(row=7, column=3, value="=SUM(C4:C6)").font = white_bold
-        ws1.cell(row=7, column=3).fill = navy_header_fill
-        ws1.cell(row=7, column=4, value="=SUM(D4:D6)").font = white_bold
-        ws1.cell(row=7, column=4).fill = navy_header_fill
-        ws1.cell(row=7, column=5, value="=SUM(E4:E6)").font = white_bold
-        ws1.cell(row=7, column=5).fill = navy_header_fill
-        ws1.cell(row=7, column=6, value="=SUM(F4:F6)").font = white_bold
-        ws1.cell(row=7, column=6).fill = navy_header_fill
-        ws1.cell(row=7, column=7, value="=SUM(G4:G6)").font = cyan_bold
-        ws1.cell(row=7, column=7).fill = navy_header_fill
-        for c in range(1, 8):
-            ws1.cell(row=7, column=c).border = thin_border
-        ws1.row_dimensions[7].height = 24
-
-        # TAB 2: 12-Month Network Cashflow & EBITDA
-        ws2 = wb.create_sheet(title="12-Month P&L")
-        ws2.views.sheetView[0].showGridLines = True
-
-        ws2.merge_cells("A1:M1")
-        ws2["A1"] = "Consolidated 12-Month Operating Cashflow & EBITDA Forecast (₹ Lakhs)"
-        ws2["A1"].font = Font(name="Calibri", size=14, bold=True, color="FFFFFF")
-        ws2["A1"].fill = navy_header_fill
+        # TAB 2: 5-Year P&L, DSCR & Embedded Chart
+        ws2 = wb.create_sheet("5-Year Projections & Chart")
+        ws2.merge_cells("A1:F1")
+        ws2["A1"] = f"{project_name} — 5-Year Financial Projections & DSCR (₹ Lakhs)"
+        ws2["A1"].font = Font(name="Calibri", size=13, bold=True, color="FFFFFF")
+        ws2["A1"].fill = navy_fill
         ws2["A1"].alignment = Alignment(horizontal="center", vertical="center")
-        ws2.row_dimensions[1].height = 35
+        ws2.row_dimensions[1].height = 32
 
-        months = [f"M{i}" for i in range(1, 13)]
-        pnl_headers = ["Metric / Month"] + months
-        for col_idx, h in enumerate(pnl_headers, start=1):
-            cell = ws2.cell(row=3, column=col_idx, value=h)
-            cell.font = white_bold
-            cell.fill = cyan_accent_fill
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.border = thin_border
+        headers2 = ["Year", "Revenue (₹L)", "EBITDA (₹L)", "Net Profit PAT (₹L)", "Debt Service (₹L)", "DSCR (x)"]
+        for col, h in enumerate(headers2, 1):
+            c = ws2.cell(row=3, column=col, value=h)
+            c.font = white_bold
+            c.fill = accent_fill
+            c.border = thin_border
 
-        pnl_metrics = [
-            ("Gross Sales (All 3 Branches)", [18.5, 21.2, 24.8, 28.5, 31.0, 34.5, 37.8, 41.2, 44.0, 47.5, 51.0, 55.0]),
-            ("Cost of Goods Sold (COGS 60%)", [f"=B4*0.6" for _ in range(12)]),
-            ("Gross Margin (40%)", [f"=B4-B5" for _ in range(12)]),
-            ("Store Rent & Utilities", [4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5]),
-            ("Staff Salaries & Wages", [3.8, 3.8, 3.8, 3.8, 4.0, 4.0, 4.0, 4.2, 4.2, 4.2, 4.5, 4.5]),
-            ("Marketing & Logistics", [2.5, 2.0, 1.8, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.8, 2.0]),
-            ("Store Operating EBITDA", [f"=B6-SUM(B7:B9)" for _ in range(12)])
-        ]
-
-        # Populate P&L data
-        for r_offset, (m_label, vals) in enumerate(pnl_metrics, start=4):
-            ws2.cell(row=r_offset, column=1, value=m_label).font = dark_bold if "EBITDA" in m_label or "Gross" in m_label else dark_regular
-            ws2.cell(row=r_offset, column=1).border = thin_border
-            for col_idx, v in enumerate(vals, start=2):
-                c_letter = get_column_letter(col_idx)
-                cell_val = v
-                if isinstance(v, str) and v.startswith("="):
-                    cell_val = v.replace("B", c_letter)
-                cell = ws2.cell(row=r_offset, column=col_idx, value=cell_val)
+        for i in range(5):
+            r = 4 + i
+            ws2.cell(row=r, column=1, value=dpr_data["years"][i]).border = thin_border
+            c_rev = ws2.cell(row=r, column=2, value=dpr_data["revenues_lakhs"][i])
+            c_eb = ws2.cell(row=r, column=3, value=dpr_data["ebitda_lakhs"][i])
+            c_pat = ws2.cell(row=r, column=4, value=dpr_data["pat_lakhs"][i])
+            c_ds = ws2.cell(row=r, column=5, value=dpr_data["annual_debt_service_lakhs"])
+            c_dscr = ws2.cell(row=r, column=6, value=f"=C{r}/E{r}")
+            for cell in (c_rev, c_eb, c_pat, c_ds):
+                cell.number_format = "#,##0.00"
                 cell.border = thin_border
-                cell.alignment = Alignment(horizontal="right", vertical="center")
-                if "EBITDA" in m_label:
-                    cell.font = cyan_bold
-                    cell.fill = gray_sub_fill
+                if i % 2 == 1:
+                    cell.fill = zebra_fill
+            c_dscr.number_format = "0.00"
+            c_dscr.border = thin_border
 
-        # Auto-fit columns
-        for ws in [ws1, ws2]:
-            for col in ws.columns:
-                max_len = max(len(str(cell.value or '')) for cell in col)
-                col_letter = get_column_letter(col[0].column)
-                ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
+        # Add Native Excel BarChart
+        chart = BarChart()
+        chart.type = "col"
+        chart.title = "5-Year Revenue vs EBITDA (₹ Lakhs)"
+        chart.y_axis.title = "INR Lakhs"
+        chart.x_axis.title = "Projection Year"
+        data_ref = Reference(ws2, min_col=2, min_row=3, max_col=3, max_row=8)
+        cats_ref = Reference(ws2, min_col=1, min_row=4, max_row=8)
+        chart.add_data(data_ref, titles_from_data=True)
+        chart.set_categories(cats_ref)
+        chart.width = 16
+        chart.height = 9
+        ws2.add_chart(chart, "A10")
 
-        filename = f"model_retail_{uuid.uuid4().hex[:8]}.xlsx"
+        for col, w in enumerate([14, 18, 18, 22, 20, 14], 1):
+            ws2.column_dimensions[openpyxl.utils.get_column_letter(col)].width = w
+
+        filename = f"dpr_model_{uuid.uuid4().hex[:8]}.xlsx"
         file_path = self.output_dir / filename
         wb.save(str(file_path))
 
@@ -160,9 +141,14 @@ class ExcelModelBuilder:
             "filename": filename,
             "file_path": str(file_path),
             "download_url": f"/api/download/generated/{filename}",
-            "file_type": "EXCEL_FINANCIAL_MODEL",
-            "title": f"{project_name} 12-Month Financial Model"
+            "tabs": ["Means of Finance", "5-Year Projections & Chart"]
         }
 
-excel_model_builder = ExcelModelBuilder()
+    def generate_retail_expansion_model(self, project_name: str = "Commercial Retail Expansion") -> Dict[str, Any]:
+        """Backward-compatible wrapper using dynamic DPR generator."""
+        from axomai.agents.z7_visionary.tools.assam_themes_and_dpr import compute_bankable_dpr_financials
+        dpr = compute_bankable_dpr_financials(capex_lakhs=75.0, scheme=None, district="Guwahati")
+        return self.generate_bankable_dpr_excel(project_name, dpr)
 
+
+excel_model_builder = ExcelModelBuilder()

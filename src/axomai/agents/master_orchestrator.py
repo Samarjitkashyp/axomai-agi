@@ -32,6 +32,7 @@ from axomai.agents.z14_horizon import z14_horizon_agent
 from axomai.agents.z15_sovereign import z15_sovereign_agent
 from axomai.agents.z16_omni import z16_omni_agent
 from axomai.agents.z17_apex_global import z17_apex_global_agent
+from axomai.agents.z18_vanguard import z18_vanguard_agent
 from axomai.agents.y1_annapurna import y1_annapurna_agent
 from axomai.agents.y2_urja import y2_urja_agent
 from axomai.agents.y3_sanjeevani import y3_sanjeevani_agent
@@ -76,6 +77,7 @@ class MasterOrchestrator:
         self.z15 = z15_sovereign_agent
         self.z16 = z16_omni_agent
         self.z17 = z17_apex_global_agent
+        self.z18 = z18_vanguard_agent
         self.y1 = y1_annapurna_agent
         self.y2 = y2_urja_agent
         self.y3 = y3_sanjeevani_agent
@@ -154,6 +156,26 @@ class MasterOrchestrator:
                 "agent": "z4",
                 "name": "Z4 Nexus (Polyglot Code Engine)",
                 "reason": "Autonomous live web reverse-engineering and app cloning detected",
+                "confidence": 0.99
+            }
+
+        # Check for Z18 Vanguard Intent (Autonomous SEO, AEO, GEO, Web Audit, Schema Audit)
+        z18_explicit_keywords = [
+            "seo audit", "aeo audit", "geo audit", "seo check", "aeo check", "geo check",
+            "audit website", "check website seo", "website audit", "audit url", "page audit",
+            "on-page seo", "technical seo", "meta tags check", "schema audit", "json-ld audit",
+            "search engine optimization", "answer engine optimization", "generative engine optimization",
+            "perplexity optimization", "ai overviews optimization", "seo score", "aeo score", "geo score"
+        ]
+        is_seo_query = any(k in q for k in z18_explicit_keywords) or (
+            ("seo" in q or "aeo" in q or "geo" in q or "audit" in q) and
+            (bool(re.search(r'https?://[^\s]+', query)) or any(ext in q for ext in [".com", ".org", ".in", ".net", ".io", "website", "site"]))
+        )
+        if is_seo_query:
+            return {
+                "agent": "z18",
+                "name": "Z18 Vanguard",
+                "reason": "Autonomous SEO, AEO (Answer Engine) & GEO (Generative AI) comprehensive website audit detected",
                 "confidence": 0.99
             }
 
@@ -1180,6 +1202,15 @@ class MasterOrchestrator:
                 "z7": "Z7 Visionary",
                 "z8": "Z8 Apex",
                 "z9": "Z9 Cortex",
+                "z10": "Z10 Matrix",
+                "z11": "Z11 Pragati",
+                "z12": "Z12 Athena",
+                "z13": "Z13 Quantum",
+                "z14": "Z14 Horizon",
+                "z15": "Z15 Sovereign",
+                "z16": "Z16 Omni",
+                "z17": "Z17 Apex-Global",
+                "z18": "Z18 Vanguard",
                 "sentinel": "Z Sentinel",
                 "swarm": "Tri-Agent Swarm Symphony",
                 "mission": "Mission Control (Autonomous Multi-Agent)"
@@ -1423,6 +1454,17 @@ class MasterOrchestrator:
                 is_auto=is_auto,
                 routing_reason=routing_reason,
                 agent_id="z17"
+            )
+
+        elif chosen_agent == "z18":
+            # Delegate to Z18 Vanguard (Autonomous SEO, AEO & GEO Intelligence Agent)
+            yield from self._execute_with_sentinel_guard(
+                self.z18.audit_stream(query=query, session_id=session_id, doc_id=document_id),
+                query=query,
+                session_id=session_id,
+                is_auto=is_auto,
+                routing_reason=routing_reason,
+                agent_id="z18"
             )
 
         elif chosen_agent == "y1":

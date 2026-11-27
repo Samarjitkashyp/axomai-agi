@@ -172,7 +172,18 @@ class CognitiveIntentProfiler:
                 ]
             }
 
-        # 5. Default General Software
+        # 5. Search, AEO, GEO & Digital Visibility
+        if any(k in q for k in ["seo", "aeo", "geo", "audit", "meta tag", "search engine", "ranking", "perplexity", "schema", "sitemap", "backlink"]):
+            return {
+                "domain": "digital_marketing_seo",
+                "invariants": [
+                    "Multi-Pillar Auditing: Balance Traditional SEO, Conversational AEO, and Generative GEO.",
+                    "Schema.org Validation: Ensure strict JSON-LD syntax compliance.",
+                    "Actionable Code Fixes: Provide ready-to-paste drop-in tags and blueprints."
+                ]
+            }
+
+        # 6. Default General Software
         return {
             "domain": "general_software",
             "invariants": [

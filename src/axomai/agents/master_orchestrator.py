@@ -416,12 +416,14 @@ class MasterOrchestrator:
                 "confidence": 0.99
             }
 
-        # Check for Z7 Visionary Intent (PowerPoint, PPTX, Assam DPR, Bilingual Slides, Generative UI, Land/EMI Calculators)
+        # Check for Z7 Visionary Intent (PowerPoint, PPTX, Pan-India DPR, VC Pitch, SME IPO, 12-Language Slides, Surgical Edit, UI Apps)
         z7_explicit_keywords = [
             "powerpoint", "presentation", "pptx", "create slides", "pitch deck", "slides on",
             "roi calculator", "simulator widget", "generative ui", "interactive widget",
             "bigha", "katha", "lessa", "land converter", "emi calculator", "tea yield simulator",
-            "html5 deck", "web deck", "dpr deck", "cmaaa dpr", "unnati dpr", "bankable dpr"
+            "html5 deck", "web deck", "dpr deck", "cmaaa dpr", "unnati dpr", "bankable dpr",
+            "sme ipo", "nse emerge", "bse sme", "vc pitch", "tam sam som", "unit economics",
+            "hindi slides", "marathi", "gujarati", "tamil", "telugu", "kannada", "edit slide", "brand kit"
         ]
         if any(k in q for k in z7_explicit_keywords):
             return {

@@ -46,12 +46,20 @@ class FinancialExtractor:
                 target_name = name.title()
                 break
 
-        ticker_match = re.search(r'\b([A-Z]{1,5}(\.[A-Z]{2})?)\b', query)
-        if ticker_match and ticker_match.group(1).upper() in ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "TSLA", "META", "TCS.NS", "RELIANCE.NS", "INFY.NS", "ZOMATO.NS"]:
-            detected_ticker = ticker_match.group(1).upper()
+        # 1. Identify Explicit Tickers (e.g. SBIN.NS, ITC.NS, AAPL, NVDA)
+        ns_match = re.search(r'\b([A-Za-z0-9_\-]{2,15}\.(?:NS|BO))\b', query, re.IGNORECASE)
+        if ns_match:
+            detected_ticker = ns_match.group(1).upper()
             target_name = detected_ticker
+        else:
+            ticker_match = re.search(r'\b([A-Z]{2,6})\b', query)
+            if ticker_match:
+                cand = ticker_match.group(1).upper()
+                if cand not in ["FOR", "AND", "WITH", "THE", "PE", "DCF", "WACC", "CAGR", "EBITDA", "FCF", "ROIC", "LBO", "INR", "USD", "EUR", "GBP", "SEBI", "NCLT", "GST", "MCA", "ROC", "RPT", "IBC", "AIF", "DIN"]:
+                    detected_ticker = cand
+                    target_name = detected_ticker
 
-        acq_match = re.search(r'(?:acquisition of|buyout of|valuation of|analyze|target[:\s]+)\s+([A-Za-z0-9\s&]+?)(?:\s+with|\s+having|\s+at|\s+for|\.|\,|$)', query, re.IGNORECASE)
+        acq_match = re.search(r'(?:acquisition of|buyout of|valuation of|analyze|audit|evaluate|tell me about|target[:\s]+)\s+([A-Za-z0-9\s&]+?)(?:\s+with|\s+having|\s+at|\s+for|\.|\,|$)', query, re.IGNORECASE)
         if acq_match and not detected_ticker:
             candidate = acq_match.group(1).strip()
             if len(candidate) > 2 and candidate.lower() not in ["the", "a", "an", "this", "target"]:

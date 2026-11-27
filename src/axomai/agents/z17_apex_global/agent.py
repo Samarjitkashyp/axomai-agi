@@ -87,6 +87,13 @@ class Z17ApexGlobalAgent:
             "message": f"💼 Z17 Apex-Global: Initiating 24-tool sovereign Wall Street & Indian regulatory audit for {target_name}..."
         }
 
+        # 1.1 Dynamic Market Registry Resolution for Arbitrary Listed Companies
+        if not ticker and target_name and target_name not in ["Target Corporation", "Company", "Target"]:
+            resolved_sym = live_market_data.resolve_symbol(target_name)
+            if resolved_sym:
+                ticker = resolved_sym
+                params["detected_ticker"] = ticker
+
         # 2. Live SEC EDGAR Filings & Public Market Data
         edgar_filings = None
         if ticker:
@@ -103,6 +110,12 @@ class Z17ApexGlobalAgent:
         if ticker:
             live_quote_data = live_market_data.fetch_live_quote(ticker)
             peer_comps = live_market_data.build_peer_comps(target_ticker=ticker)
+            if live_quote_data.get("status") == "LIVE_SUCCESS":
+                yield {
+                    "type": "status",
+                    "stage": "live_market_ticker_stream",
+                    "message": f"📈 Real-Time Exchange Feed Connected: {ticker} on {live_quote_data.get('exchange')} @ {live_quote_data.get('currency')} {live_quote_data.get('regular_market_price')} (52W: {live_quote_data.get('fifty_two_week_low')} - {live_quote_data.get('fifty_two_week_high')})"
+                }
         else:
             peer_comps = live_market_data.build_peer_comps(sector="TECH_MEGA")
 

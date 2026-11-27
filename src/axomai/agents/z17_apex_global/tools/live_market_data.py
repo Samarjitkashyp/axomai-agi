@@ -4,6 +4,7 @@ Queries live public market data for global & Indian public companies,
 computes EV/EBITDA, P/E multiples, and constructs comparable company peer groups.
 """
 
+import re
 import requests
 from typing import Dict, Any, Optional, List
 
@@ -21,6 +22,29 @@ class LiveMarketDataEngine:
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
+
+    def resolve_symbol(self, query: str) -> Optional[str]:
+        """
+        Dynamically searches public market registries (NSE, BSE, NASDAQ, NYSE)
+        for any company name or ticker and resolves its exact live exchange symbol.
+        """
+        if not query or len(query.strip()) < 2:
+            return None
+        q = query.strip()
+        if re.search(r'\.(?:NS|BO)$', q, re.IGNORECASE):
+            return q.upper()
+        try:
+            url = f"https://query1.finance.yahoo.com/v1/finance/search?q={requests.utils.quote(q)}"
+            resp = requests.get(url, headers=self.headers, timeout=4)
+            if resp.status_code == 200:
+                quotes = resp.json().get("quotes", [])
+                if quotes:
+                    sym = quotes[0].get("symbol")
+                    if sym:
+                        return sym.upper()
+        except Exception:
+            pass
+        return None
 
     def fetch_live_quote(self, ticker: str) -> Dict[str, Any]:
         """
@@ -50,6 +74,11 @@ class LiveMarketDataEngine:
                     "fifty_two_week_low": fifty_two_low,
                     "market_data_source": "Live Public Exchange Data"
                 }
+            else:
+                # If direct lookup failed (e.g. symbol without exchange suffix like 'ITC' or 'SBIN')
+                resolved = self.resolve_symbol(ticker)
+                if resolved and resolved.upper() != ticker.upper():
+                    return self.fetch_live_quote(resolved)
         except Exception as e:
             pass
 

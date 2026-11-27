@@ -1,9 +1,10 @@
 """
 Z10 Matrix - Warehouse Staging & Inventory Safety Stock Allocator.
-Computes reorder points, holding costs, and regional flood buffer staging.
+Computes reorder points, holding costs, and dynamic weather/flood buffer staging.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, Optional
+
 
 class WarehouseAllocator:
     """Manages central staging inventory and satellite branch replenishment."""
@@ -16,22 +17,20 @@ class WarehouseAllocator:
         district: str,
         monthly_sales_units: float,
         unit_cost_inr: float = 650.0,
-        monsoon_mode: bool = True
+        monsoon_mode: bool = True,
+        custom_buffer_days: Optional[int] = None
     ) -> Dict[str, Any]:
         """Calculates safety stock, cycle stock, and reorder point."""
         daily_sales = monthly_sales_units / 30.0
-
-        # Lead time in days based on distance tier
         lead_time_days = 1.0 if any(k in district.lower() for k in ["metro", "primary", "central", "hub"]) else 2.5
 
-        # Buffer days: Standard 10 days vs Monsoon 21 days
-        buffer_days = 21 if monsoon_mode else 10
+        buffer_days = custom_buffer_days if custom_buffer_days is not None else (21 if monsoon_mode else 10)
         safety_stock_units = round(daily_sales * buffer_days)
-        cycle_stock_units = round(daily_sales * lead_time_days * 2) # replenishment batch
+        cycle_stock_units = round(daily_sales * lead_time_days * 2)
         reorder_point = round((daily_sales * lead_time_days) + safety_stock_units)
 
         stock_value_inr = round((safety_stock_units + cycle_stock_units) * unit_cost_inr, 2)
-        required_storage_sqft = round((safety_stock_units + cycle_stock_units) * 0.45) # 0.45 sq.ft per unit
+        required_storage_sqft = round((safety_stock_units + cycle_stock_units) * 0.45)
 
         return {
             "district": district.title(),
@@ -47,5 +46,5 @@ class WarehouseAllocator:
             "replenishment_frequency": "Every 4 Days" if lead_time_days <= 2 else "Weekly Consolidated Run"
         }
 
-warehouse_allocator = WarehouseAllocator()
 
+warehouse_allocator = WarehouseAllocator()

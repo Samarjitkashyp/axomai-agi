@@ -1,15 +1,25 @@
 """
-Z10 Matrix - Global Logistics, Multimodal Fleet Optimization & Supply Chain Agent.
-Computes highway transit times, fuel economics, warehouse buffer allocation,
-and route resilience across regional, national, and international logistics corridors.
+Z10 Matrix - 9-Tool Live Multimodal Logistics, Fleet Optimization & Supply Chain Commander.
+Zero hardcoded dummy scenarios: uses live OSRM highway routing, OpenStreetMap Nominatim geocoding,
+Open-Meteo live weather/flood telemetry, 2-Opt multi-stop VRP solver, 3D MoRTH axle-load optimizer,
+CGST Rule 138 E-Way Bill calculator, Brahmaputra NW-2 / Rail CONCOR multimodal arbitrage,
+Cold-Chain Q10 spoilage guard, and EV vs Diesel Scope 3 Carbon Credit TCO optimizer.
 """
 
 import re
 from typing import Dict, Any, Generator, Optional, List
 
 from axomai.core.llm import llm_brain
+from axomai.agents.z10_matrix.tools.logistics_extractor import logistics_extractor
 from axomai.agents.z10_matrix.tools.route_optimizer import route_optimizer
 from axomai.agents.z10_matrix.tools.warehouse_allocator import warehouse_allocator
+from axomai.agents.z10_matrix.tools.live_weather_corridor import live_weather_radar
+from axomai.agents.z10_matrix.tools.vrp_multi_stop_solver import vrp_solver
+from axomai.agents.z10_matrix.tools.cargo_3d_load_optimizer import cargo_load_optimizer
+from axomai.agents.z10_matrix.tools.eway_bill_and_multimodal import eway_multimodal
+from axomai.agents.z10_matrix.tools.cold_chain_reefer_guard import cold_chain_guard
+from axomai.agents.z10_matrix.tools.ev_fleet_carbon_optimizer import ev_carbon_optimizer
+
 
 def normalize_markdown(text: str) -> str:
     """Ensures headings, tables, and lists always have clean double newlines."""
@@ -22,12 +32,13 @@ def normalize_markdown(text: str) -> str:
     text = re.sub(r'([^\n])\s*(\n?-\s+)', r'\1\n- ', text)
     return text
 
+
 class Z10MatrixAgent:
-    """Enterprise Chief Logistics Officer & Multimodal Supply Chain Specialist."""
+    """Enterprise Chief Logistics Officer & Live Multimodal Supply Chain Commander."""
 
     def __init__(self):
         self.name = "Z10 Matrix"
-        self.role = "Global Fleet Logistics, Highway Corridor & Warehouse Staging Specialist"
+        self.role = "9-Tool Live Fleet Logistics, VRP, E-Way Bill & Multimodal Supply Chain Commander"
 
     def logistics_stream(
         self,
@@ -35,61 +46,133 @@ class Z10MatrixAgent:
         session_id: Optional[str] = "matrix_session",
         doc_id: Optional[str] = None
     ) -> Generator[Dict[str, Any], None, None]:
-        q_lower = query.lower()
+        # 0. Dynamically extract all parameters from user query
+        params = logistics_extractor.parse_logistics_query(query)
+        origin = params["origin"]
+        dests = params["destinations"]
+        cargo_tons = params["cargo_tons"]
 
         yield {
             "type": "status",
             "stage": "logistics_optimization",
-            "message": "🚛 Z10 Matrix: Computing multimodal corridor routes, fuel economics & inventory safety buffers..."
+            "message": f"🚛 Z10 Matrix: Querying live OSRM road routes & Open-Meteo weather from {origin} to {', '.join(dests)} ({cargo_tons}T cargo)..."
         }
 
-        # Dynamically determine origin and destinations from query
-        origin = "Central Distribution Hub"
-        for city in ["mumbai", "delhi", "bengaluru", "kolkata", "chennai", "hyderabad", "ahmedabad", "guwahati"]:
-            if city in q_lower:
-                origin = city.title()
-                break
+        # 1. 3D Fleet & Axle-Load Optimization (sets optimal vehicle mileage!)
+        load_plan = cargo_load_optimizer.optimize_fleet_load(cargo_weight_tons=cargo_tons)
 
-        dests = []
-        for city in ["delhi", "mumbai", "chennai", "kolkata", "bengaluru", "pune", "dibrugarh", "nagaon", "silchar"]:
-            if city in q_lower and city.title() != origin:
-                dests.append(city.title())
-
-        if not dests:
-            dests = ["Regional Distribution Terminal A", "Regional Distribution Terminal B"]
-
-        routes = [route_optimizer.optimize_route(origin, d) for d in dests]
-        allocations = [
-            warehouse_allocator.calculate_branch_inventory_allocation(d, monthly_sales_units=1500)
+        # 2. Live OSRM Highway Routing & Nominatim Geocoding
+        routes = [
+            route_optimizer.optimize_route(
+                origin=origin,
+                destination=d,
+                mileage_km_per_l=load_plan["vehicle_mileage_kmpl"],
+                cargo_tons=cargo_tons
+            )
             for d in dests
         ]
+
+        # 3. Live Open-Meteo Weather & Flood Radar for each destination
+        weather_reports = [
+            live_weather_radar.fetch_corridor_weather(d, coords=r.get("destination_coords"))
+            for d, r in zip(dests, routes)
+        ]
+
+        # 4. Multi-Stop VRP (Nearest Neighbor + 2-Opt TSP) Sequence Optimization
+        vrp_plan = vrp_solver.solve_multi_stop_sequence(
+            origin=origin,
+            destinations=dests,
+            mileage_km_per_l=load_plan["vehicle_mileage_kmpl"]
+        )
+
+        # 5. Live Weather-Driven Warehouse Buffer & Safety Stock Allocation
+        allocations = [
+            warehouse_allocator.calculate_branch_inventory_allocation(
+                district=d,
+                monthly_sales_units=params["monthly_sales_units"],
+                monsoon_mode=(w["recommended_safety_buffer_days"] >= 15),
+                custom_buffer_days=w["recommended_safety_buffer_days"]
+            )
+            for d, w in zip(dests, weather_reports)
+        ]
+
+        # 6. CGST Rule 138 E-Way Bill & Multimodal Arbitrage (Road vs Rail vs Brahmaputra NW-2 vs Air)
+        primary_route = routes[0]
+        eway_data = eway_multimodal.evaluate_eway_bill(
+            consignment_value_inr=params["invoice_value_inr"],
+            distance_km=primary_route["distance_km"],
+            is_odc=params["is_odc"]
+        )
+        multimodal_data = eway_multimodal.compare_multimodal_options(
+            distance_km=primary_route["distance_km"],
+            cargo_tons=cargo_tons,
+            road_cost_inr=primary_route["total_logistics_cost_inr"],
+            road_hrs=primary_route["transit_time_hrs"]
+        )
+
+        # 7. Cold-Chain Spoilage & Reefer Guard
+        avg_ambient_c = weather_reports[0]["current_temp_c"] if weather_reports else 30.0
+        cold_chain_data = cold_chain_guard.evaluate_cold_chain_risk(
+            transit_hours=primary_route["transit_time_hrs"],
+            ambient_temp_c=avg_ambient_c,
+            target_temp_c=params["target_temp_c"] if params["target_temp_c"] is not None else 4.0,
+            cargo_value_inr=params["invoice_value_inr"]
+        )
+
+        # 8. EV vs Diesel Fleet TCO & Scope 3 Carbon Credit Analysis
+        ev_carbon_data = ev_carbon_optimizer.compare_ev_vs_diesel(
+            total_distance_km=sum(r["distance_km"] for r in routes),
+            cargo_tons=cargo_tons,
+            diesel_cost_inr=sum(r["fuel_cost_inr"] for r in routes)
+        )
+
+        yield {
+            "type": "status",
+            "stage": "live_telemetry_complete",
+            "message": f"🛰️ Live Telemetry Ready: {primary_route['routing_source']} ({primary_route['distance_km']} km) | Weather: {weather_reports[0]['disruption_risk']} | VRP Saved: {vrp_plan['distance_saved_km']} km"
+        }
 
         meta_event = {
             "type": "meta",
             "agent": self.name,
-            "task_type": "LOGISTICS_SUPPLY_CHAIN_OPTIMIZATION",
-            "central_hub": f"{origin} Logistics Park",
+            "task_type": "LIVE_MULTIMODAL_LOGISTICS_COMMAND",
+            "tools_count": 9,
+            "extracted_parameters": params,
+            "central_hub": f"{origin} Multi-Modal Hub",
             "routes_calculated": len(routes),
             "destinations": dests,
             "routes_data": routes,
+            "weather_data": weather_reports,
+            "vrp_optimization": vrp_plan,
+            "fleet_load_plan": load_plan,
             "allocations_data": allocations,
-            "tools_used": ["route_optimizer", "warehouse_allocator"]
+            "eway_bill": eway_data,
+            "multimodal_arbitrage": multimodal_data,
+            "cold_chain": cold_chain_data,
+            "ev_carbon_tco": ev_carbon_data,
+            "tools_used": [
+                "logistics_extractor", "route_optimizer", "live_weather_radar",
+                "vrp_solver", "cargo_load_optimizer", "warehouse_allocator",
+                "eway_multimodal", "cold_chain_guard", "ev_carbon_optimizer"
+            ]
         }
         yield meta_event
 
         prompt = (
-            f"You are Z10 Matrix, Chief Logistics Officer & Multimodal Fleet Strategist.\n"
-            f"User Goal / Inquiry: '{query}'\n\n"
-            f"Computed Highway & Freight Routes:\n{str(routes)}\n\n"
-            f"Warehouse & Buffer Staging Allocations:\n{str(allocations)}\n\n"
-            "Formulate an authoritative, operational Freight Logistics & Supply Chain Dossier in clean GitHub Markdown.\n\n"
-            "CRITICAL FORMATTING INSTRUCTIONS:\n"
-            "- Always place a blank line (\\n\\n) before every heading (##, ###).\n"
-            "- Present Corridor Comparison as a clean GitHub Markdown Table with blank lines before and after:\n"
-            "| Destination | Highway Corridor | Distance (km) | Transit Time | Total Trip Cost (₹) | Terrain & Weather Risk |\n"
-            "| :--- | :--- | :--- | :--- | :--- | :--- |\n"
-            "- Include exact warehouse staging rules (central hub to satellite terminals) and fleet speed/safety protocols.\n"
-            "- Ensure every table row ends with a newline."
+            f"You are Z10 Matrix, Chief Logistics Officer & Live Supply Chain Strategist.\n"
+            f"User Inquiry: '{query}'\n\n"
+            f"LIVE TELEMETRY & ALGORITHMIC OUTPUTS:\n"
+            f"- Optimal Fleet & MoRTH Axle Compliance: {load_plan}\n"
+            f"- Live OSRM Highway Routes: {routes}\n"
+            f"- Live Open-Meteo Weather & Flood Radar: {weather_reports}\n"
+            f"- 2-Opt Multi-Stop VRP Sequence: {vrp_plan}\n"
+            f"- Weather-Adjusted Warehouse Buffers: {allocations}\n"
+            f"- GST E-Way Bill (CGST Rule 138): {eway_data}\n"
+            f"- Multimodal Arbitrage (Road vs Rail CONCOR vs Brahmaputra NW-2 Waterway vs Air): {multimodal_data}\n"
+            f"- Cold-Chain Spoilage & Reefer Guard: {cold_chain_data}\n"
+            f"- EV vs Diesel TCO & Carbon Credits: {ev_carbon_data}\n\n"
+            "Formulate an authoritative, crisp Freight Logistics & Multimodal Supply Chain Dossier in clean GitHub Markdown using ONLY the real observed figures above.\n"
+            "Include clean Markdown tables for Highway Corridors, Multimodal Arbitrage, and Statutory Compliance."
         )
 
         full_answer = ""
@@ -99,26 +182,28 @@ class Z10MatrixAgent:
                 yield {"type": "token", "content": chunk}
         else:
             full_answer = (
-                f"### 🚛 Z10 Matrix: Multimodal Freight Logistics & Corridor Optimization\n\n"
-                f"**Central Distribution Gateway:** `{origin} Central Logistics Hub`\n\n"
-                f"#### 🛣️ Highway Corridor & Freight Economics Matrix\n\n"
-                f"| Destination | Highway Corridor | Distance (km) | Transit Time | Total Trip Cost (₹) | Terrain & Weather Risk |\n"
+                f"### 🚛 Z10 Matrix: Live Multimodal Fleet & Supply Chain Dossier\n\n"
+                f"**Origin:** `{origin}` | **Fleet:** `{load_plan['recommended_vehicle']}` (`{load_plan['payload_utilization_pct']}%` load) | **E-Way Bill:** `{eway_data['statutory_validity_days']} Days`\n\n"
+                f"#### 🛣️ Live Road Corridors & Open-Meteo Weather\n\n"
+                f"| Destination | Source | Distance | Transit | Cost (₹) | Live Weather & Rain |\n"
                 f"| :--- | :--- | :--- | :--- | :--- | :--- |\n"
             )
-            for r in routes:
+            for r, w in zip(routes, weather_reports):
                 full_answer += (
-                    f"| {r['destination']} | {r['corridor']} | {r['distance_km']} km | "
-                    f"{r['transit_time_hrs']} hrs | ₹{r.get('total_logistics_cost_inr', r.get('total_trip_cost_inr', 0)):,.2f} | {r.get('monsoon_risk', r.get('monsoon_flood_risk', 'MODERATE'))} |\n"
+                    f"| {r['destination']} | `{r['routing_source']}` | {r['distance_km']} km | "
+                    f"{r['transit_time_hrs']} hrs | ₹{r['total_logistics_cost_inr']:,.2f} | "
+                    f"{w['current_temp_c']}°C, 3D Rain `{w['forecast_3day_rain_mm']}mm` ({w['disruption_risk']}) |\n"
                 )
             full_answer += (
-                f"\n#### 📦 Warehouse Staging & Supply Chain Resilience Model\n\n"
-                f"- **Central Warehouse:** Scaled storage buffer holding safety stock to absorb seasonal weather and transport variations.\n"
-                f"- **Fleet Safety Protocol:** Vehicle telematics, GPS speed governors, and driver fatigue rotation enforced across all long-haul corridors.\n"
-                f"- **Replenishment Frequency:** High-velocity branch terminals receive bi-weekly dispatches; outlying regional hubs on weekly consolidated runs.\n"
+                f"\n#### 🚢 Multimodal Arbitrage & 2-Opt VRP\n\n"
+                f"- **Optimal VRP Sequence:** `{' -> '.join(vrp_plan['optimal_sequence'])}` (Saved `{vrp_plan['distance_saved_km']} km` / `₹{vrp_plan['fuel_savings_inr']}`)\n"
+                f"- **Lowest Cost Mode:** `{multimodal_data['lowest_cost_mode']}` | **CO₂ Saved via NW-2 Waterway:** `{multimodal_data['co2_savings_via_waterway_vs_road_kg']} kg`\n"
+                f"- **EV vs Diesel Savings:** `₹{ev_carbon_data['direct_fuel_savings_inr']}` fuel savings + `₹{ev_carbon_data['carbon_credit_revenue_inr']}` Carbon Credits\n"
             )
             for tok in full_answer.split(" "):
                 yield {"type": "token", "content": tok + " "}
 
         yield {"type": "done", "answer": normalize_markdown(full_answer)}
+
 
 z10_matrix_agent = Z10MatrixAgent()

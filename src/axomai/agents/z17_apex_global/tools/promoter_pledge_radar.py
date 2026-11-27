@@ -15,7 +15,7 @@ class PromoterPledgeRadar:
         current_share_price_inr: float = 450.0,
         total_shares_outstanding_cr: float = 10.0,
         promoter_holding_pct: float = 62.5,
-        pledged_shares_pct_of_promoter: float = 48.0,
+        pledged_shares_pct_of_promoter: float = 0.0,
         lender_cover_ratio_required: float = 2.0
     ) -> Dict[str, Any]:
         """

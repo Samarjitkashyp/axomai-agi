@@ -78,8 +78,8 @@ class Z17ApexGlobalAgent:
         entry_multiple = params["entry_multiple"]
         entry_ev_m = params["entry_ev_m"]
 
-        rev_cr = round(rev_m / 0.12, 1)  # INR crore equivalent
-        ebitda_cr = round(ebitda_m / 0.12, 1)
+        rev_cr = params["revenue_cr_explicit"] if params["revenue_cr_explicit"] is not None else round(rev_m / 0.12, 1)
+        ebitda_cr = params["ebitda_cr_explicit"] if params["ebitda_cr_explicit"] is not None else round(ebitda_m / 0.12, 1)
 
         yield {
             "type": "status",
@@ -119,34 +119,49 @@ class Z17ApexGlobalAgent:
         else:
             peer_comps = live_market_data.build_peer_comps(sector="TECH_MEGA")
 
-        # 3. MCA-21 RoC Bank Liens & Form CHG-1 Mortgages
+        # 3. MCA-21 RoC Bank Liens & Form CHG-1 Mortgages (Dynamic, no fake charges if none reported)
         mca_charges_data = mca_roc_scanner.scan_corporate_charges(
             company_name=target_name,
-            reported_fixed_assets_m=round(rev_m * 0.65, 1)
+            reported_fixed_assets_m=round(rev_m * 0.65, 1),
+            total_bank_charges_inr_cr=params["bank_charges_cr"],
+            explicit_only=True
         )
 
-        # 4. GSTN GSTR-1 vs 3B vs 2B Tax & Circular Trading Reconciliation
+        # 4. GSTN GSTR-1 vs 3B vs 2B Tax & Circular Trading Reconciliation (Clean unless variance provided)
+        gstr1_val = params["gstr1_cr"] if params["gstr1_cr"] is not None else rev_cr
+        gstr3b_val = rev_cr if params["gstr1_cr"] is None else (params["gstr1_cr"])
+        gstr2b_itc = params["gstr2b_itc_cr"] if params["gstr2b_itc_cr"] is not None else round(rev_cr * 0.10, 1)
+        gstr3b_itc = params["gstr3b_claimed_itc_cr"] if params["gstr3b_claimed_itc_cr"] is not None else gstr2b_itc
         gstn_audit_data = gstn_reconciler.reconcile_tax_returns(
             reported_turnover_inr_cr=rev_cr,
-            gstr1_outward_turnover_inr_cr=round(rev_cr * 0.99, 1),
-            gstr3b_taxable_turnover_inr_cr=round(rev_cr * 0.95, 1)
+            gstr1_outward_turnover_inr_cr=gstr1_val,
+            gstr3b_taxable_turnover_inr_cr=gstr3b_val,
+            gstr2b_eligible_itc_inr_cr=gstr2b_itc,
+            gstr3b_claimed_itc_inr_cr=gstr3b_itc
         )
 
-        # 5. Promoter Share Pledge & Margin Call Liquidation Radar
+        # 5. Promoter Share Pledge & Margin Call Liquidation Radar (Dynamic pledge %, 0% if not pledged)
+        live_px = live_quote_data.get("regular_market_price") if (live_quote_data and live_quote_data.get("status") == "LIVE_SUCCESS") else None
+        share_price_inr = params["stock_price_inr"] or live_px or 450.0
         promoter_pledge_data = promoter_pledge_radar.analyze_promoter_pledges(
             company_name=target_name,
-            current_share_price_inr=live_quote_data.get("regular_market_price", 450.0) if live_quote_data else 450.0
+            current_share_price_inr=share_price_inr,
+            promoter_holding_pct=params["promoter_holding_pct"] if params["promoter_holding_pct"] is not None else 55.0,
+            pledged_shares_pct_of_promoter=params["pledged_pct"] if params["pledged_pct"] is not None else 0.0
         )
 
-        # 6. Related Party Transactions (Section 188) Siphoning Audit
+        # 6. Related Party Transactions (Section 188) Siphoning Audit (Dynamic RPTs, clean if none reported)
         rpt_audit_data = rpt_siphoning_scanner.scan_related_party_transactions(
             company_name=target_name,
             reported_pat_inr_cr=round(ebitda_cr * 0.62, 1),
             reported_ebitda_inr_cr=ebitda_cr,
-            revenue_inr_cr=rev_cr
+            revenue_inr_cr=rev_cr,
+            custom_consulting_cr=params["rpt_consulting_cr"],
+            custom_icd_cr=params["rpt_icd_cr"],
+            explicit_only=True
         )
 
-        # 7. Income Tax Rule 11UA / Angel Tax Statutory Valuation
+        # 7. Income Tax Rule 11UA / Angel Tax Statutory Valuation (Dynamic issue/fair value if given)
         rule_11ua_data = rule_11ua_engine.compute_rule_11ua_valuation(
             company_name=target_name,
             book_value_assets_cr=round(rev_cr * 0.85, 1),
@@ -155,24 +170,30 @@ class Z17ApexGlobalAgent:
             wacc_pct=wacc_pct
         )
 
-        # 8. NCLT & IBC 2016 Distressed Asset Resolution & Section 29A Screener
+        # 8. NCLT & IBC 2016 Distressed Asset Resolution (Scaled to actual debt/NCLT mention)
+        debt_cr = params["debt_cr_explicit"] if params["debt_cr_explicit"] is not None else round(net_debt_m / 0.12, 1)
         nclt_resolution_data = nclt_ibc_resolution.evaluate_cirp_resolution_plan(
             corporate_debtor=target_name,
-            total_admitted_claims_inr_cr=round(rev_cr * 2.5, 1),
-            secured_financial_debt_inr_cr=round(rev_cr * 1.8, 1),
-            proposed_resolution_offer_inr_cr=round(rev_cr * 1.1, 1)
+            total_admitted_claims_inr_cr=debt_cr if debt_cr > 0 else 10.0,
+            secured_financial_debt_inr_cr=round(debt_cr * 0.75, 1) if debt_cr > 0 else 5.0,
+            proposed_resolution_offer_inr_cr=round(ebitda_cr * 5.0, 1)
         )
 
-        # 9. SEBI Takeover Code (SAST Regulations 2011) 26% Open Offer Engine
+        # 9. SEBI Takeover Code (SAST Regulations 2011) 26% Open Offer Engine (Dynamic stake % & offer price)
+        acq_pct = params["acq_stake_pct"] if params["acq_stake_pct"] is not None else 0.0
         sebi_takeover_data = sebi_sast_engine.evaluate_takeover_compliance(
             target_name=target_name,
-            current_market_price_inr=live_quote_data.get("regular_market_price", 380.0) if live_quote_data else 380.0
+            current_market_price_inr=share_price_inr,
+            shares_outstanding_cr=12.0,
+            shares_to_acquire_cr=round(12.0 * (acq_pct / 100.0), 2),
+            negotiated_deal_price_inr=params["offer_price_inr"] or share_price_inr
         )
 
-        # 10. SEBI AIF Category I/II Private Equity Fund Waterfall
+        # 10. SEBI AIF Category I/II Private Equity Fund Waterfall (Scaled to deal EV or explicit fund size)
+        aif_cap_cr = params["aif_fund_cr"] if params["aif_fund_cr"] is not None else round(entry_ev_m / 0.12, 1)
         aif_waterfall_data = aif_fund_waterfall.compute_distribution_waterfall(
-            total_committed_capital_inr_cr=500.0,
-            total_realized_proceeds_inr_cr=round(500.0 * 2.5, 1)
+            total_committed_capital_inr_cr=aif_cap_cr,
+            total_realized_proceeds_inr_cr=round(aif_cap_cr * 2.2, 1)
         )
 
         # 11. Forensic Accounting Fraud Radar (Beneish M-Score & Altman Z-Score)

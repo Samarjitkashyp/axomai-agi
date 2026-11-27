@@ -13,47 +13,57 @@ class MCARoCLienScanner:
         self,
         company_name: str = "Target Corporation",
         cin_number: Optional[str] = None,
-        reported_fixed_assets_m: float = 85.0
+        reported_fixed_assets_m: float = 85.0,
+        total_bank_charges_inr_cr: Optional[float] = None,
+        explicit_only: bool = False
     ) -> Dict[str, Any]:
         """
         Scans MCA-21 Register of Charges (Form CHG-1 / CHG-4) to detect encumbered assets.
+        If explicit_only=True and no bank charges were provided, returns clean 0-charge baseline
+        instead of assuming synthetic bank liens.
         """
         if not cin_number:
             cin_number = f"U72900AS2018PTC{abs(hash(company_name)) % 90000 + 10000}"
 
-        # Standard institutional Indian bank charge registers
-        charges = [
-            {
-                "charge_id": f"CHG_{abs(hash(company_name + 'SBI')) % 800000 + 100000}",
-                "charge_holder": "State Bank of India (Consortium Lead)",
-                "amount_secured_inr_cr": 45.0,
-                "amount_secured_usd_m": round(45.0 * 0.12, 2),
-                "property_encumbered": "First pari-passu charge on all Immovable Properties, Industrial Land & Plant & Machinery at Factory Site",
-                "creation_date": "2021-04-15",
-                "status": "OPEN_ACTIVE_CHARGE",
-                "satisfaction_filed": "NO"
-            },
-            {
-                "charge_id": f"CHG_{abs(hash(company_name + 'HDFC')) % 800000 + 100000}",
-                "charge_holder": "HDFC Bank Ltd",
-                "amount_secured_inr_cr": 25.0,
-                "amount_secured_usd_m": round(25.0 * 0.12, 2),
-                "property_encumbered": "Hypothecation of Book Debts, Receivables & Raw Material Inventory",
-                "creation_date": "2022-09-20",
-                "status": "OPEN_ACTIVE_CHARGE",
-                "satisfaction_filed": "NO"
-            },
-            {
-                "charge_id": f"CHG_{abs(hash(company_name + 'SIDBI')) % 800000 + 100000}",
-                "charge_holder": "SIDBI / State Financial Corporation",
-                "amount_secured_inr_cr": 8.5,
-                "amount_secured_usd_m": round(8.5 * 0.12, 2),
-                "property_encumbered": "Second charge on solar rooftop installations & commercial vehicles",
-                "creation_date": "2019-11-10",
-                "status": "SATISFIED_DISCHARGED",
-                "satisfaction_filed": "YES (Form CHG-4 Filed)"
-            }
-        ]
+        if total_bank_charges_inr_cr is not None:
+            charges = []
+            if total_bank_charges_inr_cr > 0:
+                charges.append({
+                    "charge_id": f"CHG_{abs(hash(company_name + 'BANK')) % 800000 + 100000}",
+                    "charge_holder": "Reported Consortium Bank Lien (Form CHG-1)",
+                    "amount_secured_inr_cr": round(total_bank_charges_inr_cr, 2),
+                    "amount_secured_usd_m": round(total_bank_charges_inr_cr * 0.12, 2),
+                    "property_encumbered": "First pari-passu charge on Fixed Assets & Current Assets",
+                    "creation_date": "Active Register",
+                    "status": "OPEN_ACTIVE_CHARGE",
+                    "satisfaction_filed": "NO"
+                })
+        elif explicit_only:
+            charges = []
+        else:
+            # Standalone sample register when called directly without parameters
+            charges = [
+                {
+                    "charge_id": f"CHG_{abs(hash(company_name + 'SBI')) % 800000 + 100000}",
+                    "charge_holder": "State Bank of India (Consortium Lead)",
+                    "amount_secured_inr_cr": 45.0,
+                    "amount_secured_usd_m": round(45.0 * 0.12, 2),
+                    "property_encumbered": "First pari-passu charge on all Immovable Properties, Industrial Land & Plant & Machinery at Factory Site",
+                    "creation_date": "2021-04-15",
+                    "status": "OPEN_ACTIVE_CHARGE",
+                    "satisfaction_filed": "NO"
+                },
+                {
+                    "charge_id": f"CHG_{abs(hash(company_name + 'HDFC')) % 800000 + 100000}",
+                    "charge_holder": "HDFC Bank Ltd",
+                    "amount_secured_inr_cr": 25.0,
+                    "amount_secured_usd_m": round(25.0 * 0.12, 2),
+                    "property_encumbered": "Hypothecation of Book Debts, Receivables & Raw Material Inventory",
+                    "creation_date": "2022-09-20",
+                    "status": "OPEN_ACTIVE_CHARGE",
+                    "satisfaction_filed": "NO"
+                }
+            ]
 
         active_charges = [c for c in charges if c["status"] == "OPEN_ACTIVE_CHARGE"]
         total_encumbered_usd_m = round(sum(c["amount_secured_usd_m"] for c in active_charges), 2)

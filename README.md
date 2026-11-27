@@ -290,18 +290,25 @@ AxomAI's fleet comprises **25 specialized agents** divided into 4 operational ti
 
 #### 20. Z17 Apex-Global (Wall Street & Private Equity Due Diligence)
 - **Module:** `src/axomai/agents/z17_apex_global/`
-- **Core Domain:** Institutional Private Equity M&A underwriting, 5-Year LBO Multi-Tranche Debt Waterfalls, 10,000-Iteration Stochastic Monte Carlo DCF, Public M&A EPS Accretion/Dilution, Live Market Comps, and Quality of Earnings (QoE) Audits.
+- **Core Domain:** Sovereign Private Equity M&A underwriting, 16-Tool Wall Street Quantitative Suite, 5-Year Linked 3-Statement Modeling, 5-Year Multi-Tranche LBO Debt Waterfalls, S&P/Moody's Synthetic Credit Ratings, 10,000-Iteration Stochastic Monte Carlo DCF, Forensic Accounting Radar (Beneish M-Score & Altman Z-Score), Public M&A EPS Accretion/Dilution, Macro Stress Scenarios (Stagflation/Recession) & Tornado Rankings, Quality of Earnings (QoE) Audits, Live Downloadable Excel (.xlsx) Model Generation, and Acquisition Letter of Intent (LOI) Drafting.
 - **How It Works:**
   - `financial_extractor.py`: Dynamically parses target names, public tickers, revenue, EBITDA, growth rates, and multiples from natural language.
+  - `sec_edgar_filings.py`: Connects directly to US SEC EDGAR and Indian BSE/NSE regulatory sources for verified 10-K/10-Q audited XBRL data.
   - `live_market_data.py`: Fetches real-time market data across global exchanges (NASDAQ/NYSE/NSE/BSE) and constructs peer group trading multiple benchmarks.
+  - `forensic_accounting.py`: Computes the 8-ratio Beneish M-Score for earnings manipulation detection and the 5-ratio Altman Z-Score for bankruptcy prediction.
+  - `three_statement_model.py`: Generates a fully integrated 5-year linked Income Statement, Balance Sheet (Assets = Liabilities + Equity balanced), and Cash Flow Statement with working capital metrics (DSO, DIO, DPO).
+  - `credit_rating_engine.py`: Evaluates DSCR/FCCR debt service coverage and assigns synthetic credit ratings (AAA to CCC) with bond yield spreads and max debt capacity sizing.
   - `valuation_engine.py`: Builds a full 5-year unlevered DCF with 5x5 WACC sensitivity matrices and an institutional LBO debt waterfall (Senior/Mezzanine tranches, 75% cash sweep, MOIC, and IRR).
   - `monte_carlo_valuation.py`: Executes 10,000 multivariate stochastic iterations computing P5 (Bear) to P95 (Bull) valuation percentiles and 95%/99% Value-at-Risk (VaR).
+  - `scenario_stress_testing.py`: Models Base, Bull, Stagflation, and Deep Recession macro environments with Tornado sensitivity rankings.
   - `accretion_dilution.py`: Models public M&A share swaps, cash/debt financing mix, pro-forma EPS impact, and break-even synergy requirements.
   - `sec_filing_parser.py`: Analyzes Quality of Earnings (QoE) pro-forma EBITDA add-backs and enforces strict 10% indemnity escrow holdback covenants.
   - `earnings_nlp_engine.py`: Scans executive earnings call transcripts for linguistic deception, evasion markers, and passive-voice distancing.
   - `pmi_synergy_matrix.py`: Models Day-1 to Day-100 post-merger integration milestones and net capitalized run-rate synergies.
+  - `excel_model_generator.py`: Autonomously generates a board-ready, multi-tab Microsoft Excel workbook (.xlsx) with live dynamic formulas (`=SUM`, `=NPV`, `=IRR`).
+  - `loi_term_sheet_generator.py`: Drafts an institutional Private Equity acquisition Letter of Intent (LOI) / Term Sheet with 45-day exclusivity covenants.
   - `cim_pitchbook_compiler.py`: Compiles Goldman Sachs / KKR caliber Confidential Investment Committee Memorandums.
-- **Practical Use Case:** Underwriting complex institutional buyouts, structuring multi-tranche LBO debt waterfalls, testing deal resilience against stochastic market drawdowns, and detecting hidden liabilities before signing Definitive Purchase Agreements (SPA).
+- **Practical Use Case:** End-to-end autonomous institutional private equity due diligence: from scraping real SEC audited filings, auditing balance sheet fraud risk, sizing debt capacity, and stress-testing cash flows across 10,000 Monte Carlo runs, to exporting live Excel financial models and drafting binding acquisition LOIs.
 
 #### 21. Z18 Vanguard (Autonomous SEO, AEO & GEO Intelligence)
 - **Module:** `src/axomai/agents/z18_vanguard/`

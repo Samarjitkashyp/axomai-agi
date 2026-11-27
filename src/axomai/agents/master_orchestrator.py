@@ -481,10 +481,15 @@ class MasterOrchestrator:
                 "confidence": 0.96
             }
 
-        # Check for Z10 Matrix Intent (Logistics, Freight, Fleet, Corridor, Warehouse Staging)
+        # Check for Z10 Matrix Intent (17-Tool Logistics, ULIP/ONDC, Backhaul, VRP, Digital Twin, Port Demurrage, BVLOS Drone)
         z10_explicit_keywords = [
             "logistics", "freight", "fleet", "highway corridor", "freight corridor", "truck route",
-            "warehouse staging", "transit time", "trucking", "toll charges", "fleet route", "distribution hub"
+            "warehouse staging", "transit time", "trucking", "toll charges", "fleet route", "distribution hub",
+            "e-way bill", "eway bill", "vrp", "multi-stop", "cold chain", "cold-chain", "reefer",
+            "brahmaputra waterway", "nw-2", "concor", "axle load", "ev truck", "cargo load",
+            "ulip", "ondc", "backhaul", "return load", "reverse auction", "spot bidding",
+            "act east", "petrapole", "dawki", "sutarkandi", "moreh", "jogighopa",
+            "digital twin", "demurrage", "detention", "bvlos", "cargo drone", "driver fatigue", "blackspot"
         ]
         if any(k in q for k in z10_explicit_keywords):
             return {

@@ -290,9 +290,18 @@ AxomAI's fleet comprises **25 specialized agents** divided into 4 operational ti
 
 #### 20. Z17 Apex-Global (Wall Street & Private Equity Due Diligence)
 - **Module:** `src/axomai/agents/z17_apex_global/`
-- **Core Domain:** Private equity M&A underwriting, Leveraged Buyout (LBO) modeling, Monte Carlo DCF valuation, and CIM pitchbooks.
-- **How It Works:** Executes 10,000 stochastic Monte Carlo simulation rounds to compute enterprise valuation distributions (P10, P50, P90) and debt repayment feasibility.
-- **Practical Use Case:** Underwriting a \$50M corporate acquisition with full debt service coverage ratio (DSCR) and internal rate of return (IRR) projections.
+- **Core Domain:** Institutional Private Equity M&A underwriting, 5-Year LBO Multi-Tranche Debt Waterfalls, 10,000-Iteration Stochastic Monte Carlo DCF, Public M&A EPS Accretion/Dilution, Live Market Comps, and Quality of Earnings (QoE) Audits.
+- **How It Works:**
+  - `financial_extractor.py`: Dynamically parses target names, public tickers, revenue, EBITDA, growth rates, and multiples from natural language.
+  - `live_market_data.py`: Fetches real-time market data across global exchanges (NASDAQ/NYSE/NSE/BSE) and constructs peer group trading multiple benchmarks.
+  - `valuation_engine.py`: Builds a full 5-year unlevered DCF with 5x5 WACC sensitivity matrices and an institutional LBO debt waterfall (Senior/Mezzanine tranches, 75% cash sweep, MOIC, and IRR).
+  - `monte_carlo_valuation.py`: Executes 10,000 multivariate stochastic iterations computing P5 (Bear) to P95 (Bull) valuation percentiles and 95%/99% Value-at-Risk (VaR).
+  - `accretion_dilution.py`: Models public M&A share swaps, cash/debt financing mix, pro-forma EPS impact, and break-even synergy requirements.
+  - `sec_filing_parser.py`: Analyzes Quality of Earnings (QoE) pro-forma EBITDA add-backs and enforces strict 10% indemnity escrow holdback covenants.
+  - `earnings_nlp_engine.py`: Scans executive earnings call transcripts for linguistic deception, evasion markers, and passive-voice distancing.
+  - `pmi_synergy_matrix.py`: Models Day-1 to Day-100 post-merger integration milestones and net capitalized run-rate synergies.
+  - `cim_pitchbook_compiler.py`: Compiles Goldman Sachs / KKR caliber Confidential Investment Committee Memorandums.
+- **Practical Use Case:** Underwriting complex institutional buyouts, structuring multi-tranche LBO debt waterfalls, testing deal resilience against stochastic market drawdowns, and detecting hidden liabilities before signing Definitive Purchase Agreements (SPA).
 
 #### 21. Z18 Vanguard (Autonomous SEO, AEO & GEO Intelligence)
 - **Module:** `src/axomai/agents/z18_vanguard/`

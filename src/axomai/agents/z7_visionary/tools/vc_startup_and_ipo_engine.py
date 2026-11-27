@@ -11,7 +11,16 @@ from typing import Dict, Any, List, Optional
 class VcStartupAndIpoEngine:
     """Computes VC Unit Economics, Cap Table Dilution & SME IPO Roadshow Metrics."""
 
-    def compute_vc_or_ipo_metrics(self, query: str, capex_lakhs: float = 100.0) -> Dict[str, Any]:
+    def compute_vc_or_ipo_metrics(
+        self,
+        query: str,
+        capex_lakhs: float = 100.0,
+        cac_inr: Optional[float] = None,
+        ltv_inr: Optional[float] = None,
+        pre_money_cr: Optional[float] = None,
+        runway_months: Optional[int] = None,
+        tam_cr: Optional[float] = None,
+    ) -> Dict[str, Any]:
         q_lower = query.lower()
         is_sme_ipo = any(k in q_lower for k in ["sme ipo", "nse emerge", "bse sme", "drhp", "roadshow", "ipo"])
         is_vc_pitch = any(k in q_lower for k in ["vc", "startup", "seed", "series a", "sequoia", "yc", "shark tank", "tam", "sam", "som", "cac", "ltv", "runway", "fundraise"])
@@ -22,19 +31,19 @@ class VcStartupAndIpoEngine:
         if m_raise:
             raise_cr = float(m_raise.group(1).replace(",", ""))
 
-        # VC Unit Economics & Cap Table
-        cac_inr = 1850.0
-        ltv_inr = 14800.0
-        ltv_cac_ratio = round(ltv_inr / cac_inr, 1)
-        monthly_burn_lakhs = round(max(4.0, (raise_cr * 100.0) / 18.0), 1)
-        runway_months = 18
+        # VC Unit Economics & Cap Table (dynamic overrides when specified in prompt)
+        cac_inr = float(cac_inr) if (cac_inr is not None and cac_inr > 0) else 1850.0
+        ltv_inr = float(ltv_inr) if (ltv_inr is not None and ltv_inr > 0) else 14800.0
+        ltv_cac_ratio = round(ltv_inr / max(cac_inr, 1.0), 1)
+        runway_months = int(runway_months) if (runway_months is not None and runway_months > 0) else 18
+        monthly_burn_lakhs = round(max(2.0, (raise_cr * 100.0) / runway_months), 1)
 
-        pre_money_cr = round(raise_cr * 4.0, 2)
+        pre_money_cr = round(float(pre_money_cr), 2) if (pre_money_cr is not None and pre_money_cr > 0) else round(raise_cr * 4.0, 2)
         post_money_cr = round(pre_money_cr + raise_cr, 2)
         dilution_pct = round((raise_cr / max(post_money_cr, 0.1)) * 100.0, 1)
 
         # TAM / SAM / SOM (INR Crores)
-        tam_cr = round(max(5000.0, raise_cr * 1500.0), 0)
+        tam_cr = round(float(tam_cr), 0) if (tam_cr is not None and tam_cr > 0) else round(max(5000.0, raise_cr * 1500.0), 0)
         sam_cr = round(tam_cr * 0.22, 0)
         som_cr = round(sam_cr * 0.05, 1)
 

@@ -21,7 +21,13 @@ class GenerativeUIEngine:
         self.output_dir = settings.STORAGE_DIR / "generated"
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    def generate_widget(self, widget_type: str = "ROI_SIMULATOR", project_name: str = "AxomAI Interactive App", raw_query: str = "") -> Dict[str, Any]:
+    def generate_widget(
+        self,
+        widget_type: str = "ROI_SIMULATOR",
+        project_name: str = "AxomAI Interactive App",
+        raw_query: str = "",
+        metrics: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         if widget_type == "ASSAM_LAND_CONVERTER":
             res = self._assam_land_converter(project_name)
         elif widget_type == "LOAN_SUBSIDY_EMI":
@@ -29,7 +35,7 @@ class GenerativeUIEngine:
         elif widget_type == "TEA_YIELD_SIMULATOR":
             res = self._tea_yield_simulator(project_name)
         elif widget_type == "KPI_DASHBOARD":
-            res = self._kpi_dashboard(project_name)
+            res = self._kpi_dashboard(project_name, metrics=metrics)
         elif widget_type == "CUSTOM_DYNAMIC_APP" and raw_query:
             res = self._compile_arbitrary_micro_app(raw_query, project_name)
         else:
@@ -185,7 +191,13 @@ class GenerativeUIEngine:
 </div>"""
         return {"widget_type": "TEA_YIELD_SIMULATOR", "html": html.strip(), "project_name": project_name}
 
-    def _kpi_dashboard(self, project_name: str) -> Dict[str, Any]:
+    def _kpi_dashboard(self, project_name: str, metrics: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        m = metrics or {}
+        growth_pct = m.get("growth_pct", 22.0)
+        ebitda_pct = m.get("ebitda_margin_pct", 24.0)
+        payback_yrs = m.get("payback_years", 2.8)
+        avg_dscr = m.get("avg_dscr", 1.8)
+        rating = "A+" if avg_dscr >= 1.75 else ("A" if avg_dscr >= 1.4 else "B+")
         html = f"""
 <div class="p-4 rounded-xl bg-gray-900 border border-indigo-700/80 shadow-2xl text-white font-sans max-w-xl">
   <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-800">
@@ -193,10 +205,10 @@ class GenerativeUIEngine:
     <span class="text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-700 px-2 py-0.5 rounded font-mono">LIVE KPI</span>
   </div>
   <div class="grid grid-cols-2 gap-3 text-xs">
-    <div class="p-3 rounded-lg bg-black/50 border border-gray-800"><span class="text-gray-400 block">Projected 5Y CAGR</span><span class="text-lg font-bold text-emerald-400 font-mono">24.6%</span></div>
-    <div class="p-3 rounded-lg bg-black/50 border border-gray-800"><span class="text-gray-400 block">Target EBITDA Margin</span><span class="text-lg font-bold text-cyan-300 font-mono">26.5%</span></div>
-    <div class="p-3 rounded-lg bg-black/50 border border-gray-800"><span class="text-gray-400 block">Payback Period</span><span class="text-lg font-bold text-amber-300 font-mono">2.8 Years</span></div>
-    <div class="p-3 rounded-lg bg-black/50 border border-gray-800"><span class="text-gray-400 block">Bankability Rating</span><span class="text-lg font-bold text-indigo-300 font-mono">A+ (DSCR 1.8x)</span></div>
+    <div class="p-3 rounded-lg bg-black/50 border border-gray-800"><span class="text-gray-400 block">Projected 5Y Growth</span><span class="text-lg font-bold text-emerald-400 font-mono">{growth_pct}%</span></div>
+    <div class="p-3 rounded-lg bg-black/50 border border-gray-800"><span class="text-gray-400 block">Target EBITDA Margin</span><span class="text-lg font-bold text-cyan-300 font-mono">{ebitda_pct}%</span></div>
+    <div class="p-3 rounded-lg bg-black/50 border border-gray-800"><span class="text-gray-400 block">Payback Period</span><span class="text-lg font-bold text-amber-300 font-mono">{payback_yrs} Years</span></div>
+    <div class="p-3 rounded-lg bg-black/50 border border-gray-800"><span class="text-gray-400 block">Bankability Rating</span><span class="text-lg font-bold text-indigo-300 font-mono">{rating} (DSCR {avg_dscr}x)</span></div>
   </div>
 </div>"""
         return {"widget_type": "KPI_DASHBOARD", "html": html.strip(), "project_name": project_name}

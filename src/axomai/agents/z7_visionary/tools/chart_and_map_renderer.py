@@ -119,5 +119,65 @@ class ChartAndMapRenderer:
         img.save(str(file_path))
         return {"filename": filename, "file_path": str(file_path), "download_url": f"/api/download/generated/{filename}"}
 
+    def render_pan_india_corridor_map(self, target_hub: str, target_state: str) -> Dict[str, Any]:
+        """Generates a 1000x540 PNG Pan-India Industrial & Startup Corridor Map for non-Assam hubs."""
+        w, h = 1000, 540
+        img = Image.new("RGB", (w, h), (10, 20, 35))
+        draw = ImageDraw.Draw(img)
+
+        draw.text((40, 24), f"PAN-INDIA INDUSTRIAL CORRIDOR MAP — TARGET: {target_hub.upper()} ({target_state.upper()})", fill=(0, 229, 255))
+
+        pan_hubs = {
+            "delhi": (0.42, 0.24),
+            "noida": (0.46, 0.26),
+            "jaipur": (0.35, 0.34),
+            "ahmedabad": (0.24, 0.48),
+            "surat": (0.25, 0.56),
+            "mumbai": (0.26, 0.64),
+            "pune": (0.31, 0.68),
+            "hyderabad": (0.46, 0.68),
+            "bengaluru": (0.43, 0.82),
+            "chennai": (0.54, 0.82),
+            "kolkata": (0.72, 0.50),
+            "guwahati": (0.85, 0.34),
+        }
+        edges = [
+            ("delhi", "noida"), ("delhi", "jaipur"), ("jaipur", "ahmedabad"),
+            ("ahmedabad", "surat"), ("surat", "mumbai"), ("mumbai", "pune"),
+            ("pune", "hyderabad"), ("hyderabad", "bengaluru"), ("bengaluru", "chennai"),
+            ("chennai", "kolkata"), ("kolkata", "delhi"), ("kolkata", "guwahati"),
+        ]
+
+        def to_px(norm: Tuple[float, float]) -> Tuple[int, int]:
+            return int(70 + norm[0] * (w - 140)), int(70 + norm[1] * (h - 120))
+
+        for u, v in edges:
+            draw.line([to_px(pan_hubs[u]), to_px(pan_hubs[v])], fill=(71, 85, 105), width=3)
+
+        t_low = (target_hub or "").lower().strip()
+        matched = False
+        for hub_name, coords in pan_hubs.items():
+            px, py = to_px(coords)
+            is_target = (hub_name in t_low or t_low in hub_name)
+            if is_target:
+                matched = True
+                draw.ellipse([px - 22, py - 22, px + 22, py + 22], outline=(245, 158, 11), width=3)
+                draw.ellipse([px - 10, py - 10, px + 10, py + 10], fill=(0, 229, 255), outline=(255, 255, 255), width=2)
+                draw.text((px + 16, py - 14), f"{target_hub.upper()} (TARGET)", fill=(245, 158, 11))
+            else:
+                draw.ellipse([px - 6, py - 6, px + 6, py + 6], fill=(148, 163, 184))
+                draw.text((px + 10, py - 6), hub_name.title(), fill=(203, 213, 225))
+
+        if not matched:
+            px, py = to_px((0.50, 0.50))
+            draw.ellipse([px - 22, py - 22, px + 22, py + 22], outline=(245, 158, 11), width=3)
+            draw.ellipse([px - 10, py - 10, px + 10, py + 10], fill=(0, 229, 255), outline=(255, 255, 255), width=2)
+            draw.text((px + 16, py - 14), f"{target_hub.upper()} (TARGET)", fill=(245, 158, 11))
+
+        filename = f"pan_india_map_{uuid.uuid4().hex[:8]}.png"
+        file_path = self.output_dir / filename
+        img.save(str(file_path))
+        return {"filename": filename, "file_path": str(file_path), "download_url": f"/api/download/generated/{filename}"}
+
 
 chart_map_renderer = ChartAndMapRenderer()

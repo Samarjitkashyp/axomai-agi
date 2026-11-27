@@ -65,9 +65,12 @@ SECTOR_THEMES = {
 def compute_bankable_dpr_financials(
     capex_lakhs: float = 50.0,
     scheme: Optional[str] = None,
-    district: str = "Guwahati"
+    district: str = "Guwahati",
+    growth_pct: Optional[float] = None,
+    ebitda_margin_pct: Optional[float] = None,
+    interest_rate_pct: Optional[float] = None,
 ) -> Dict[str, Any]:
-    """Computes 5-Year Revenue, EBITDA, Subsidy, Loan EMI & DSCR for Assam Bankable DPRs."""
+    """Computes 5-Year Revenue, EBITDA, Subsidy, Loan EMI & DSCR for Bankable DPRs."""
     subsidy_pct = 0.0
     if scheme and "CMAAA" in scheme:
         subsidy_pct = 50.0
@@ -82,6 +85,10 @@ def compute_bankable_dpr_financials(
     promoter_margin_lakhs = round(capex_lakhs * 0.15, 2)
     term_loan_lakhs = round(max(0.0, capex_lakhs - promoter_margin_lakhs - subsidy_lakhs), 2)
 
+    g_rate = (growth_pct / 100.0) if (growth_pct is not None and growth_pct > 0) else 0.22
+    base_ebitda_margin = (ebitda_margin_pct / 100.0) if (ebitda_margin_pct is not None and ebitda_margin_pct > 0) else 0.24
+    int_rate = (interest_rate_pct / 100.0) if (interest_rate_pct is not None and interest_rate_pct > 0) else 0.095
+
     years = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"]
     revenues_lakhs = []
     ebitda_lakhs = []
@@ -89,12 +96,12 @@ def compute_bankable_dpr_financials(
     dscr_list = []
 
     base_rev = capex_lakhs * 1.45
-    annual_debt_service = round((term_loan_lakhs / 5.0) + (term_loan_lakhs * 0.095), 2) if term_loan_lakhs > 0 else 1.0
+    annual_debt_service = round((term_loan_lakhs / 5.0) + (term_loan_lakhs * int_rate), 2) if term_loan_lakhs > 0 else 1.0
 
     for i in range(5):
-        rev = round(base_rev * ((1.22) ** i), 2)
-        ebitda = round(rev * (0.24 + i * 0.01), 2)
-        pat = round((ebitda - (capex_lakhs * 0.08) - (term_loan_lakhs * 0.08)) * 0.78, 2)
+        rev = round(base_rev * ((1.0 + g_rate) ** i), 2)
+        ebitda = round(rev * min(0.75, base_ebitda_margin + i * 0.01), 2)
+        pat = round((ebitda - (capex_lakhs * 0.08) - (term_loan_lakhs * int_rate * 0.85)) * 0.78, 2)
         dscr = round(ebitda / max(annual_debt_service, 0.5), 2)
         revenues_lakhs.append(rev)
         ebitda_lakhs.append(ebitda)
@@ -102,6 +109,7 @@ def compute_bankable_dpr_financials(
         dscr_list.append(dscr)
 
     avg_dscr = round(sum(dscr_list) / len(dscr_list), 2)
+    payback_years = round(max(1.2, min(6.5, (capex_lakhs - subsidy_lakhs) / max(sum(pat_lakhs[:3]) / 3.0, 1.0))), 1)
     return {
         "district": district,
         "scheme": scheme or "Standard Commercial Term Loan",
@@ -110,6 +118,11 @@ def compute_bankable_dpr_financials(
         "govt_subsidy_lakhs": subsidy_lakhs,
         "bank_term_loan_lakhs": term_loan_lakhs,
         "annual_debt_service_lakhs": annual_debt_service,
+        "growth_pct": round(g_rate * 100.0, 1),
+        "ebitda_margin_pct": round(base_ebitda_margin * 100.0, 1),
+        "interest_rate_pct": round(int_rate * 100.0, 2),
+        "payback_years": payback_years,
+        "avg_dscr": avg_dscr,
         "years": years,
         "revenues_lakhs": revenues_lakhs,
         "ebitda_lakhs": ebitda_lakhs,

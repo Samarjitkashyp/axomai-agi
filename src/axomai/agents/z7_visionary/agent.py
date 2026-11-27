@@ -57,7 +57,22 @@ class Z7VisionaryAgent:
         if params["is_ui_widget"]:
             w_type = params["widget_type"]
             yield {"type": "status", "stage": "generative_ui", "message": f"🎨 Z7 Visionary: Compiling live interactive HTML/JS micro-app ({w_type})..."}
-            widget_data = generative_ui_engine.generate_widget(widget_type=w_type, project_name=params["title"], raw_query=query)
+            kpi_metrics = None
+            if w_type == "KPI_DASHBOARD":
+                kpi_metrics = compute_bankable_dpr_financials(
+                    capex_lakhs=params["capex_lakhs"],
+                    scheme=params["scheme"],
+                    district=params["district"],
+                    growth_pct=params.get("growth_pct"),
+                    ebitda_margin_pct=params.get("ebitda_margin_pct"),
+                    interest_rate_pct=params.get("interest_rate_pct"),
+                )
+            widget_data = generative_ui_engine.generate_widget(
+                widget_type=w_type,
+                project_name=params["title"],
+                raw_query=query,
+                metrics=kpi_metrics,
+            )
             yield {"type": "meta", "agent": self.name, "task_type": "GENERATIVE_UI_WIDGET", "widget": widget_data, "tools_count": 2, "tools_used": ["visionary_extractor", "generative_ui_engine"]}
             msg = f"### 🎨 Z7 Visionary: Interactive `{w_type}` Micro-App\n\n📥 **[Download Standalone Micro-App (.html)]({widget_data.get('download_url')})**\n\nYour live interactive widget is embedded below."
             for tok in msg.split(" "):
@@ -67,7 +82,15 @@ class Z7VisionaryAgent:
 
         # ROUTE B: Pan-India + Assam Full Studio (.pptx + .docx + .xlsx + .html + Brand Kit + VC/IPO)
         pan_india = resolve_pan_india_policy(query, language_script=params["language_script"])
-        vc_ipo = vc_ipo_engine.compute_vc_or_ipo_metrics(query, capex_lakhs=params["capex_lakhs"])
+        vc_ipo = vc_ipo_engine.compute_vc_or_ipo_metrics(
+            query,
+            capex_lakhs=params["capex_lakhs"],
+            cac_inr=params.get("cac_inr"),
+            ltv_inr=params.get("ltv_inr"),
+            pre_money_cr=params.get("pre_money_cr"),
+            runway_months=params.get("runway_months"),
+            tam_cr=params.get("tam_cr"),
+        )
 
         # Live URL Brand Kit Extraction if a website URL is provided
         url_m = re.search(r'(https?://[^\s\)\],\'"]+)', query)
@@ -85,7 +108,14 @@ class Z7VisionaryAgent:
         }
 
         # 1. Financials + State Benchmarks
-        dpr_data = compute_bankable_dpr_financials(capex_lakhs=params["capex_lakhs"], scheme=active_scheme, district=active_location)
+        dpr_data = compute_bankable_dpr_financials(
+            capex_lakhs=params["capex_lakhs"],
+            scheme=active_scheme,
+            district=active_location,
+            growth_pct=params.get("growth_pct"),
+            ebitda_margin_pct=params.get("ebitda_margin_pct"),
+            interest_rate_pct=params.get("interest_rate_pct"),
+        )
         benchmarks = evaluate_assam_benchmarks_and_scheme(district=params["district"], capex_lakhs=params["capex_lakhs"], scheme=active_scheme, language_script=pan_india["language_script"])
         # Override script labels & tariff with Pan-India state policy if non-Assam
         benchmarks["script_labels"] = {
@@ -98,13 +128,17 @@ class Z7VisionaryAgent:
             benchmarks["apdcl_industrial_tariff_inr_kwh"] = pan_india["power_tariff_inr_kwh"]
             benchmarks["aidc_lease_rate_inr_sqft"] = pan_india["industrial_lease_sqft_inr"]
 
-        # 2. High-DPI Break-Even Chart PNG & Catchment Map PNG
+        # 2. High-DPI Break-Even Chart PNG & Catchment Map PNG (Assam OR Pan-India Corridor)
         bep_chart = chart_map_renderer.render_bep_crossover_chart(
             bep_capacity_pct=benchmarks["bep_capacity_pct"],
             bep_revenue_lakhs=benchmarks["bep_revenue_lakhs"],
             yr1_revenue_lakhs=dpr_data["revenues_lakhs"][0]
         )
-        assam_map = chart_map_renderer.render_assam_catchment_map(target_district=params["district"]) if not pan_india["is_pan_india_non_assam"] else None
+        assam_map = (
+            chart_map_renderer.render_pan_india_corridor_map(target_hub=pan_india["industrial_hub"], target_state=pan_india["state"])
+            if pan_india["is_pan_india_non_assam"]
+            else chart_map_renderer.render_assam_catchment_map(target_district=params["district"])
+        )
 
         # 3. Synthesize Slides (inject VC/IPO slides & Document Ingestion context if present)
         ctx_query = f"{query}\nDocument Context: {doc_context[:800]}" if doc_context else query

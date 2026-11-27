@@ -94,6 +94,26 @@ class VisionaryQueryExtractor:
         udyam_match = re.search(r'\b(UDYAM-[A-Z]{2}-\d{2}-\d{7})\b', query, re.IGNORECASE)
         udyam_seal = udyam_match.group(1).upper() if udyam_match else None
 
+        # 6b. Dynamic Financial & VC/IPO Parameter Extraction (eliminates static defaults when specified)
+        def _extract_num(pattern: str) -> Optional[float]:
+            m = re.search(pattern, q_lower)
+            if m:
+                try:
+                    return float(m.group(1).replace(",", ""))
+                except Exception:
+                    return None
+            return None
+
+        growth_pct = _extract_num(r'(?:growth|cagr)\s*(?:rate|of|:|=|at)?\s*(\d+(?:\.\d+)?)\s*%')
+        ebitda_margin_pct = _extract_num(r'(?:ebitda|margin)\s*(?:margin|of|:|=|at)?\s*(\d+(?:\.\d+)?)\s*%')
+        interest_rate_pct = _extract_num(r'(?:interest|roi|rate)\s*(?:rate|of|:|=|at)?\s*(\d+(?:\.\d+)?)\s*%')
+        cac_inr = _extract_num(r'\bcac\b[^.\n]{0,15}?(?:inr|rs\.?|₹)?\s*(\d[\d,]*(?:\.\d+)?)')
+        ltv_inr = _extract_num(r'\bltv\b[^.\n]{0,15}?(?:inr|rs\.?|₹)?\s*(\d[\d,]*(?:\.\d+)?)')
+        pre_money_cr = _extract_num(r'pre[-\s]?money(?:\s*valuation)?[^.\n]{0,15}?(?:inr|rs\.?|₹)?\s*(\d[\d,]*(?:\.\d+)?)\s*(?:cr|crore)?')
+        runway_val = _extract_num(r'\brunway\b[^.\n]{0,15}?(\d+)\s*(?:months?|mos?|m)\b')
+        runway_months = int(runway_val) if runway_val else None
+        tam_cr = _extract_num(r'\btam\b[^.\n]{0,15}?(?:inr|rs\.?|₹)?\s*(\d[\d,]*(?:\.\d+)?)\s*(?:cr|crore)?')
+
         # 7. Output Formats Needed
         m_slides = re.search(r'(\d{1,2})\s*slides?\b', q_lower)
         target_slides = max(5, min(15, int(m_slides.group(1)))) if m_slides else 8
@@ -120,6 +140,14 @@ class VisionaryQueryExtractor:
             "is_bilingual": is_bilingual,
             "is_bilingual_assamese": language_script == "assamese" or is_bilingual,
             "capex_lakhs": capex_lakhs,
+            "growth_pct": growth_pct,
+            "ebitda_margin_pct": ebitda_margin_pct,
+            "interest_rate_pct": interest_rate_pct,
+            "cac_inr": cac_inr,
+            "ltv_inr": ltv_inr,
+            "pre_money_cr": pre_money_cr,
+            "runway_months": runway_months,
+            "tam_cr": tam_cr,
             "white_label_brand": white_label_brand,
             "udyam_seal": udyam_seal,
             "target_slides": target_slides,

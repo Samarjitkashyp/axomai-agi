@@ -77,6 +77,18 @@ class DisasterTelemetryFeed:
         max_mag = max([float(q["magnitude"]) for q in quakes if q.get("magnitude") is not None], default=0.0)
         seismic_tier = "HIGH_SEISMIC_ALERT" if max_mag >= 5.0 else ("MODERATE_TREMORS" if max_mag >= 3.5 else "QUIET_SEISMIC_BASELINE")
 
+        # 3. Live NASA EONET Global Natural Events (Wildfires, Storms, Floods)
+        eonet_events: List[Dict[str, Any]] = []
+        eonet_source = "LIVE_NASA_EONET_V3_API"
+        try:
+            r_eo = requests.get("https://eonet.gsfc.nasa.gov/api/v3/events", params={"status": "open", "limit": 5}, timeout=4.0)
+            if r_eo.status_code == 200:
+                for ev in (r_eo.json().get("events") or []):
+                    cats = [c.get("title") for c in (ev.get("categories") or [])]
+                    eonet_events.append({"title": ev.get("title"), "category": cats[0] if cats else "Natural Event"})
+        except Exception:
+            eonet_source = "NASA_EONET_OFFLINE_FALLBACK"
+
         return {
             "target_location": target_location,
             "seismic_source": seismic_source,
@@ -85,6 +97,8 @@ class DisasterTelemetryFeed:
             "max_magnitude_500km": max_mag,
             "seismic_tier": seismic_tier,
             "atmospheric_aqi": aqi_data,
+            "eonet_source": eonet_source,
+            "nasa_eonet_active_events": eonet_events,
         }
 
 

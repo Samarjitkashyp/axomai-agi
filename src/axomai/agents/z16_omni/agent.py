@@ -15,6 +15,7 @@ from axomai.agents.z16_omni.tools.change_detection_engine import change_detectio
 from axomai.agents.z16_omni.tools.geospatial_impact_and_routing import geospatial_impact_routing
 from axomai.agents.z16_omni.tools.disaster_telemetry_feed import disaster_telemetry_feed
 from axomai.agents.z16_omni.tools.multi_site_comparator import multi_site_comparator
+from axomai.agents.z16_omni.tools.river_discharge_and_elevation import river_discharge_elevation
 from axomai.agents.z16_omni.tools.geospatial_engine import geospatial_engine
 from axomai.agents.z16_omni.tools.satellite_analytics import satellite_analytics
 from axomai.agents.z16_omni.tools.sar_radar_analytics import sar_radar_analytics
@@ -99,6 +100,7 @@ class Z16OmniAgent:
             thermal_data=thermal_data, port_cv=port_cv, ais_data=ais_data
         )
         disaster_feed = disaster_telemetry_feed.fetch_seismic_and_aqi(lat, lng, target_loc)
+        hydro_elev = river_discharge_elevation.fetch_hydrology_and_elevation(lat, lng, target_loc)
         multi_site = multi_site_comparator.compare_sites(query)
 
         # 7. Optional Uploaded Aerial/Satellite Image CV Analysis
@@ -134,6 +136,7 @@ class Z16OmniAgent:
             "change_detection_30d": change_30d,
             "operational_impact": impact_res,
             "seismic_and_aqi": disaster_feed,
+            "river_discharge_and_elevation": hydro_elev,
             "multi_site_comparison": multi_site,
             "uploaded_image_cv": uploaded_cv,
             "optical_indices": sat_indices,
@@ -151,7 +154,7 @@ class Z16OmniAgent:
             "tools_used": [
                 "geo_extractor_and_live_apis", "gis_map_export_builder",
                 "change_detection_engine", "geospatial_impact_routing",
-                "disaster_telemetry_feed", "multi_site_comparator",
+                "disaster_telemetry_feed", "multi_site_comparator", "river_discharge_elevation",
                 "geospatial_engine", "satellite_analytics", "sar_radar_analytics",
                 "satellite_cv_counter", "maritime_ais_tracker", "thermal_evaporative_stress"
             ]
@@ -172,6 +175,7 @@ class Z16OmniAgent:
             )
 
         aqi = disaster_feed["atmospheric_aqi"]
+        eonet_str = ", ".join(e.get("title", "") for e in (disaster_feed.get("nasa_eonet_active_events") or [])[:2]) or "None active"
         download_banner = (
             f"\n\n### 🗺️ Downloadable GIS & Satellite Artifacts ({target_loc})\n\n"
             f"- 🌐 **[Open Interactive Satellite & Port Map (.html)]({leaflet_map['download_url']})**\n"
@@ -179,9 +183,11 @@ class Z16OmniAgent:
             f"- 📈 **[Download 30-Day Change Detection Chart (.png)]({change_30d['trend_chart']['download_url']})**\n"
             f"- 📊 **[Download 7-Day Telemetry & Port Workbook (.xlsx)]({excel_res['download_url']})**\n"
             f"- 🧭 **[Download QGIS / ArcGIS Vector Layer (.geojson)]({geojson_res['download_url']})**\n\n"
-            f"#### ⚡ Operational, Seismic & Atmospheric Telemetry\n"
+            f"#### ⚡ Operational, Hydrological, Seismic & Atmospheric Telemetry\n"
+            f"- **Terrain & River Discharge (GloFAS):** Elevation `{hydro_elev['elevation_meters_asl']} m ASL` | Discharge `{hydro_elev['river_discharge_today_m3s']} m³/s` (7D Max `{hydro_elev['river_discharge_7d_max_m3s']} m³/s` — `{hydro_elev['hydro_flood_tier']}`)\n"
             f"- **30D Rain Surge:** `{change_30d['precip_surge_pct']:+.1f}%` ({change_30d['change_verdict']})\n"
             f"- **Seismic (500km USGS):** `{disaster_feed['earthquake_count_500km']} events` (Max M`{disaster_feed['max_magnitude_500km']}` — `{disaster_feed['seismic_tier']}`)\n"
+            f"- **NASA EONET Global Watch:** `{eonet_str}` (`{disaster_feed.get('eonet_source')}`)\n"
             f"- **Atmospheric Aerosol / Smoke:** `PM2.5 {aqi['pm2_5']} µg/m³` | `Dust {aqi['dust']}` (`{aqi['smoke_haze_tier']}` — `{aqi['source']}`)\n"
             f"- **Alternate Freight Route:** `{impact_res['recommended_alternate_route']}`\n"
             f"- **Crop Yield Risk:** `{impact_res['crop_yield_loss_risk_pct']}%` | **Demurrage Exposure:** `INR {impact_res['estimated_demurrage_inr_lakhs']} Lakhs` (`${int(impact_res['estimated_demurrage_usd']):,}`)\n"

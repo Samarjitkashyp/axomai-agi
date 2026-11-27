@@ -27,22 +27,29 @@ class GISMapAndExportBuilder:
         sar_flood: Dict[str, Any],
         thermal_data: Dict[str, Any],
         ports: List[Dict[str, Any]],
+        change_30d: Dict[str, Any] = None,
     ) -> Dict[str, Any]:
-        """Generates a standalone interactive Leaflet.js satellite + street map HTML file."""
+        """Generates a standalone interactive Leaflet.js satellite + street map HTML file with maritime corridor."""
         fname = f"omni_map_{uuid.uuid4().hex[:8]}.html"
         fpath = self.output_dir / fname
 
         port_markers_js = ""
+        route_pts = []
         for p in ports[:10]:
             c = p.get("coordinates", {})
             plat, plng = c.get("lat"), c.get("lng")
             if plat is not None and plng is not None:
+                route_pts.append([plat, plng])
                 pname = str(p.get("port_name", "Port")).replace("'", "")
                 cong = str(p.get("congestion_index", "")).replace("'", "")
                 port_markers_js += (
                     f"L.circleMarker([{plat}, {plng}], {{radius: 7, color: '#f59e0b', fillColor: '#fbbf24', fillOpacity: 0.85}})"
                     f".addTo(map).bindPopup('<b>{pname}</b><br/>Congestion: {cong}');\n"
                 )
+
+        c30 = change_30d or {}
+        surge_txt = f"{c30.get('precip_surge_pct', 0.0):+.1f}%" if c30 else "N/A"
+        verdict_txt = c30.get("change_verdict", "STABLE")
 
         flood_color = "#ef4444" if "CRITICAL" in str(sar_flood.get("flood_severity_tier", "")) else "#06b6d4"
         html = f"""<!DOCTYPE html>
@@ -57,7 +64,7 @@ class GISMapAndExportBuilder:
     body {{ margin: 0; font-family: system-ui, sans-serif; background: #020617; color: #f8fafc; }}
     #map {{ height: 100vh; width: 100vw; }}
     .hud {{ position: fixed; top: 14px; right: 14px; z-index: 999; background: rgba(15, 23, 42, 0.92);
-            border: 1px solid #0ea5e9; border-radius: 10px; padding: 12px 16px; max-width: 320px; font-size: 12px; }}
+            border: 1px solid #0ea5e9; border-radius: 10px; padding: 12px 16px; max-width: 340px; font-size: 12px; }}
     .hud h3 {{ margin: 0 0 6px; color: #38bdf8; font-size: 14px; }}
   </style>
 </head>
@@ -66,6 +73,7 @@ class GISMapAndExportBuilder:
     <h3>🛰️ Z16 Omni Live GIS Telemetry</h3>
     <div><b>Target:</b> {target_location} ({lat:.4f}, {lng:.4f})</div>
     <div><b>SAR Flood Tier:</b> {sar_flood.get('flood_severity_tier')} ({sar_flood.get('inundation_expansion_pct')})</div>
+    <div><b>30D Rain Surge:</b> {surge_txt} ({verdict_txt})</div>
     <div><b>Thermal ESI:</b> {thermal_data.get('evaporative_stress_index')} ({thermal_data.get('stress_tier')})</div>
     <div><b>LST:</b> {thermal_data.get('derived_land_surface_temp')}</div>
   </div>
@@ -73,10 +81,11 @@ class GISMapAndExportBuilder:
   <script>
     const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{{z}}/{{y}}/{{x}}', {{ attribution: 'Esri World Imagery' }});
     const osm = L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{ attribution: 'OpenStreetMap' }});
-    const map = L.map('map', {{ center: [{lat}, {lng}], zoom: 9, layers: [esriSat] }});
+    const map = L.map('map', {{ center: [{lat}, {lng}], zoom: 8, layers: [esriSat] }});
     L.control.layers({{ 'Satellite Imagery': esriSat, 'Street Map': osm }}).addTo(map);
     L.marker([{lat}, {lng}]).addTo(map).bindPopup('<b>{target_location}</b><br/>SAR: {sar_flood.get("flood_severity_tier")}<br/>ESI: {thermal_data.get("evaporative_stress_index")}').openPopup();
     L.circle([{lat}, {lng}], {{ radius: 18000, color: '{flood_color}', fillColor: '{flood_color}', fillOpacity: 0.18 }}).addTo(map);
+    L.polyline({json.dumps(route_pts[:4])}, {{ color: '#38bdf8', weight: 2, dashArray: '6, 6' }}).addTo(map);
     {port_markers_js}
   </script>
 </body>

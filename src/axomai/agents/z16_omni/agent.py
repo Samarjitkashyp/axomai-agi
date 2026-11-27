@@ -7,9 +7,12 @@ satellite computer vision object counting, marine AIS vessel tracking, and therm
 import re
 from typing import Dict, Any, Generator, Optional, List
 
+from pathlib import Path
 from axomai.core.llm import llm_brain
 from axomai.agents.z16_omni.tools.geo_extractor_and_live_apis import geo_extractor_and_live_apis
 from axomai.agents.z16_omni.tools.gis_map_and_export_builder import gis_map_export_builder
+from axomai.agents.z16_omni.tools.change_detection_engine import change_detection_engine
+from axomai.agents.z16_omni.tools.geospatial_impact_and_routing import geospatial_impact_routing
 from axomai.agents.z16_omni.tools.geospatial_engine import geospatial_engine
 from axomai.agents.z16_omni.tools.satellite_analytics import satellite_analytics
 from axomai.agents.z16_omni.tools.sar_radar_analytics import sar_radar_analytics
@@ -87,10 +90,23 @@ class Z16OmniAgent:
             soil_moisture_pct=live_weather["soil_moisture_pct"],
         )
 
-        # 6. Generate Downloadable Interactive Leaflet Map, Tactical GIS PNG, GeoJSON & Excel
+        # 6. 30-Day Historical Anomaly & Change Detection + Operational/Financial Impact
+        change_30d = change_detection_engine.analyze_30d_anomaly(target_loc, lat, lng)
+        impact_res = geospatial_impact_routing.evaluate_operational_impact(
+            target_location=target_loc, sar_flood=sar_flood, sat_indices=sat_indices,
+            thermal_data=thermal_data, port_cv=port_cv, ais_data=ais_data
+        )
+
+        # 7. Optional Uploaded Aerial/Satellite Image CV Analysis
+        uploaded_cv = None
+        img_m = re.search(r'([A-Za-z0-9_\\/:.\-]+\.(?:png|jpg|jpeg|webp))', query or "", re.IGNORECASE)
+        if img_m and Path(img_m.group(1)).exists():
+            uploaded_cv = satellite_cv_counter.analyze_uploaded_image(img_m.group(1))
+
+        # 8. Generate Downloadable Interactive Leaflet Map, Tactical GIS PNG, GeoJSON & Excel
         leaflet_map = gis_map_export_builder.create_interactive_leaflet_map(
             target_location=target_loc, lat=lat, lng=lng,
-            sar_flood=sar_flood, thermal_data=thermal_data, ports=ports
+            sar_flood=sar_flood, thermal_data=thermal_data, ports=ports, change_30d=change_30d
         )
         tactical_png = gis_map_export_builder.create_tactical_gis_png(
             target_location=target_loc, lat=lat, lng=lng,
@@ -111,6 +127,9 @@ class Z16OmniAgent:
             "geo_target": {"location": target_loc, "region": geo["region_label"], "lat": lat, "lng": lng},
             "live_weather": live_weather,
             "stac_scene": stac_scene,
+            "change_detection_30d": change_30d,
+            "operational_impact": impact_res,
+            "uploaded_image_cv": uploaded_cv,
             "optical_indices": sat_indices,
             "maritime_chokepoints": ports,
             "sar_radar_inundation": sar_flood,
@@ -120,10 +139,12 @@ class Z16OmniAgent:
             "thermal_evaporative_stress": thermal_data,
             "interactive_map": leaflet_map,
             "tactical_gis_png": tactical_png,
+            "change_trend_png": change_30d["trend_chart"],
             "geojson_export": geojson_res,
             "excel_telemetry": excel_res,
             "tools_used": [
                 "geo_extractor_and_live_apis", "gis_map_export_builder",
+                "change_detection_engine", "geospatial_impact_routing",
                 "geospatial_engine", "satellite_analytics", "sar_radar_analytics",
                 "satellite_cv_counter", "maritime_ais_tracker", "thermal_evaporative_stress"
             ]
@@ -134,8 +155,13 @@ class Z16OmniAgent:
             f"\n\n### 🗺️ Downloadable GIS & Satellite Artifacts ({target_loc})\n\n"
             f"- 🌐 **[Open Interactive Satellite & Port Map (.html)]({leaflet_map['download_url']})**\n"
             f"- 📡 **[Download Tactical SAR/ESI GIS Radar (.png)]({tactical_png['download_url']})**\n"
+            f"- 📈 **[Download 30-Day Change Detection Chart (.png)]({change_30d['trend_chart']['download_url']})**\n"
             f"- 📊 **[Download 7-Day Telemetry & Port Workbook (.xlsx)]({excel_res['download_url']})**\n"
-            f"- 🧭 **[Download QGIS / ArcGIS Vector Layer (.geojson)]({geojson_res['download_url']})**\n"
+            f"- 🧭 **[Download QGIS / ArcGIS Vector Layer (.geojson)]({geojson_res['download_url']})**\n\n"
+            f"#### ⚡ Operational & Financial Impact\n"
+            f"- **30D Rain Surge:** `{change_30d['precip_surge_pct']:+.1f}%` ({change_30d['change_verdict']})\n"
+            f"- **Alternate Freight Route:** `{impact_res['recommended_alternate_route']}`\n"
+            f"- **Crop Yield Risk:** `{impact_res['crop_yield_loss_risk_pct']}%` | **Demurrage Exposure:** `INR {impact_res['estimated_demurrage_inr_lakhs']} Lakhs` (`${int(impact_res['estimated_demurrage_usd']):,}`)\n"
         )
 
         prompt = (

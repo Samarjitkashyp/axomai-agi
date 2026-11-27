@@ -8,6 +8,8 @@ import re
 from typing import Dict, Any, Generator, Optional, List
 
 from axomai.core.llm import llm_brain
+from axomai.agents.z16_omni.tools.geo_extractor_and_live_apis import geo_extractor_and_live_apis
+from axomai.agents.z16_omni.tools.gis_map_and_export_builder import gis_map_export_builder
 from axomai.agents.z16_omni.tools.geospatial_engine import geospatial_engine
 from axomai.agents.z16_omni.tools.satellite_analytics import satellite_analytics
 from axomai.agents.z16_omni.tools.sar_radar_analytics import sar_radar_analytics
@@ -39,35 +41,76 @@ class Z16OmniAgent:
         session_id: Optional[str] = "omni_session",
         doc_id: Optional[str] = None
     ) -> Generator[Dict[str, Any], None, None]:
+        geo = geo_extractor_and_live_apis.extract_geo_intent(query)
+        target_loc = geo["target_location"]
+        lat, lng = geo["lat"], geo["lng"]
+        live_weather = geo["live_weather"]
+        stac_scene = geo["stac_scene"]
+
         yield {
             "type": "status",
             "stage": "satellite_telemetry_analysis",
-            "message": "🛰️ Z16 Omni: Acquiring Sentinel-1 SAR radar, AIS maritime transponders, CV object counts & ESI..."
+            "message": f"🛰️ Z16 Omni: Fetching live Open-Meteo + STAC satellite pass for {target_loc} ({lat:.3f}, {lng:.3f})..."
         }
 
-        # 1. Optical Multispectral Indices
-        sat_indices = satellite_analytics.evaluate_satellite_indices(region_name="Global Strategic River Basin")
-        ports = geospatial_engine.get_port_telemetry()
+        # 1. Live-Calibrated Optical Multispectral Indices & Port Hubs
+        sat_indices = satellite_analytics.evaluate_satellite_indices(
+            region_name=target_loc,
+            cloud_cover_pct=live_weather["cloud_cover_pct"],
+            soil_moisture_pct=live_weather["soil_moisture_pct"],
+            precip_7d_mm=live_weather["precip_7d_total_mm"],
+            stac_scene=stac_scene,
+        )
+        ports = geospatial_engine.get_port_telemetry(query)
 
-        # 2. Cloud-Penetrating Sentinel-1 SAR Radar Analysis
+        # 2. Cloud-Penetrating Sentinel-1 SAR Radar Analysis (Live Rain + Soil Moisture)
         sar_flood = sar_radar_analytics.analyze_sar_flood_inundation(
-            region_name="Major Freight Corridor & River Basin", cloud_cover_pct=100.0
+            region_name=target_loc,
+            cloud_cover_pct=live_weather["cloud_cover_pct"],
+            precip_7d_mm=live_weather["precip_7d_total_mm"],
+            soil_moisture_pct=live_weather["soil_moisture_pct"],
+            stac_scene=stac_scene,
         )
 
-        # 3. Satellite Computer Vision Container / Tank Counting
-        port_cv = satellite_cv_counter.detect_port_container_density("singapore_pasir_panjang")
-        oil_tank = satellite_cv_counter.compute_oil_tank_fill_level("numaligarh_refinery_crude_tanks")
+        # 3. Dynamic Port Container & Refinery Tank Shadow Trigonometry
+        port_cv = satellite_cv_counter.detect_port_container_density(geo["port_key"])
+        oil_tank = satellite_cv_counter.compute_oil_tank_fill_level(geo["tank_key"])
 
-        # 4. Real-time Marine AIS Tracking
-        ais_data = maritime_ais_tracker.track_vessel_telemetry("ever_given_sister")
+        # 4. Dynamic Marine AIS Tracking
+        ais_data = maritime_ais_tracker.track_vessel_telemetry(geo["vessel_key"])
 
-        # 5. Thermal Infrared Evaporative Stress (Pre-Drought)
-        thermal_data = thermal_stress_engine.compute_evaporative_stress("global_grain_belt")
+        # 5. True Planck + Live ET0 Thermal Evaporative Stress (Pre-Drought)
+        thermal_data = thermal_stress_engine.compute_evaporative_stress(
+            biome_id=geo["biome_key"],
+            live_temp_c=live_weather["temperature_c"],
+            live_et0_mm=live_weather["et0_today_mm"],
+            soil_moisture_pct=live_weather["soil_moisture_pct"],
+        )
+
+        # 6. Generate Downloadable Interactive Leaflet Map, Tactical GIS PNG, GeoJSON & Excel
+        leaflet_map = gis_map_export_builder.create_interactive_leaflet_map(
+            target_location=target_loc, lat=lat, lng=lng,
+            sar_flood=sar_flood, thermal_data=thermal_data, ports=ports
+        )
+        tactical_png = gis_map_export_builder.create_tactical_gis_png(
+            target_location=target_loc, lat=lat, lng=lng,
+            live_weather=live_weather, sar_flood=sar_flood, thermal_data=thermal_data
+        )
+        geojson_res = gis_map_export_builder.create_geojson_export(
+            target_location=target_loc, lat=lat, lng=lng,
+            sar_flood=sar_flood, thermal_data=thermal_data, ports=ports
+        )
+        excel_res = gis_map_export_builder.create_telemetry_excel(
+            target_location=target_loc, live_weather=live_weather, ports=ports
+        )
 
         meta_event = {
             "type": "meta",
             "agent": self.name,
             "task_type": "GLOBAL_GEOSPATIAL_AND_SATELLITE_VISION",
+            "geo_target": {"location": target_loc, "region": geo["region_label"], "lat": lat, "lng": lng},
+            "live_weather": live_weather,
+            "stac_scene": stac_scene,
             "optical_indices": sat_indices,
             "maritime_chokepoints": ports,
             "sar_radar_inundation": sar_flood,
@@ -75,17 +118,33 @@ class Z16OmniAgent:
             "satellite_cv_oil": oil_tank,
             "ais_vessel_telemetry": ais_data,
             "thermal_evaporative_stress": thermal_data,
+            "interactive_map": leaflet_map,
+            "tactical_gis_png": tactical_png,
+            "geojson_export": geojson_res,
+            "excel_telemetry": excel_res,
             "tools_used": [
+                "geo_extractor_and_live_apis", "gis_map_export_builder",
                 "geospatial_engine", "satellite_analytics", "sar_radar_analytics",
-                "satellite_cv_counter", "maritime_ais_tracker", "thermal_stress_engine"
+                "satellite_cv_counter", "maritime_ais_tracker", "thermal_evaporative_stress"
             ]
         }
         yield meta_event
 
+        download_banner = (
+            f"\n\n### 🗺️ Downloadable GIS & Satellite Artifacts ({target_loc})\n\n"
+            f"- 🌐 **[Open Interactive Satellite & Port Map (.html)]({leaflet_map['download_url']})**\n"
+            f"- 📡 **[Download Tactical SAR/ESI GIS Radar (.png)]({tactical_png['download_url']})**\n"
+            f"- 📊 **[Download 7-Day Telemetry & Port Workbook (.xlsx)]({excel_res['download_url']})**\n"
+            f"- 🧭 **[Download QGIS / ArcGIS Vector Layer (.geojson)]({geojson_res['download_url']})**\n"
+        )
+
         prompt = (
             f"You are Z16 Omni, Chief Remote Sensing Scientist & Geospatial Intelligence Officer.\n"
-            f"User Goal / Inquiry: '{query}'\n\n"
-            f"Sentinel-1 SAR Cloud-Penetrating Radar Analysis: {sar_flood}\n"
+            f"User Goal / Inquiry: '{query}'\n"
+            f"Target Coordinates: {target_loc} ({geo['region_label']}) @ {lat:.4f}, {lng:.4f}\n"
+            f"Live Earth Telemetry ({live_weather['source']}): Temp {live_weather['temperature_c']}°C, Cloud {live_weather['cloud_cover_pct']}%, 7D Rain {live_weather['precip_7d_total_mm']}mm, Soil Moisture {live_weather['soil_moisture_pct']}%, ET0 {live_weather['et0_today_mm']}mm\n"
+            f"Latest Satellite Scene ({stac_scene['source']}): {stac_scene['scene_id']} ({stac_scene['datetime']})\n"
+            f"Sentinel-1 SAR Flood Analysis: {sar_flood}\n"
             f"Satellite CV Container/Oil Tank Audit: {port_cv} | {oil_tank}\n"
             f"AIS Vessel Telemetry: {ais_data}\n"
             f"Thermal Evaporative Stress (Pre-Drought): {thermal_data}\n\n"
@@ -104,21 +163,24 @@ class Z16OmniAgent:
             for chunk in llm_brain.stream_generate("You are Z16 Omni, Geospatial Intelligence Officer.", prompt):
                 full_answer += chunk
                 yield {"type": "token", "content": chunk}
+            full_answer += download_banner
+            for tok in download_banner.split(" "):
+                yield {"type": "token", "content": tok + " "}
         else:
             full_answer = (
-                f"### 🛰️ Z16 Omni: Global Geospatial & Satellite Vision Intelligence\n\n"
-                f"**Constellation:** `ESA Sentinel-1 SAR + NASA Landsat-9 + Planet Labs 30cm` | **Observation Mode:** `MULTI_SENSOR_FUSION`\n\n"
+                f"### 🛰️ Z16 Omni: Live Geospatial & Satellite Vision Intelligence ({target_loc})\n\n"
+                f"**Coordinates:** `{lat:.4f}, {lng:.4f}` ({geo['region_label']}) | **Telemetry:** `{live_weather['source']}` | **STAC Pass:** `{stac_scene['scene_id']}`\n\n"
                 f"#### 🌍 Remote Sensing Telemetry & Computer Vision Matrix\n\n"
                 f"| Sensor Platform | Spectral / Radar Band | Target Asset / Region | Metric Observed | Strategic Operational Implication |\n"
                 f"| :--- | :--- | :--- | :--- | :--- |\n"
-                f"| **Sentinel-1 C-SAR** | Microwave Dual-Pol (VV/VH) | Strategic Freight Basin | Backscatter Δ: {sar_flood['backscatter_change_ratio_db']} | 100% cloud-penetrating flood mapping; {sar_flood['net_submerged_land_sqkm']} sq km inundated |\n"
-                f"| **PlanetScope 30cm** | Optical RGB/NIR | Pasir Panjang, Singapore | {port_cv['detected_teu_count']:,} TEUs ({port_cv['yard_utilization_pct']}) | High yard congestion; container dwell time +36.5h |\n"
-                f"| **Shadow Trig CV** | Optical Shadow Geometry | Strategic Energy Reservoirs | {oil_tank['tank_fill_level_pct']} Fill ({oil_tank['estimated_crude_stored_barrels']}) | Strategic energy inventory abundant at 80.9% capacity |\n"
-                f"| **NASA ECOSTRESS** | Thermal Infrared (TIRS) | Global Grain Agricultural Belt | LST: {thermal_data['derived_land_surface_temp']} (ESI: {thermal_data['evaporative_stress_index']}) | 15-day pre-drought root zone early warning; deploy proactive irrigation |\n\n"
+                f"| **Sentinel-1 C-SAR** | Microwave Dual-Pol (VV/VH) | {target_loc} | Backscatter Δ: {sar_flood['backscatter_change_ratio_db']} | {sar_flood['flood_severity_tier']}; {sar_flood['net_submerged_land_sqkm']} sq km expansion |\n"
+                f"| **Optical CV 30cm** | Optical RGB/NIR | {port_cv['facility_id']} | {port_cv['detected_teu_count']:,} TEUs ({port_cv['yard_utilization_pct']}) | {port_cv['congestion_status']}; berth wait {port_cv['estimated_berth_wait_hours']}h |\n"
+                f"| **Shadow Trig CV** | Optical Shadow Geometry | {oil_tank['facility']} | {oil_tank['tank_fill_level_pct']} Fill ({oil_tank['estimated_crude_stored_barrels']}) | {oil_tank['strategic_reserves_status']} |\n"
+                f"| **Thermal + Open-Meteo** | TIRS + Live ET0 | {geo['biome_key']} | LST: {thermal_data['derived_land_surface_temp']} (ESI: {thermal_data['evaporative_stress_index']}) | {thermal_data['stress_tier']}; {thermal_data['agronomic_intervention']} |\n\n"
                 f"#### 🚢 Marine AIS Vessel Tracking & Maritime Corridors\n\n"
                 f"- **Monitored Vessel:** `{ais_data['vessel_name']}` ({ais_data['vessel_class']}) at `{ais_data['navigational_location']}`.\n"
                 f"- **Speed Over Ground:** `{ais_data['speed_over_ground']}` | **ETA Drift:** `{ais_data['eta_drift_delay_hours']}` to `{ais_data['destination_port']}`.\n"
-                f"- **Freight Logistics Alert:** Multimodal corridors monitored via SAR radar with automatic high-ground route reallocation for low-lying stretches.\n"
+                f"{download_banner}"
             )
             for tok in full_answer.split(" "):
                 yield {"type": "token", "content": tok + " "}

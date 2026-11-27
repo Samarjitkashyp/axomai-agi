@@ -50,6 +50,33 @@ GLOBAL_PORT_HUBS = [
         "key_chokepoint": "Bay of Bengal",
         "strategic_role": "Closest maritime access point for Northeast India (Tripura & Barak Valley transit corridor).",
         "congestion_index": "ELEVATED (3.4 days wait)"
+    },
+    {
+        "port_name": "Mundra Port (Adani)",
+        "country": "India",
+        "coordinates": {"lat": 22.8395, "lng": 69.7213},
+        "annual_throughput_teu": "7.4 Million TEU",
+        "key_chokepoint": "Gulf of Kutch / Arabian Sea",
+        "strategic_role": "India's largest commercial container port serving Northern & Western industrial corridors.",
+        "congestion_index": "NORMAL (1.1 days wait)"
+    },
+    {
+        "port_name": "Paradip Port",
+        "country": "India",
+        "coordinates": {"lat": 20.2644, "lng": 86.6708},
+        "annual_throughput_teu": "145 MMT Cargo",
+        "key_chokepoint": "Bay of Bengal (Odisha)",
+        "strategic_role": "East coast energy, coal, iron ore & refinery terminal.",
+        "congestion_index": "NORMAL (1.3 days wait)"
+    },
+    {
+        "port_name": "Pandu Inland Port (Guwahati)",
+        "country": "India",
+        "coordinates": {"lat": 26.1714, "lng": 91.6820},
+        "annual_throughput_teu": "NW-2 Brahmaputra Multimodal",
+        "key_chokepoint": "National Waterway 2 (Brahmaputra)",
+        "strategic_role": "Northeast India's anchor riverine terminal connecting Assam to Haldia/Kolkata via Indo-Bangladesh Protocol Route.",
+        "congestion_index": "OPTIMAL (0.5 days wait)"
     }
 ]
 
@@ -57,7 +84,11 @@ class GeospatialEngine:
     """Manages spatial coordinate resolution and maritime logistics tracking."""
 
     def get_port_telemetry(self, query: str = "") -> List[Dict[str, Any]]:
-        return GLOBAL_PORT_HUBS
+        if not query:
+            return GLOBAL_PORT_HUBS
+        q = query.lower()
+        prioritized = [p for p in GLOBAL_PORT_HUBS if any(w in p["port_name"].lower() or w in p["country"].lower() or w in p["strategic_role"].lower() for w in q.split() if len(w) > 3)]
+        return prioritized + [p for p in GLOBAL_PORT_HUBS if p not in prioritized]
 
 geospatial_engine = GeospatialEngine()
 

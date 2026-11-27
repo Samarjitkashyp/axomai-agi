@@ -533,18 +533,23 @@ class MasterOrchestrator:
                 "confidence": 0.99
             }
 
-        # Check for Z15 Sovereign Intent (Global Cyber Defense, CVE, Vulnerabilities, SOC2, Zero-Trust, MITRE, SBOM, Canary)
+        # Check for Z15 Sovereign Intent (Global Cyber Defense, CERT-In, DPDP Act, NCIIPC, RBI/UPI, PQC, eBPF, CART, CTI)
         z15_explicit_keywords = [
             "cve", "cvss", "vulnerability scan", "cyber defense", "threat intelligence",
             "soc 2", "iso 27001", "zero-trust audit", "zero day", "exploit", "ciso",
             "mitre", "adversary profiling", "sigma rule", "yara rule", "sbom", "reachability",
-            "cyclonedx", "jailbreak", "llm guardrail", "honeytoken", "canary token"
+            "cyclonedx", "jailbreak", "llm guardrail", "honeytoken", "canary token",
+            "cert-in", "cert in", "annexure-1", "dpdp", "dpdp act", "data fiduciary",
+            "nciipc", "scada", "ics ot", "modbus", "dnp3", "iec 60870",
+            "rbi cyber", "npci upi", "mule account", "pqc", "post-quantum", "fips 203",
+            "ml-kem", "kyber", "ml-dsa", "ebpf", "virtual hotpatch", "hot-patch",
+            "cart", "continuous red team", "darknet cti", "threat feed"
         ]
         if any(k in q for k in z15_explicit_keywords):
             return {
                 "agent": "z15",
                 "name": "Z15 Sovereign",
-                "reason": "Global cyber defense, MITRE adversary TTPs, SBOM reachability, or honeytoken canary detected",
+                "reason": "Sovereign cyber defense, CERT-In reporting, DPDP Act shield, NCIIPC OT guard, or PQC/eBPF detected",
                 "confidence": 0.98
             }
 

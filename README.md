@@ -276,11 +276,20 @@ AxomAI's fleet comprises **25 specialized agents** divided into 4 operational ti
 - **How It Works:** Computes Garman-Kohlhagen currency option valuations, designs zero-cost collar hedging structures, and audits UCP 600 Letters of Credit.
 - **Practical Use Case:** Shielding an export business from USD/INR exchange rate volatility using zero-cost currency option collars.
 
-#### 18. Z15 Sovereign (Cyber Defense & SOC Threat Intelligence)
+#### 18. Z15 Sovereign (National Cyber Defense & Sovereign Threat Intelligence Commander)
 - **Module:** `src/axomai/agents/z15_sovereign/`
-- **Core Domain:** Enterprise cybersecurity, MITRE ATT&CK mapping, software bill of materials (SBOM) vulnerability reachability, and honeytokens.
-- **How It Works:** Analyzes dependency call graphs and network event logs to isolate critical CVE vulnerabilities and deploy decoy canary traps.
-- **Practical Use Case:** Auditing application source code to detect reachable vulnerable dependencies and generating defensive Sigma rules.
+- **Core Domain:** 14-Tool Enterprise & Sovereign Cyber Defense Suite, CERT-In 6-Hour Statutory Incident Reporting (IT Act Section 70B Annexure-1), DPDP Act 2023 Autonomous Data Fiduciary & ₹250 Crore Penalty Shield, NCIIPC Critical National Infrastructure (CII Section 70) SCADA/OT Grid Shield, RBI Cyber Resilience & NPCI UPI Velocity Fraud Interceptor, Post-Quantum Cryptography (PQC NIST FIPS 203/204), eBPF Linux Kernel Virtual Hot-Patching, Continuous Automated Red-Teaming (CART OWASP API Top 10), Sovereign CTI & Darknet Intelligence Fusion, MITRE ATT&CK APT Profiling, SBOM Call-Graph Reachability, and AI LLM Guardrail Shields.
+- **How It Works:**
+  - `cert_in_incident_reporter.py`: Automates official CERT-In Annexure-1 incident dossiers within the mandatory 6-hour statutory window under Section 70B of the IT Act, 2000, eliminating criminal non-compliance liabilities.
+  - `dpdp_act_shield.py`: Audits Data Fiduciary compliance under DPDP Act 2023, detects Indian sovereign PII (Aadhaar, PAN, Voter ID, UPI), computes statutory fine exposure up to ₹250 Crores, and drafts intimation forms to the Data Protection Board of India (DPBI).
+  - `nciipc_grid_shield.py`: Protects Indian Critical Information Infrastructure (CII) under IT Act Section 70; monitors industrial SCADA/OT protocols (Modbus, DNP3, IEC 60870-5-104), detects state-sponsored cyber warfare (Volt Typhoon, RedEcho), and triggers emergency substation air-gap isolation.
+  - `rbi_npci_cyber_resilience.py`: Enforces the 84 controls of RBI's Master Direction on Cyber Resilience and intercepts high-velocity NPCI UPI fraud, SIM-swap attacks, and financial mule accounts.
+  - `post_quantum_crypto_shield.py`: Audits legacy RSA/ECC keys against Shor's Algorithm and "Harvest Now, Decrypt Later" (HNDL) espionage, generating migration roadmaps to NIST FIPS 203 (ML-KEM / Kyber) and FIPS 204 (ML-DSA / Dilithium) aligned with India's National Quantum Mission.
+  - `ebpf_kernel_hotpatcher.py`: Compiles in-memory eBPF Linux kernel bytecode filters and Cilium Tetragon policies to block zero-day exploits (e.g. CVE-2024-3094) at the syscall level without server reboots.
+  - `cart_continuous_auditor.py`: Runs 24/7 autonomous ethical penetration testing simulations against OWASP API Top 10 vectors (BOLA, SSRF, broken auth) and generates verifiable code-level remediation patches.
+  - `sovereign_cti_engine.py`: Correlates CERT-In advisories, NCIIPC early warnings, MISP feeds, and darknet credential dumps, auto-revoking exposed employee credentials.
+  - `cve_scanner.py`, `compliance_framework.py`, `mitre_adversary.py`, `sbom_reachability.py`, `llm_guardrail.py`, `deception_grid.py`: Core suite providing CVSS 3.1 exploit scoring, SOC 2/ISO 27001 zero-trust audits, Sigma/YARA generation, false-positive SBOM reachability triage, prompt injection defense, and active honeytokens.
+- **Practical Use Case:** Defending a national power transmission grid, banking API gateway, or enterprise cloud against state-sponsored APTs while guaranteeing 100% compliance with CERT-In 6-hour reporting and DPDP Act ₹250 Cr statutory shields.
 
 #### 19. Z16 Omni (Global Geospatial & Satellite Vision Intelligence)
 - **Module:** `src/axomai/agents/z16_omni/`

@@ -145,7 +145,12 @@ class MasterOrchestrator:
             "nciipc", "scada", "ics ot", "modbus", "dnp3", "iec 60870",
             "rbi cyber", "npci upi", "mule account", "pqc", "post-quantum", "fips 203",
             "ml-kem", "kyber", "ml-dsa", "ebpf", "virtual hotpatch", "hot-patch",
-            "cart", "continuous red team", "darknet cti", "threat feed"
+            "cart", "continuous red team", "darknet cti", "threat feed",
+            "air-gap", "air gap", "data diode", "badusb", "memory forensic", "fileless malware",
+            "process hollowing", "soar playbook", "soar containment", "model poisoning",
+            "weight poisoning", "model inversion", "safetensors", "ss7", "diameter",
+            "5g core", "network slicing", "cyber warfare", "state attribution", "threat actor attribution",
+            "volt typhoon", "lazarus group", "apt29", "section 65b"
         ]
         if any(k in q for k in z15_explicit_keywords):
             return {
@@ -563,7 +568,12 @@ class MasterOrchestrator:
             "nciipc", "scada", "ics ot", "modbus", "dnp3", "iec 60870",
             "rbi cyber", "npci upi", "mule account", "pqc", "post-quantum", "fips 203",
             "ml-kem", "kyber", "ml-dsa", "ebpf", "virtual hotpatch", "hot-patch",
-            "cart", "continuous red team", "darknet cti", "threat feed"
+            "cart", "continuous red team", "darknet cti", "threat feed",
+            "air-gap", "air gap", "data diode", "badusb", "memory forensic", "fileless malware",
+            "process hollowing", "soar playbook", "soar containment", "model poisoning",
+            "weight poisoning", "model inversion", "safetensors", "ss7", "diameter",
+            "5g core", "network slicing", "cyber warfare", "state attribution", "threat actor attribution",
+            "volt typhoon", "lazarus group", "apt29", "section 65b"
         ]
         if any(k in q for k in z15_explicit_keywords):
             return {

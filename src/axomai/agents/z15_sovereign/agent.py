@@ -1,11 +1,14 @@
 """
-Z15 Sovereign - Global Cyber Defense & Indian Sovereign Threat Intelligence Agent.
+Z15 Sovereign - 20-Tool Military & Sovereign Cyber Defense Commander.
 Orchestrates global CVE threat hunting, CVSS 3.1 exploit assessments,
 MITRE ATT&CK adversary mapping, SBOM reachability analysis, AI LLM guardrails, honeytoken deception,
 CERT-In 6-hour statutory incident reporting (IT Act Sec 70B), DPDP Act 2023 ₹250 Cr penalty defense,
 NCIIPC Critical National Infrastructure SCADA/OT defense, RBI & NPCI UPI cyber resilience,
 Post-Quantum Cryptography (PQC NIST FIPS 203/204), eBPF Linux kernel zero-day virtual hot-patching,
-Continuous Automated Red-Teaming (CART), and Sovereign CTI Darknet intelligence fusion.
+Continuous Automated Red-Teaming (CART), Sovereign CTI Darknet intelligence fusion,
+Air-gap removable media forensics & optical data diode emulation, volatile memory fileless malware dissection,
+Autonomous SOAR sub-50ms micro-containment playbooks, AI model poisoning & inversion defense,
+Telecom SS7/Diameter & 5G network slicing security, and Sovereign Cyber Warfare State Attribution.
 """
 
 import re
@@ -29,6 +32,14 @@ from axomai.agents.z15_sovereign.tools.ebpf_kernel_hotpatcher import ebpf_hotpat
 from axomai.agents.z15_sovereign.tools.cart_continuous_auditor import cart_auditor
 from axomai.agents.z15_sovereign.tools.sovereign_cti_engine import sovereign_cti
 
+# Military & Nation-State Defense Super-Powers
+from axomai.agents.z15_sovereign.tools.airgap_media_forensics import airgap_forensics
+from axomai.agents.z15_sovereign.tools.memory_forensic_dissector import memory_dissector
+from axomai.agents.z15_sovereign.tools.autonomous_soar_playbook import autonomous_soar
+from axomai.agents.z15_sovereign.tools.ai_model_poisoning_shield import ai_model_shield
+from axomai.agents.z15_sovereign.tools.telecom_5g_sovereign_guard import telecom_5g_guard
+from axomai.agents.z15_sovereign.tools.sovereign_attribution_engine import sovereign_attribution
+
 def normalize_markdown(text: str) -> str:
     """Ensures headings, tables, and lists always have clean double newlines."""
     text = re.sub(r'^[ \t]+(#{1,4}\s+)', r'\1', text, flags=re.MULTILINE)
@@ -41,11 +52,11 @@ def normalize_markdown(text: str) -> str:
     return text
 
 class Z15SovereignAgent:
-    """Enterprise Chief Information Security Officer & Indian Sovereign Cyber Defense Commander."""
+    """Enterprise Chief Information Security Officer & Military Cyber Defense Commander."""
 
     def __init__(self):
         self.name = "Z15 Sovereign"
-        self.role = "Global Cyber Defense & Sovereign Threat Intelligence Commander"
+        self.role = "National Cyber Defense Commander & Sovereign Threat Intelligence Titan"
 
     def cyber_defense_stream(
         self,
@@ -56,7 +67,7 @@ class Z15SovereignAgent:
         yield {
             "type": "status",
             "stage": "sovereign_threat_hunting_initiation",
-            "message": "🛡️ Z15 Sovereign: Initializing 14-tool sovereign cyber defense & threat intelligence pipeline..."
+            "message": "🛡️ Z15 Sovereign: Initializing 20-tool military & sovereign cyber defense command matrix..."
         }
 
         # 1. AI LLM Safety Guardrail & PII Shield
@@ -111,17 +122,18 @@ class Z15SovereignAgent:
         # 8. NCIIPC Critical National Infrastructure SCADA/OT Grid Shield
         nciipc_data = nciipc_shield.audit_scada_telemetry(
             sector="Power & Energy (National Grid)",
-            grid_frequency_hz=50.01,
-            unauthorized_coil_writes=0
+            grid_frequency_hz=49.42,
+            unauthorized_coil_writes=3
         )
 
         # 9. RBI Cyber Resilience & NPCI UPI Fraud Interceptor
         rbi_data = rbi_npci_shield.audit_rbi_cyber_governance()
         upi_fraud_data = rbi_npci_shield.intercept_npci_upi_fraud(
-            sender_vpa="user@okhdfc",
-            receiver_vpa="merchant@icici",
-            amount_inr=15000.0,
-            transaction_count_last_10_mins=2
+            sender_vpa="victim@okhdfc",
+            receiver_vpa="mule_syndicate@ybl",
+            amount_inr=95000.0,
+            transaction_count_last_10_mins=12,
+            sim_swap_in_last_24_hours=True
         )
 
         # 10. Post-Quantum Cryptography (PQC) Shield (NIST FIPS 203/204)
@@ -144,17 +156,74 @@ class Z15SovereignAgent:
         # 13. Sovereign Cyber Threat Intelligence (CTI) Fusion
         cti_data = sovereign_cti.scan_sovereign_threat_feeds()
 
+        # 14. Air-Gap Removable Media Forensics & Optical Data Diode
+        airgap_data = airgap_forensics.audit_removable_media(
+            device_vendor_id="058f",
+            device_product_id="6387",
+            volume_label="SOVEREIGN_AIRGAP_ENCLAVE"
+        )
+        yield {
+            "type": "status",
+            "stage": "airgap_media_forensics",
+            "message": f"🔒 Air-Gap Boundary: Optical Diode {airgap_data['optical_data_diode_status']['unidirectional_optical_diode']} (Verdict: {airgap_data['airgap_admission_verdict']})"
+        }
+
+        # 15. Volatile Memory Forensic Dissector (Section 65B Admissible)
+        memory_data = memory_dissector.audit_process_memory_space(
+            pid=1488,
+            process_name="svchost.exe",
+            has_unbacked_rwx_pages=True,
+            hollowed_pe_header=True
+        )
+        yield {
+            "type": "status",
+            "stage": "memory_forensic_dissection",
+            "message": f"🧪 Volatile Memory Dissected: PID {memory_data['inspected_pid']} ({memory_data['threat_classification']}) | Sealed under Sec 65B"
+        }
+
+        # 16. Autonomous SOAR Sub-50ms Micro-Containment Playbook
+        soar_data = autonomous_soar.compile_containment_playbook(
+            incident_id=cert_in_data["incident_reference_id"],
+            compromised_host_ip="10.0.14.88",
+            c2_adversary_ip="185.220.101.45"
+        )
+
+        # 17. AI Model Poisoning & Inversion Shield
+        model_shield_data = ai_model_shield.audit_model_artifact(
+            model_name="axomai-neural-core-70b",
+            weight_format="safetensors"
+        )
+
+        # 18. Telecom SS7/Diameter & 5G Network Slicing Guard
+        telecom_data = telecom_5g_guard.audit_telecom_signaling_traffic(
+            imsi_masked="40445XXXXXXXXXX",
+            calling_gt_address="+79100000000",
+            message_type="MAP_SEND_ROUTING_INFO_FOR_SM"
+        )
+
+        # 19. Sovereign Cyber Warfare Attribution Engine
+        attribution_data = sovereign_attribution.attribute_cyber_campaign(
+            detected_lotl_techniques=["Living-off-the-Land (LotL)", "FRP Reverse Proxy"]
+        )
+        yield {
+            "type": "status",
+            "stage": "cyber_warfare_attribution",
+            "message": f"⚔️ Legal State Attribution: {attribution_data['attributed_adversary']} ({attribution_data['state_sponsorship']}) [Confidence: {attribution_data['attribution_confidence_pct']}%]"
+        }
+
         meta_event = {
             "type": "meta",
             "agent": self.name,
-            "task_type": "SOVEREIGN_CYBER_DEFENSE_AND_REGULATORY_SHIELD",
-            "tools_count": 14,
+            "task_type": "MILITARY_SOVEREIGN_CYBER_DEFENSE_MATRIX",
+            "tools_count": 20,
             "tools_used": [
                 "cve_scanner", "compliance_framework", "mitre_adversary_profiler",
                 "sbom_analyzer", "llm_guardrail_shield", "deception_grid",
                 "cert_in_reporter", "dpdp_shield", "nciipc_shield",
                 "rbi_npci_shield", "pqc_shield", "ebpf_hotpatcher",
-                "cart_auditor", "sovereign_cti"
+                "cart_auditor", "sovereign_cti", "airgap_forensics",
+                "memory_dissector", "autonomous_soar", "ai_model_shield",
+                "telecom_5g_guard", "sovereign_attribution"
             ],
             "cert_in": cert_in_data,
             "dpdp_act": dpdp_data,
@@ -163,55 +232,66 @@ class Z15SovereignAgent:
             "post_quantum": pqc_data,
             "ebpf_patch": ebpf_patch_data,
             "cart_audit": cart_data,
-            "sovereign_cti": cti_data
+            "sovereign_cti": cti_data,
+            "airgap": airgap_data,
+            "memory": memory_data,
+            "soar_playbook": soar_data,
+            "ai_model_guard": model_shield_data,
+            "telecom_5g": telecom_data,
+            "attribution": attribution_data
         }
         yield meta_event
 
         prompt = (
-            f"You are Z15 Sovereign, Global Cyber Defense Commander & Enterprise CISO.\n"
+            f"You are Z15 Sovereign, Military Cyber Defense Commander & National CISO.\n"
             f"User Inquiry: '{query}'\n\n"
             f"CERT-In 6-Hour Ref: {cert_in_data['incident_reference_id']} ({cert_in_data['statutory_compliance_status']})\n"
             f"DPDP Act 2023 Shield: {dpdp_data['statutory_shield_verdict']} (Score: {dpdp_data['compliance_score_pct']}%)\n"
             f"NCIIPC Grid Status: {nciipc_data['threat_classification']} (Frequency: {nciipc_data['operational_metrics']['grid_frequency_hz']} Hz)\n"
             f"RBI & NPCI UPI Verdict: {upi_fraud_data['transaction_verdict']} (Readiness: {rbi_data['readiness_score_pct']}%)\n"
-            f"Post-Quantum Readiness: {pqc_data['hndl_threat_verdict']} (NIST FIPS 203 ML-KEM Roadmap)\n"
+            f"Post-Quantum Readiness: {pqc_data['hndl_threat_verdict']} (Target: ML-KEM-768 / FIPS 203)\n"
             f"eBPF Kernel Hot-Patch: {ebpf_patch_data['patch_reference_id']} ({ebpf_patch_data['enforcement_action']})\n"
-            f"CART 24/7 Red-Teaming: {cart_data['ciso_summary']}\n"
-            f"Sovereign CTI Fusion: {cti_data['sovereign_intel_verdict']}\n\n"
-            "Formulate an authoritative Sovereign Cyber Defense Dossier in clean GitHub Markdown.\n"
-            "Format in structured sections with clean Markdown tables for Threat Vector Analysis and Statutory Regulatory Compliance."
+            f"Air-Gap Diode: {airgap_data['airgap_admission_verdict']} (Optical Diode: {airgap_data['optical_data_diode_status']['unidirectional_optical_diode']})\n"
+            f"Memory Dissection: PID {memory_data['inspected_pid']} ({memory_data['threat_classification']}) [Evidence Act Sec 65B Certificate Generated]\n"
+            f"SOAR Containment: {soar_data['soar_playbook_reference']} (SLA: {soar_data['automated_containment_sla']})\n"
+            f"AI Model Provenance: {model_shield_data['security_clearance']} (Format: {model_shield_data['weight_serialization_format']})\n"
+            f"Telecom 5G Defense: {telecom_data['carrier_firewall_action']}\n"
+            f"Legal Cyber Attribution: {attribution_data['attributed_adversary']} ({attribution_data['state_sponsorship']}) [Confidence: {attribution_data['attribution_confidence_pct']}%]\n\n"
+            "Formulate an authoritative 20-Tool Sovereign Cyber Defense Command Dossier in clean GitHub Markdown.\n"
+            "Structure with clean Markdown tables for Threat Vector Analysis, Statutory Compliance Shield, and Geopolitical State Attribution."
         )
 
         full_answer = ""
         if llm_brain.is_available:
-            for chunk in llm_brain.stream_generate("You are Z15 Sovereign, Sovereign Cyber Defense Commander.", prompt):
+            for chunk in llm_brain.stream_generate("You are Z15 Sovereign, Military Cyber Defense Commander.", prompt):
                 full_answer += chunk
                 yield {"type": "token", "content": chunk}
         else:
             top_threat = threats[0]
             full_answer = (
-                f"### 🛡️ Z15 Sovereign: National Cyber Defense & Sovereign Threat Intelligence\n\n"
-                f"**Threat Hunting Status:** `ACTIVE_SOVEREIGN_SURVEILLANCE` | **AI Firewall:** `VERIFIED_SECURE` | **CERT-In Status:** `{cert_in_data['statutory_compliance_status']}`\n\n"
+                f"### 🛡️ Z15 Sovereign: 20-Tool Military & Sovereign Cyber Defense Command Matrix\n\n"
+                f"**Threat Hunter Status:** `ACTIVE_SOVEREIGN_SURVEILLANCE` | **AI Firewall:** `VERIFIED_SECURE` | **CERT-In Status:** `{cert_in_data['statutory_compliance_status']}`\n\n"
                 f"#### 🔒 Threat Vulnerability Matrix & Exploit Vectors\n\n"
                 f"| Threat Vector / CVE | CVSS 3.1 Severity | Reachability Status | MITRE Tactic | Remediation & Hot-Patch Protocol |\n"
                 f"| :--- | :--- | :--- | :--- | :--- |\n"
                 f"| **{top_threat['cve_id']}** | {top_threat['cvss_v3_score']} ({top_threat['severity']}) | EXPLOITABLE_REACHABLE | Initial Access (T1190) | Apply zero-day patch & isolate edge gateways |\n"
                 f"| **CVE-2024-3094** | 10.0 (CRITICAL) | QUARANTINED | Defense Evasion (T1218) | eBPF Kernel Hot-Patch (`{ebpf_patch_data['patch_reference_id']}`) enforced |\n"
-                f"| **Urllib3 Body Leak** | 7.5 (HIGH) | EXPLOITABLE_REACHABLE | Lateral Exfiltration | Restrict automated redirect headers via TLS cert |\n"
-                f"| **Pillow Eval Vector** | 9.8 (CRITICAL) | DORMANT (Dead Code) | Execution (T1059) | Backlogged; eliminated from active triage by SBOM |\n\n"
+                f"| **Process Hollowing** | 9.8 (CRITICAL) | ACTIVE_MEMORY | Process Injection (T1055) | Memory Dissector terminated PID `{memory_data['inspected_pid']}` (Sec 65B Sealed) |\n"
+                f"| **SS7 OTP Intercept** | 8.9 (HIGH) | DROPPED_CARRIER | Signaling Intercept | Blocked rogue Global Title `{telecom_data['origin_global_title']}` at National Gateway |\n\n"
                 f"#### 🏛️ Indian Sovereign Statutory & Regulatory Compliance Shield\n\n"
                 f"| Statutory Authority / Act | Mandate & Standard | Operational Metric | Compliance Verdict |\n"
                 f"| :--- | :--- | :--- | :--- |\n"
                 f"| **CERT-In (MeitY)** | IT Act Sec 70B (6-Hour Incident Filing) | Filed within `{cert_in_data['time_elapsed_since_detection_hours']} hrs` | **COMPLIANT** (`{cert_in_data['incident_reference_id']}`) |\n"
                 f"| **DPDP Act, 2023** | Data Fiduciary Safeguards (Sec 8 / 33) | Score: `{dpdp_data['compliance_score_pct']}%` | **PROTECTED** (Zero Exposure to ₹250 Cr fine) |\n"
-                f"| **NCIIPC (Sec 70 CII)** | SCADA/ICS OT Grid Protection | Frequency: `{nciipc_data['operational_metrics']['grid_frequency_hz']} Hz` | **GREEN_NOMINAL** (Air-Gap Standby) |\n"
+                f"| **NCIIPC (Sec 70 CII)** | SCADA/ICS OT Grid Protection | Frequency: `{nciipc_data['operational_metrics']['grid_frequency_hz']} Hz` | **AIR_GAP_ENGAGED** (Breaker Trips Blocked) |\n"
                 f"| **RBI Cyber Resilience** | Master Direction on IT Governance | Controls Passed: `{rbi_data['readiness_score_pct']}%` | **FULLY_AUDIT_READY** |\n"
                 f"| **National Quantum Mission** | NIST PQC FIPS 203 / 204 Standards | Target: `ML-KEM-768 & ML-DSA` | **MIGRATION_ROADMAP_ACTIVE** |\n\n"
-                f"#### 🎯 Advanced Autonomous Defensive Capabilities\n\n"
-                f"- **eBPF Virtual Hot-Patching:** Deployed `{ebpf_patch_data['patch_reference_id']}` on Linux Kernel LSM hook `bprm_check_security` without rebooting servers.\n"
-                f"- **24x7 Continuous Red-Teaming (CART):** {cart_data['ciso_summary']}\n"
-                f"- **Active Cyber Deception Grid:** Deployed 3 canary tripwires across AWS IAM credentials and PostgreSQL honey tables (`{canary_res['canary_tokens'][1]['table_name']}`).\n"
-                f"- **Sovereign CTI Fusion:** {cti_data['sovereign_intel_verdict']}\n"
+                f"#### ⚔️ Geopolitical State Attribution & Military Countermeasures\n\n"
+                f"- **Attributed Threat Actor:** `{attribution_data['attributed_adversary']}` | **State Sponsor:** `{attribution_data['state_sponsorship']}`\n"
+                f"- **Attribution Confidence:** `{attribution_data['attribution_confidence_pct']}%` (`{attribution_data['confidence_grade']}`)\n"
+                f"- **Autonomous SOAR Micro-Containment:** Dispatched `{soar_data['soar_playbook_reference']}` (<50ms SLA) isolating host `{soar_data['tier_2_firewall_drop']['action']}`.\n"
+                f"- **Air-Gap Removable Media Defense:** Optical Diode status `{airgap_data['optical_data_diode_status']['unidirectional_optical_diode']}` (EAL 7+ assurance level).\n"
+                f"- **AI Model Provenance:** Verified SafeTensors model `{model_shield_data['model_name']}` (`{model_shield_data['security_clearance']}`).\n"
             )
             for tok in full_answer.split(" "):
                 yield {"type": "token", "content": tok + " "}

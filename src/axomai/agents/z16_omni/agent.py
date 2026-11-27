@@ -18,6 +18,7 @@ from axomai.agents.z16_omni.tools.multi_site_comparator import multi_site_compar
 from axomai.agents.z16_omni.tools.river_discharge_and_elevation import river_discharge_elevation
 from axomai.agents.z16_omni.tools.solar_wind_and_energy_grid import solar_wind_energy_grid
 from axomai.agents.z16_omni.tools.satellite_orbit_and_pass import satellite_orbit_pass
+from axomai.agents.z16_omni.tools.marine_ocean_state import marine_ocean_state
 from axomai.agents.z16_omni.tools.geospatial_engine import geospatial_engine
 from axomai.agents.z16_omni.tools.satellite_analytics import satellite_analytics
 from axomai.agents.z16_omni.tools.sar_radar_analytics import sar_radar_analytics
@@ -87,8 +88,9 @@ class Z16OmniAgent:
             geo["tank_key"], solar_elevation_deg=orbit_pass["solar_elevation_deg"]
         )
 
-        # 4. Dynamic Marine AIS Tracking
+        # 4. Dynamic Marine AIS Tracking & Live Ocean Sea-State
         ais_data = maritime_ais_tracker.track_vessel_telemetry(geo["vessel_key"])
+        marine_state = marine_ocean_state.fetch_marine_sea_state(ports, target_loc)
 
         # 5. True Planck + Live ET0 Thermal Evaporative Stress (Pre-Drought)
         thermal_data = thermal_stress_engine.compute_evaporative_stress(
@@ -156,6 +158,7 @@ class Z16OmniAgent:
             "satellite_cv_port": port_cv,
             "satellite_cv_oil": oil_tank,
             "ais_vessel_telemetry": ais_data,
+            "marine_sea_state": marine_state,
             "thermal_evaporative_stress": thermal_data,
             "interactive_map": leaflet_map,
             "tactical_gis_png": tactical_png,
@@ -166,7 +169,7 @@ class Z16OmniAgent:
                 "geo_extractor_and_live_apis", "gis_map_export_builder",
                 "change_detection_engine", "geospatial_impact_routing",
                 "disaster_telemetry_feed", "multi_site_comparator", "river_discharge_elevation",
-                "solar_wind_energy_grid", "satellite_orbit_pass",
+                "solar_wind_energy_grid", "satellite_orbit_pass", "marine_ocean_state",
                 "geospatial_engine", "satellite_analytics", "sar_radar_analytics",
                 "satellite_cv_counter", "maritime_ais_tracker", "thermal_evaporative_stress"
             ]
@@ -198,6 +201,7 @@ class Z16OmniAgent:
             f"#### ⚡ Operational, Hydrological, Seismic & Atmospheric Telemetry\n"
             f"- **Composite Geo-Risk Score:** `{energy_risk['composite_geo_risk_score']}/100` (`{energy_risk['composite_risk_grade']}`) | **Solar PV Yield:** `{energy_risk['solar_pv_yield_kwh_kwp_day']} kWh/kWp/day` | **Wind Gusts:** `{energy_risk['wind_gusts_10m_kmh']} km/h` (`{energy_risk['wind_safety_tier']}`)\n"
             f"- **Live LEO Orbit & Solar Angle:** `{orbit_pass['leo_platform']}` @ `{orbit_pass['live_footprint_coords']}` (`{orbit_pass['ground_track_distance_km']} km` away, `{orbit_pass['source']}`) | Solar Elevation `{orbit_pass['solar_elevation_deg']}°`\n"
+            f"- **Marine Sea-State ({marine_state['port_monitored']}):** Wave `{marine_state['wave_height_m']} m` | Swell `{marine_state['swell_height_m']} m` (`{marine_state['berthing_safety_tier']}` — `{marine_state['source']}`)\n"
             f"- **Terrain & River Discharge (GloFAS):** Elevation `{hydro_elev['elevation_meters_asl']} m ASL` | Discharge `{hydro_elev['river_discharge_today_m3s']} m³/s` (7D Max `{hydro_elev['river_discharge_7d_max_m3s']} m³/s` — `{hydro_elev['hydro_flood_tier']}`)\n"
             f"- **30D Rain Surge:** `{change_30d['precip_surge_pct']:+.1f}%` ({change_30d['change_verdict']})\n"
             f"- **Seismic (500km USGS):** `{disaster_feed['earthquake_count_500km']} events` (Max M`{disaster_feed['max_magnitude_500km']}` — `{disaster_feed['seismic_tier']}`)\n"

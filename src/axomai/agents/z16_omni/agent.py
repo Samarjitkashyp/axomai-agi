@@ -20,6 +20,7 @@ from axomai.agents.z16_omni.tools.solar_wind_and_energy_grid import solar_wind_e
 from axomai.agents.z16_omni.tools.satellite_orbit_and_pass import satellite_orbit_pass
 from axomai.agents.z16_omni.tools.marine_ocean_state import marine_ocean_state
 from axomai.agents.z16_omni.tools.geospatial_docx_briefing import geospatial_docx_briefing
+from axomai.agents.z16_omni.tools.geospatial_html5_dashboard import geospatial_html5_dashboard
 from axomai.agents.z16_omni.tools.geospatial_engine import geospatial_engine
 from axomai.agents.z16_omni.tools.satellite_analytics import satellite_analytics
 from axomai.agents.z16_omni.tools.sar_radar_analytics import sar_radar_analytics
@@ -144,6 +145,11 @@ class Z16OmniAgent:
             tactical_png_path=tactical_png["file_path"],
             trend_png_path=change_30d["trend_chart"]["file_path"],
         )
+        dashboard_res = geospatial_html5_dashboard.create_command_dashboard_html(
+            target_location=target_loc, geo=geo, live_weather=live_weather, sar_flood=sar_flood,
+            thermal_data=thermal_data, hydro_elev=hydro_elev, energy_risk=energy_risk,
+            disaster_feed=disaster_feed, marine_state=marine_state, leaflet_url=leaflet_map["download_url"],
+        )
 
         meta_event = {
             "type": "meta",
@@ -174,11 +180,13 @@ class Z16OmniAgent:
             "geojson_export": geojson_res,
             "excel_telemetry": excel_res,
             "docx_briefing": docx_res,
+            "html5_dashboard": dashboard_res,
             "tools_used": [
                 "geo_extractor_and_live_apis", "gis_map_export_builder",
                 "change_detection_engine", "geospatial_impact_routing",
                 "disaster_telemetry_feed", "multi_site_comparator", "river_discharge_elevation",
-                "solar_wind_energy_grid", "satellite_orbit_pass", "marine_ocean_state", "geospatial_docx_briefing",
+                "solar_wind_energy_grid", "satellite_orbit_pass", "marine_ocean_state",
+                "geospatial_docx_briefing", "geospatial_html5_dashboard",
                 "geospatial_engine", "satellite_analytics", "sar_radar_analytics",
                 "satellite_cv_counter", "maritime_ais_tracker", "thermal_evaporative_stress"
             ]
@@ -203,6 +211,7 @@ class Z16OmniAgent:
         download_banner = (
             f"\n\n### 🗺️ Downloadable GIS & Satellite Artifacts ({target_loc})\n\n"
             f"- 🌐 **[Open Interactive Satellite & Port Map (.html)]({leaflet_map['download_url']})**\n"
+            f"- 🎛️ **[Open Executive GIS Command Dashboard (.html)]({dashboard_res['download_url']})**\n"
             f"- 📡 **[Download Tactical SAR/ESI GIS Radar (.png)]({tactical_png['download_url']})**\n"
             f"- 📈 **[Download 30-Day Change Detection Chart (.png)]({change_30d['trend_chart']['download_url']})**\n"
             f"- 📊 **[Download 7-Day Telemetry & Port Workbook (.xlsx)]({excel_res['download_url']})**\n"

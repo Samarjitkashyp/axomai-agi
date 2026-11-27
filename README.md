@@ -3,12 +3,13 @@
 [![Python Version](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg)](https://fastapi.tiangolo.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B%20%7C%20pgvector-336791.svg)](https://www.postgresql.org)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Axom%20AI-0077B5?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/company/ai-axom/)
 [![Architecture](https://img.shields.io/badge/Architecture-Sovereign%20AGI%20Fleet-gold.svg)](#-architectural-blueprint)
 [![Agents](https://img.shields.io/badge/Active%20Agents-25%20Autonomous%20Fleet-green.svg)](#-autonomous-agent-fleet-directory-a-to-z)
 [![Security](https://img.shields.io/badge/Security-Zero--Trust%20Iron--Dome-red.svg)](#-zero-trust-security-iron-dome-z-sentinel)
 [![License](https://img.shields.io/badge/License-Proprietary%20%26%20Confidential-black.svg)](#-copyright--proprietary-legal-notice)
 
-**AxomAI** is an advanced, production-grade **Sovereign Artificial General Intelligence (AGI)** enterprise platform. Engineered for mission-critical industrial resilience, deep multimodal analytics, high-finance quantitative modeling, regional economic empowerment, and sovereign defense, AxomAI operates as an autonomous cognitive ecosystem that perceives, reasons, executes, and self-optimizes in real time.
+**AxomAI** ([Axom AI](https://www.linkedin.com/company/ai-axom/)) is an advanced, production-grade **Sovereign Artificial General Intelligence (AGI)** enterprise platform. Engineered for mission-critical industrial resilience, deep multimodal analytics, high-finance quantitative modeling, regional economic empowerment, and sovereign defense, AxomAI operates as an autonomous cognitive ecosystem that perceives, reasons, executes, and self-optimizes in real time.
 
 Operating across **25 autonomous specialized agents**, **multi-agent mega syndicates**, a **4-Tier Cognitive Infinite Memory Engine**, an **Autonomous Internet Self-Learning Radar**, a **Proactive Heartbeat Consciousness Loop**, and a **Recursive Code Metamorphosis Hot-Patcher**, AxomAI fuses rigorous mathematical modeling, real-time web telemetry, geospatial radar vision, and zero-trust cybersecurity guardrails into a unified sovereign war room.
 
@@ -446,15 +447,15 @@ python scratch/test_all_syndicates.py
 
 ## ⚖️ Copyright & Proprietary Legal Notice
 
-**Copyright © 2024–2026 Axom AI. All Rights Reserved.**
+**Copyright © 2024–2026 [Axom AI](https://www.linkedin.com/company/ai-axom/). All Rights Reserved.**
 
 ### Research & Development Notice
-This software, including its cognitive architecture, agent blueprints, mathematical modeling algorithms, memory systems, and user interfaces, is the proprietary **Research & Development (R&D) intellectual property of Axom AI**.
+This software, including its cognitive architecture, agent blueprints, mathematical modeling algorithms, memory systems, and user interfaces, is the proprietary **Research & Development (R&D) intellectual property of [Axom AI](https://www.linkedin.com/company/ai-axom/)**.
 
 ### Terms of Use & Strict Restrictions
-- **No Unauthorized Use:** No part of this repository, source code, design architecture, or documentation may be copied, reproduced, modified, distributed, transmitted, broadcast, displayed, licensed, sold, or commercially exploited in any form or by any means without the express prior written consent of **Axom AI**.
+- **No Unauthorized Use:** No part of this repository, source code, design architecture, or documentation may be copied, reproduced, modified, distributed, transmitted, broadcast, displayed, licensed, sold, or commercially exploited in any form or by any means without the express prior written consent of **[Axom AI](https://www.linkedin.com/company/ai-axom/)**.
 - **Prohibition on Reverse Engineering:** Decompilation, disassembly, reverse engineering, extraction of underlying trade secrets, or training of competitive artificial intelligence models based on the code or datasets within this repository is strictly prohibited.
-- **Confidentiality:** All proprietary algorithms, prompt engineering topologies, and system workflows remain the confidential trade secrets of Axom AI.
+- **Confidentiality:** All proprietary algorithms, prompt engineering topologies, and system workflows remain the confidential trade secrets of [Axom AI](https://www.linkedin.com/company/ai-axom/).
 
 For licensing inquiries, enterprise deployment partnerships, or research collaboration permissions, contact:  
-**Axom AI Enterprise R&D Division** • `contact@axomai.internal` / Official Enterprise Channels
+**[Axom AI](https://www.linkedin.com/company/ai-axom/) Enterprise R&D Division** • [`support@aiaxom.co.in`](mailto:support@aiaxom.co.in) • [Official LinkedIn: company/ai-axom](https://www.linkedin.com/company/ai-axom/)

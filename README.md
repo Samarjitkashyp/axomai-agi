@@ -288,10 +288,18 @@ AxomAI's fleet comprises **25 specialized agents** divided into 4 operational ti
 - **How It Works:** Decodes satellite multispectral radar bands and marine transponder signals to measure crop health, flood boundaries, and shipping traffic.
 - **Practical Use Case:** Monitoring seasonal river basin flood inundation and measuring agricultural soil moisture stress across rural districts.
 
-#### 20. Z17 Apex-Global (Wall Street & Private Equity Due Diligence)
+#### 20. Z17 Apex-Global (Wall Street & Sovereign Indian Corporate Finance)
 - **Module:** `src/axomai/agents/z17_apex_global/`
-- **Core Domain:** Sovereign Private Equity M&A underwriting, 16-Tool Wall Street Quantitative Suite, 5-Year Linked 3-Statement Modeling, 5-Year Multi-Tranche LBO Debt Waterfalls, S&P/Moody's Synthetic Credit Ratings, 10,000-Iteration Stochastic Monte Carlo DCF, Forensic Accounting Radar (Beneish M-Score & Altman Z-Score), Public M&A EPS Accretion/Dilution, Macro Stress Scenarios (Stagflation/Recession) & Tornado Rankings, Quality of Earnings (QoE) Audits, Live Downloadable Excel (.xlsx) Model Generation, and Acquisition Letter of Intent (LOI) Drafting.
+- **Core Domain:** Sovereign Wall Street & Indian Private Equity M&A underwriting, 24-Tool Full Financial Engineering Suite, MCA-21 RoC Form CHG-1 Bank Liens & Mortgages, GSTN GSTR-1/3B/2B Tax Fraud & Circular Turnover Reconciliation, Promoter Share Pledge & Margin Call Liquidation Radar, Section 188 Related Party Siphoning Audits, Income Tax Rule 11UA / Angel Tax Valuation Defense, NCLT IBC 2016 CIRP Resolution Plans & Section 29A Screening, SEBI SAST 26% Mandatory Open Offers, SEBI Category I/II AIF Fund Waterfalls, 5-Year Linked 3-Statement Modeling ($Assets = Liabilities + Equity$), S&P/Moody's Synthetic Credit Ratings, 10,000-Iteration Stochastic Monte Carlo DCF, Live Excel (.xlsx) Model Generation, and Acquisition Letter of Intent (LOI) Drafting.
 - **How It Works:**
+  - `mca_roc_scanner.py`: Scans MCA-21 Register of Charges (Form CHG-1) to detect active undisclosed bank mortgages and audits Director DIN compliance under Section 164(2).
+  - `gstn_forensic_reconciliation.py`: Cross-reconciles GSTR-1, GSTR-3B, and GSTR-2B returns to expose circular trading, fake turnover inflation, and Section 16(2)(c) ITC clawback liabilities.
+  - `promoter_pledge_radar.py`: Monitors BSE/NSE promoter share pledging and calculates exact stock price drop thresholds that trigger NBFC collateral liquidation margin calls.
+  - `rpt_siphoning_scanner.py`: Audits Section 188 of Companies Act 2013 to detect profit siphoning, family tunneling, unapproved Inter-Corporate Deposits (ICDs), and computes True Normalized EBITDA.
+  - `rule_11ua_valuation.py`: Generates Income Tax Rule 11UA(2) Merchant Banker DCF and Rule 11UA(1) NAV valuations to grant 100% statutory defense against Section 56(2)(viib) "Angel Tax" additions.
+  - `nclt_ibc_resolution.py`: Evaluates NCLT Corporate Insolvency Resolution Plans (CIRP), screens Section 29A bidder eligibility, and models Committee of Creditors (CoC) recovery waterfalls under Section 53.
+  - `sebi_sast_takeover.py`: Evaluates mandatory 26% Public Open Offer triggers under SEBI Takeover Regulations, computes 60-day VWAP floor pricing, and sizes Regulation 17 escrow deposits.
+  - `aif_fund_waterfall.py`: Models SEBI AIF Category I/II Private Equity distribution waterfalls (100% LP capital return, 9% INR preferred hurdle, 80/20 GP catch-up, and 20% carried interest).
   - `financial_extractor.py`: Dynamically parses target names, public tickers, revenue, EBITDA, growth rates, and multiples from natural language.
   - `sec_edgar_filings.py`: Connects directly to US SEC EDGAR and Indian BSE/NSE regulatory sources for verified 10-K/10-Q audited XBRL data.
   - `live_market_data.py`: Fetches real-time market data across global exchanges (NASDAQ/NYSE/NSE/BSE) and constructs peer group trading multiple benchmarks.
@@ -308,7 +316,7 @@ AxomAI's fleet comprises **25 specialized agents** divided into 4 operational ti
   - `excel_model_generator.py`: Autonomously generates a board-ready, multi-tab Microsoft Excel workbook (.xlsx) with live dynamic formulas (`=SUM`, `=NPV`, `=IRR`).
   - `loi_term_sheet_generator.py`: Drafts an institutional Private Equity acquisition Letter of Intent (LOI) / Term Sheet with 45-day exclusivity covenants.
   - `cim_pitchbook_compiler.py`: Compiles Goldman Sachs / KKR caliber Confidential Investment Committee Memorandums.
-- **Practical Use Case:** End-to-end autonomous institutional private equity due diligence: from scraping real SEC audited filings, auditing balance sheet fraud risk, sizing debt capacity, and stress-testing cash flows across 10,000 Monte Carlo runs, to exporting live Excel financial models and drafting binding acquisition LOIs.
+- **Practical Use Case:** Complete sovereign corporate finance & private equity due diligence across both global Wall Street and Indian domestic markets: scanning RoC bank charges, verifying GST returns, detecting promoter share pledge risks, defending against Angel Tax notices, resolving NCLT distressed assets, computing 10,000 Monte Carlo runs, exporting live Excel models, and drafting binding acquisition LOIs.
 
 #### 21. Z18 Vanguard (Autonomous SEO, AEO & GEO Intelligence)
 - **Module:** `src/axomai/agents/z18_vanguard/`

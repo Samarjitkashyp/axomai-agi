@@ -1,17 +1,18 @@
 """
-Z15 Sovereign - Post-Quantum Cryptography (PQC) & National Quantum Mission Shield.
-Audits enterprise cryptographic inventories for quantum vulnerability under Shor's Algorithm.
-Evaluates "Harvest Now, Decrypt Later" (HNDL) state-sponsored espionage exposure,
-and drafts migration blueprints to NIST FIPS 203 (ML-KEM / Kyber), FIPS 204 (ML-DSA / Dilithium),
-and FIPS 205 (SLH-DSA / SPHINCS+) standards aligned with India's National Quantum Mission (NQM).
+Z15 Sovereign - Live Post-Quantum Cryptography (PQC) & TLS Cipher Auditor.
+Performs REAL live SSL/TLS socket handshakes against target domains to inspect
+negotiated TLS versions and cipher suites, then audits them against Shor's Algorithm
+and NIST FIPS 203 (ML-KEM / Kyber), FIPS 204 (ML-DSA / Dilithium), and FIPS 205 (SLH-DSA).
 """
 
+import ssl
+import socket
 from typing import Dict, Any, List, Optional
 
-class PostQuantumCryptoShield:
-    """Enterprise Cryptographic Inventory Auditor & Quantum Migration Engine."""
 
-    # PQC Algorithms officially standardized by NIST (August 2024 FIPS releases)
+class PostQuantumCryptoShield:
+    """Live TLS/SSL Inspector & Post-Quantum Cryptography Migration Engine."""
+
     NIST_PQC_STANDARDS = {
         "ML-KEM": {
             "fips_standard": "FIPS 203",
@@ -37,28 +38,49 @@ class PostQuantumCryptoShield:
     }
 
     LEGACY_CRYPTO_VULNERABILITY = {
-        "RSA-2048": {"quantum_status": "VULNERABLE", "threat": "Broken by ~4,096 logical qubits via Shor's Algorithm", "hndl_risk": "CRITICAL"},
-        "RSA-4096": {"quantum_status": "VULNERABLE", "threat": "Broken by ~8,192 logical qubits via Shor's Algorithm", "hndl_risk": "HIGH"},
-        "ECDSA-P256": {"quantum_status": "VULNERABLE", "threat": "Broken by ~2,330 logical qubits via Shor's Algorithm", "hndl_risk": "CRITICAL"},
-        "ECDH-X25519": {"quantum_status": "VULNERABLE", "threat": "Key exchange decryptable retroactively", "hndl_risk": "CRITICAL"},
-        "AES-256-GCM": {"quantum_status": "QUANTUM_RESISTANT", "threat": "Safe under Grover's Algorithm (128-bit quantum security retained)", "hndl_risk": "NEGLIGIBLE"},
-        "SHA-384 / SHA-512": {"quantum_status": "QUANTUM_RESISTANT", "threat": "Pre-image resistance remains cryptographically sound", "hndl_risk": "NEGLIGIBLE"}
+        "RSA": {"quantum_status": "VULNERABLE", "threat": "Broken by Shor's Algorithm", "hndl_risk": "CRITICAL"},
+        "ECDSA": {"quantum_status": "VULNERABLE", "threat": "Broken by Shor's Algorithm", "hndl_risk": "CRITICAL"},
+        "ECDHE": {"quantum_status": "VULNERABLE", "threat": "Classical key exchange decryptable retroactively", "hndl_risk": "CRITICAL"},
+        "TLS_AES_256_GCM_SHA384": {"quantum_status": "SYMMETRIC_SAFE_KEX_CLASSICAL", "threat": "AES-256 safe, but classical X25519/ECDHE handshake vulnerable unless ML-KEM hybrid used", "hndl_risk": "HIGH"},
+        "TLS_AES_128_GCM_SHA256": {"quantum_status": "SYMMETRIC_WEAKENED_BY_GROVER", "threat": "Grover reduces AES-128 to 64-bit quantum security", "hndl_risk": "HIGH"}
     }
+
+    def inspect_live_tls(self, domain: str, port: int = 443) -> Optional[Dict[str, Any]]:
+        """Performs a live TLS handshake against domain:443 to inspect actual cipher & TLS version."""
+        try:
+            ctx = ssl.create_default_context()
+            with socket.create_connection((domain, port), timeout=4) as sock:
+                with ctx.wrap_socket(sock, server_hostname=domain) as ssock:
+                    cipher = ssock.cipher()  # (name, protocol, bits)
+                    return {
+                        "domain": domain,
+                        "tls_version": ssock.version(),
+                        "cipher_name": cipher[0] if cipher else "UNKNOWN",
+                        "cipher_bits": cipher[2] if cipher else 0,
+                        "source": "LIVE_TLS_HANDSHAKE"
+                    }
+        except Exception:
+            return None
 
     def audit_cryptographic_inventory(
         self,
         tls_cipher_suites: Optional[List[str]] = None,
         database_key_algs: Optional[List[str]] = None,
-        root_ca_signature_alg: str = "RSA-2048"
+        root_ca_signature_alg: str = "RSA-2048",
+        target_domain: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Audits enterprise cryptographic keys against quantum threats and HNDL espionage.
+        Audits live TLS handshakes (if domain provided) and cryptographic inventories
+        against quantum threats and HNDL espionage.
         """
+        live_tls_info = None
+        if target_domain and not target_domain.endswith(".internal"):
+            live_tls_info = self.inspect_live_tls(target_domain)
+            if live_tls_info:
+                tls_cipher_suites = [live_tls_info["cipher_name"]]
+
         if not tls_cipher_suites:
-            tls_cipher_suites = [
-                "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-                "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
-            ]
+            tls_cipher_suites = ["TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"]
 
         if not database_key_algs:
             database_key_algs = ["RSA-2048", "AES-256-GCM"]
@@ -66,42 +88,40 @@ class PostQuantumCryptoShield:
         vulnerable_items = []
         hndl_exposure_detected = False
 
-        # Audit TLS suites
         for suite in tls_cipher_suites:
-            for legacy_alg, meta in self.LEGACY_CRYPTO_VULNERABILITY.items():
-                if legacy_alg.replace("-", "_") in suite or (legacy_alg.split("-")[0] in suite and "RSA" in suite):
+            matched = False
+            for key, meta in self.LEGACY_CRYPTO_VULNERABILITY.items():
+                if key in suite.upper():
                     vulnerable_items.append({
-                        "asset": f"TLS Cipher: {suite}",
-                        "legacy_primitive": legacy_alg,
+                        "asset": f"TLS Cipher: {suite}" + (f" ({live_tls_info['domain']} {live_tls_info['tls_version']})" if live_tls_info else ""),
+                        "legacy_primitive": key,
                         "quantum_status": meta["quantum_status"],
                         "hndl_risk": meta["hndl_risk"],
                         "remediation_pqc": "Upgrade to X25519MLKEM768 (Hybrid Post-Quantum TLS 1.3)"
                     })
-                    if meta["hndl_risk"] == "CRITICAL":
+                    if meta["hndl_risk"] in ("CRITICAL", "HIGH"):
                         hndl_exposure_detected = True
-
-        # Audit DB and CA keys
-        if root_ca_signature_alg in self.LEGACY_CRYPTO_VULNERABILITY:
-            meta = self.LEGACY_CRYPTO_VULNERABILITY[root_ca_signature_alg]
-            if meta["quantum_status"] == "VULNERABLE":
+                    matched = True
+                    break
+            if not matched:
                 vulnerable_items.append({
-                    "asset": f"Root CA Certificate Signature ({root_ca_signature_alg})",
-                    "legacy_primitive": root_ca_signature_alg,
-                    "quantum_status": meta["quantum_status"],
-                    "hndl_risk": meta["hndl_risk"],
-                    "remediation_pqc": "Re-issue with ML-DSA-65 (FIPS 204) or dual hybrid signature"
+                    "asset": f"TLS Cipher: {suite}",
+                    "legacy_primitive": "CLASSICAL_KEX",
+                    "quantum_status": "AUDIT_REQUIRED",
+                    "hndl_risk": "HIGH",
+                    "remediation_pqc": "Verify X25519MLKEM768 hybrid key exchange"
                 })
+                hndl_exposure_detected = True
 
-        # Calculate Quantum Readiness Score
-        total_audited = len(tls_cipher_suites) + len(database_key_algs) + 1
+        total_audited = len(tls_cipher_suites) + len(database_key_algs)
         vuln_count = len(vulnerable_items)
         readiness_pct = max(0.0, round(((total_audited - vuln_count) / max(total_audited, 1)) * 100, 1))
 
         return {
             "national_mission": "National Quantum Mission (NQM), Govt of India & NIST PQC Guidelines",
+            "live_tls_handshake": live_tls_info,
             "quantum_readiness_score_pct": readiness_pct,
             "hndl_threat_verdict": "CRITICAL_RETROACTIVE_DECRYPTION_RISK" if hndl_exposure_detected else "PROTECTED_PQC_ENFORCED",
-            "vulnerable_primitives_count": vuln_count,
             "vulnerabilities_found": vulnerable_items,
             "nist_pqc_target_standards": self.NIST_PQC_STANDARDS,
             "post_quantum_migration_roadmap": [
@@ -110,5 +130,6 @@ class PostQuantumCryptoShield:
                 "Stage 3: Rotate legacy RSA database master keys to AES-256-GCM wrapped with ML-KEM-1024"
             ]
         }
+
 
 pqc_shield = PostQuantumCryptoShield()

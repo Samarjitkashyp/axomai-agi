@@ -1,104 +1,96 @@
 """
-Z15 Sovereign - Continuous Automated Red-Teaming (CART) Defensive Posture Auditor.
-Performs continuous 24/7/365 ethical penetration testing simulations against enterprise APIs,
-microservices, and web endpoints based on OWASP API Security Top 10 (2023).
-Generates verifiable proof of exploitability assessments and automated code-level developer patches.
+Z15 Sovereign - Live Non-Destructive Security Posture & HTTP Header Auditor (CART).
+When a real URL/endpoint is provided, performs safe non-destructive HTTP inspection
+of security headers (HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Server banner, CORS)
+and generates concrete FastAPI/Nginx remediation snippets.
 """
 
+import requests
 from typing import Dict, Any, List, Optional
 
-class CartContinuousAuditorEngine:
-    """Enterprise 24/7 Continuous Automated Red-Teaming (CART) Assessment Engine."""
 
-    OWASP_API_TOP10 = [
-        {"id": "API1:2023", "name": "Broken Object Level Authorization (BOLA / IDOR)", "severity": "HIGH"},
-        {"id": "API2:2023", "name": "Broken Authentication (Weak JWT / Session Fixation)", "severity": "CRITICAL"},
-        {"id": "API3:2023", "name": "Broken Object Property Level Authorization (Mass Assignment)", "severity": "HIGH"},
-        {"id": "API4:2023", "name": "Unrestricted Resource Consumption (DoS / Rate Limiting)", "severity": "MEDIUM"},
-        {"id": "API5:2023", "name": "Broken Function Level Authorization (BFLA / Admin Bypass)", "severity": "CRITICAL"},
-        {"id": "API6:2023", "name": "Unrestricted Access to Sensitive Business Flows", "severity": "HIGH"},
-        {"id": "API7:2023", "name": "Server-Side Request Forgery (SSRF)", "severity": "CRITICAL"},
-        {"id": "API8:2023", "name": "Security Misconfiguration (Default Keys / Verbose Errors)", "severity": "MEDIUM"},
-        {"id": "API9:2023", "name": "Improper Inventory Management (Zombie / Shadow APIs)", "severity": "MEDIUM"},
-        {"id": "API10:2023", "name": "Unsafe Consumption of Third-Party APIs", "severity": "HIGH"}
-    ]
+class CartContinuousAuditorEngine:
+    """Live HTTP Security Posture & OWASP Header Auditor."""
+
+    REQUIRED_SECURITY_HEADERS = {
+        "Strict-Transport-Security": "Prevents SSL stripping & downgrade attacks (max-age=31536000; includeSubDomains)",
+        "Content-Security-Policy": "Mitigates XSS and unauthorized script injection",
+        "X-Frame-Options": "Prevents Clickjacking (DENY or SAMEORIGIN)",
+        "X-Content-Type-Options": "Prevents MIME-type sniffing (nosniff)"
+    }
 
     def run_continuous_red_team_audit(
         self,
-        target_api_endpoint: str = "https://api.enterprise.internal/v2/customer/orders",
-        simulated_attack_surface: str = "REST_AND_GRAPHQL_APIS",
+        target_api_endpoint: str = "http://127.0.0.1:8080/",
+        simulated_attack_surface: str = "REST_AND_WEB_HEADERS",
         test_idor_vectors: bool = True,
         test_ssrf_vectors: bool = True,
         test_jwt_none_alg: bool = True
     ) -> Dict[str, Any]:
         """
-        Executes simulated adversarial ethical probes to detect exploitable vectors
-        before real-world adversaries discover them.
+        Performs a real non-destructive HTTP security header & CORS audit against target_api_endpoint.
         """
-        findings = []
+        findings: List[Dict[str, str]] = []
+        audit_mode = "LIVE_HTTP_HEADER_AUDIT"
+        http_status = None
 
-        if test_idor_vectors:
-            findings.append({
-                "owasp_category": "API1:2023 - Broken Object Level Authorization (BOLA)",
-                "target_route": f"{target_api_endpoint}/{{order_id}}",
-                "attack_probe": "GET /v2/customer/orders/98412 with User Token 'cust_123' accessing 'cust_456'",
-                "exploitability_status": "EXPLOITABLE_CONFIRMED",
-                "risk_impact": "Unauthorized horizontal data leakage across customer tenants",
-                "automated_patch_snippet": (
-                    "# Python FastAPI Defensive Authorization Patch:\n"
-                    "@app.get('/v2/customer/orders/{order_id}')\n"
-                    "async def get_order(order_id: int, current_user = Depends(get_current_active_user), db = Depends(get_db)):\n"
-                    "    order = db.query(Order).filter(Order.id == order_id, Order.user_id == current_user.id).first()\n"
-                    "    if not order:\n"
-                    "        raise HTTPException(status_code=404, detail='Order not found or unauthorized')\n"
-                    "    return order"
-                )
-            })
+        try:
+            resp = requests.get(target_api_endpoint, timeout=4, allow_redirects=True)
+            http_status = resp.status_code
+            headers_lower = {k.lower(): v for k, v in resp.headers.items()}
 
-        if test_ssrf_vectors:
-            findings.append({
-                "owasp_category": "API7:2023 - Server-Side Request Forgery (SSRF)",
-                "target_route": f"{target_api_endpoint}/webhook/callback",
-                "attack_probe": "POST payload with callback_url='http://169.254.169.254/latest/meta-data/'",
-                "exploitability_status": "DEFENDED_BLOCKED_BY_SENTINEL",
-                "risk_impact": "Cloud metadata exfiltration and instance identity token theft",
-                "automated_patch_snippet": (
-                    "# Defensive Egress Private IP Guard:\n"
-                    "import ipaddress, urllib.parse\n"
-                    "def validate_webhook_target(url: str) -> bool:\n"
-                    "    hostname = urllib.parse.urlparse(url).hostname\n"
-                    "    ip = ipaddress.ip_address(socket.gethostbyname(hostname))\n"
-                    "    if ip.is_private or ip.is_loopback or ip.is_link_local:\n"
-                    "        raise ValueError('Prohibited SSRF private network destination')\n"
-                    "    return True"
-                )
-            })
+            for hdr, desc in self.REQUIRED_SECURITY_HEADERS.items():
+                if hdr.lower() not in headers_lower:
+                    findings.append({
+                        "owasp_category": "API8:2023 - Security Misconfiguration",
+                        "target_route": target_api_endpoint,
+                        "attack_probe": f"Live HTTP GET header inspection for '{hdr}'",
+                        "exploitability_status": "EXPLOITABLE_MISSING_HEADER",
+                        "risk_impact": desc,
+                        "automated_patch_snippet": f"response.headers['{hdr}'] = 'strict-value'  # Add in FastAPI middleware"
+                    })
 
-        if test_jwt_none_alg:
-            findings.append({
-                "owasp_category": "API2:2023 - Broken Authentication (Algorithm Confusion)",
-                "target_route": f"{target_api_endpoint}/auth/refresh",
-                "attack_probe": "Supplied JWT header with {\"alg\": \"none\"} and forged sub claims",
-                "exploitability_status": "DEFENDED_STRICT_HS256_ENFORCED",
-                "risk_impact": "Full privilege escalation to superadmin role",
-                "automated_patch_snippet": "jwt.decode(token, SECRET_KEY, algorithms=['HS256'], options={'verify_signature': True})"
-            })
+            if headers_lower.get("access-control-allow-origin") == "*":
+                findings.append({
+                    "owasp_category": "API8:2023 - Permissive CORS Wildcard",
+                    "target_route": target_api_endpoint,
+                    "attack_probe": "Inspected Access-Control-Allow-Origin header",
+                    "exploitability_status": "EXPLOITABLE_WILDCARD_CORS",
+                    "risk_impact": "Any external origin can issue cross-origin API requests",
+                    "automated_patch_snippet": "app.add_middleware(CORSMiddleware, allow_origins=['https://trusted.domain'])"
+                })
 
-        critical_count = sum(1 for f in findings if f["exploitability_status"] == "EXPLOITABLE_CONFIRMED")
-        security_health_pct = round(((len(findings) - critical_count) / max(len(findings), 1)) * 100, 1)
+            if "server" in headers_lower:
+                findings.append({
+                    "owasp_category": "API8:2023 - Server Banner Information Disclosure",
+                    "target_route": target_api_endpoint,
+                    "attack_probe": f"Observed Server header: {headers_lower['server']}",
+                    "exploitability_status": "INFO_LEAK_DETECTED",
+                    "risk_impact": "Reveals exact server stack to automated scanners",
+                    "automated_patch_snippet": "uvicorn --no-server-header"
+                })
+
+        except Exception as e:
+            audit_mode = f"TARGET_UNREACHABLE ({str(e)[:50]})"
+
+        total_checks = len(self.REQUIRED_SECURITY_HEADERS) + 2
+        issues_count = len(findings)
+        security_health_pct = round(max(0.0, ((total_checks - issues_count) / total_checks) * 100), 1)
 
         return {
-            "cart_audit_cycle": "CONTINUOUS_24X7_AUTONOMOUS_CYCLE",
+            "cart_audit_cycle": audit_mode,
             "target_surface": target_api_endpoint,
+            "http_status_observed": http_status,
             "security_posture_health_pct": security_health_pct,
-            "total_adversary_probes_executed": 38,
-            "actionable_vulnerabilities_confirmed": critical_count,
+            "total_adversary_probes_executed": total_checks,
+            "actionable_vulnerabilities_confirmed": issues_count,
             "findings": findings,
-            "remediation_status": "PATCHES_READY_FOR_AUTO_MERGE",
+            "remediation_status": "PATCHES_READY_FOR_AUTO_MERGE" if issues_count > 0 else "HARDENED_SECURE",
             "ciso_summary": (
-                f"Continuous Red-Teaming identified {critical_count} actionable zero-day exploit paths out of {len(findings)} tested. "
-                f"Defensive AST patch snippets generated for developer review."
+                f"Live HTTP posture audit ({audit_mode}) on {target_api_endpoint} found {issues_count} misconfigurations "
+                f"(Health: {security_health_pct}%)."
             )
         }
+
 
 cart_auditor = CartContinuousAuditorEngine()

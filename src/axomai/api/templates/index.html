@@ -238,113 +238,8 @@
     </div>
   </header>
 
-  <!-- WORKSPACE SHELL: LEFT NEURALINK PIPELINE + CENTER CHAT -->
+  <!-- WORKSPACE SHELL: CENTER CHAT + RIGHT NEURAL AGENT MAP -->
   <div class="flex-1 flex overflow-hidden relative w-full z-10">
-
-    <!-- LEFT SIDEBAR: NEW CHAT + VERTICAL NEURALINK LIVE AGENT PIPELINE -->
-    <aside id="neural-sidebar" class="hidden md:flex flex-col w-72 lg:w-80 shrink-0 border-r border-slate-800/80 bg-[#070b14]/85 backdrop-blur-xl p-3.5 gap-3 overflow-y-auto">
-      <button onclick="clearChatUI()" class="w-full py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-sky-600/25 to-indigo-600/25 hover:from-sky-500/35 hover:to-indigo-500/35 border border-sky-500/40 text-xs font-semibold text-sky-100 flex items-center justify-center gap-2 transition-all shadow-sm">
-        <i data-lucide="plus-circle" class="w-4 h-4 text-sky-400"></i>
-        <span>New Chat</span>
-      </button>
-
-      <!-- Vertical Neuralink-Style Agent Dots Map Box -->
-      <div class="flex-1 flex flex-col rounded-2xl border border-slate-800/90 bg-slate-950/85 p-3 shadow-2xl relative overflow-hidden">
-        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80">
-          <div class="flex items-center gap-2">
-            <span id="neural-master-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-            <span class="text-[11px] font-bold tracking-wider uppercase text-sky-300 font-mono">Neural Agent Map</span>
-          </div>
-          <span id="neural-timer" class="text-[10px] font-mono text-slate-400">STANDBY</span>
-        </div>
-
-        <!-- Interactive SVG Neural Dots Constellation -->
-        <div class="relative flex-1 flex items-center justify-center min-h-[340px] rounded-xl bg-[#04070e]/90 border border-slate-800/60 overflow-hidden">
-          <svg id="neural-map-svg" viewBox="0 0 260 360" class="w-full h-full max-h-[380px]">
-            <!-- Faint Background Mesh Lines -->
-            <g stroke="#1e293b" stroke-width="1" opacity="0.65">
-              <line x1="130" y1="26" x2="130" y2="74" />
-              <line x1="130" y1="74" x2="130" y2="124" />
-              <line x1="130" y1="124" x2="48" y2="176" />
-              <line x1="130" y1="124" x2="130" y2="176" />
-              <line x1="130" y1="124" x2="212" y2="176" />
-              <line x1="130" y1="124" x2="48" y2="232" />
-              <line x1="130" y1="124" x2="130" y2="232" />
-              <line x1="130" y1="124" x2="212" y2="232" />
-              <line x1="48" y1="176" x2="130" y2="296" />
-              <line x1="130" y1="176" x2="130" y2="296" />
-              <line x1="212" y1="176" x2="130" y2="296" />
-              <line x1="48" y1="232" x2="130" y2="296" />
-              <line x1="130" y1="232" x2="130" y2="296" />
-              <line x1="212" y1="232" x2="130" y2="296" />
-              <line x1="130" y1="296" x2="130" y2="338" />
-            </g>
-
-            <!-- Dynamic Active Synapse Connections Layer -->
-            <g id="neural-active-edges"></g>
-
-            <!-- Agent & Pipeline Dots -->
-            <g font-family="ui-monospace, monospace" font-size="9" text-anchor="middle">
-              <!-- User Prompt Dot -->
-              <circle id="ndot-user" cx="130" cy="26" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="130" y="13" fill="#94a3b8">USER</text>
-
-              <!-- Z Sentinel Pre-Shield -->
-              <circle id="ndot-preguard" cx="130" cy="74" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="172" y="77" fill="#94a3b8" text-anchor="start">Z-Sentinel</text>
-
-              <!-- Master Orchestrator -->
-              <circle id="ndot-router" cx="130" cy="124" r="9" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="172" y="127" fill="#94a3b8" text-anchor="start">Orchestrator</text>
-
-              <!-- Specialist Agent Constellation Dots -->
-              <circle id="ndot-z1" cx="48" cy="176" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="48" y="195" fill="#94a3b8">Z1 Alpha</text>
-
-              <circle id="ndot-z7" cx="130" cy="176" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="130" y="195" fill="#94a3b8">Z7 Vision</text>
-
-              <circle id="ndot-z10" cx="212" cy="176" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="212" y="195" fill="#94a3b8">Z10 Matrix</text>
-
-              <circle id="ndot-z16" cx="48" cy="232" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="48" y="251" fill="#94a3b8">Z16 Omni</text>
-
-              <circle id="ndot-z17" cx="130" cy="232" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="130" y="251" fill="#94a3b8">Z17 Apex</text>
-
-              <circle id="ndot-z_other" cx="212" cy="232" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="212" y="251" fill="#94a3b8">Specialist</text>
-
-              <!-- Post-Audit & Output -->
-              <circle id="ndot-audit" cx="130" cy="296" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="172" y="299" fill="#94a3b8" text-anchor="start">Fact Audit</text>
-
-              <circle id="ndot-output" cx="130" cy="338" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
-              <text x="172" y="341" fill="#94a3b8" text-anchor="start">Verified</text>
-            </g>
-          </svg>
-        </div>
-
-        <!-- Live Active Agent & Tools Pill -->
-        <div class="mt-2.5 p-2 rounded-xl bg-slate-900/80 border border-slate-800/80 space-y-1.5">
-          <div class="flex items-center justify-between text-[10px] font-mono">
-            <span id="neural-active-label" class="text-sky-300 font-semibold truncate">Standby Mode</span>
-            <span id="badge-tools" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">0 TOOLS</span>
-          </div>
-          <div id="neural-tools-grid" class="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
-            <span class="text-[10px] text-slate-500">Ask anything to light up the agent map</span>
-          </div>
-        </div>
-
-        <!-- Compact Synapse Telemetry Log -->
-        <div class="mt-2 pt-2 border-t border-slate-800/80">
-          <div id="neural-log" class="overflow-y-auto space-y-0.5 text-[10px] font-mono text-slate-400 max-h-20">
-            <div class="text-slate-600">• Ready. Dots connect live per query.</div>
-          </div>
-        </div>
-      </div>
-    </aside>
 
     <!-- MAIN CENTERED CHAT WORKSPACE -->
     <main class="flex-1 flex flex-col items-center justify-between overflow-hidden relative w-full">
@@ -407,6 +302,81 @@
     </div>
 
   </main>
+
+  <!-- RIGHT SIDEBAR: ONLY NEURAL AGENT MAP BOX -->
+  <aside id="neural-sidebar" class="hidden md:flex flex-col w-72 lg:w-80 shrink-0 border-l border-slate-800/80 bg-[#070b14]/85 backdrop-blur-xl p-3.5 overflow-hidden">
+    <div class="flex-1 flex flex-col rounded-2xl border border-slate-800/90 bg-slate-950/85 p-3 shadow-2xl relative overflow-hidden">
+      <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80">
+        <div class="flex items-center gap-2">
+          <span id="neural-master-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+          <span class="text-[11px] font-bold tracking-wider uppercase text-sky-300 font-mono">Neural Agent Map</span>
+        </div>
+        <span id="neural-timer" class="text-[10px] font-mono text-slate-400">STANDBY</span>
+      </div>
+
+      <div class="relative flex-1 flex items-center justify-center rounded-xl bg-[#04070e]/90 border border-slate-800/60 overflow-hidden">
+        <svg id="neural-map-svg" viewBox="0 0 260 360" class="w-full h-full">
+          <!-- Faint Background Mesh Lines -->
+          <g stroke="#1e293b" stroke-width="1" opacity="0.65">
+            <line x1="130" y1="26" x2="130" y2="74" />
+            <line x1="130" y1="74" x2="130" y2="124" />
+            <line x1="130" y1="124" x2="48" y2="176" />
+            <line x1="130" y1="124" x2="130" y2="176" />
+            <line x1="130" y1="124" x2="212" y2="176" />
+            <line x1="130" y1="124" x2="48" y2="232" />
+            <line x1="130" y1="124" x2="130" y2="232" />
+            <line x1="130" y1="124" x2="212" y2="232" />
+            <line x1="48" y1="176" x2="130" y2="296" />
+            <line x1="130" y1="176" x2="130" y2="296" />
+            <line x1="212" y1="176" x2="130" y2="296" />
+            <line x1="48" y1="232" x2="130" y2="296" />
+            <line x1="130" y1="232" x2="130" y2="296" />
+            <line x1="212" y1="232" x2="130" y2="296" />
+            <line x1="130" y1="296" x2="130" y2="338" />
+          </g>
+
+          <!-- Dynamic Active Synapse Connections Layer -->
+          <g id="neural-active-edges"></g>
+
+          <!-- Agent & Pipeline Dots -->
+          <g font-family="ui-monospace, monospace" font-size="9" text-anchor="middle">
+            <circle id="ndot-user" cx="130" cy="26" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="130" y="13" fill="#94a3b8">USER</text>
+
+            <circle id="ndot-preguard" cx="130" cy="74" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="172" y="77" fill="#94a3b8" text-anchor="start">Z-Sentinel</text>
+
+            <circle id="ndot-router" cx="130" cy="124" r="9" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="172" y="127" fill="#94a3b8" text-anchor="start">Orchestrator</text>
+
+            <circle id="ndot-z1" cx="48" cy="176" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="48" y="195" fill="#94a3b8">Z1 Alpha</text>
+
+            <circle id="ndot-z7" cx="130" cy="176" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="130" y="195" fill="#94a3b8">Z7 Vision</text>
+
+            <circle id="ndot-z10" cx="212" cy="176" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="212" y="195" fill="#94a3b8">Z10 Matrix</text>
+
+            <circle id="ndot-z16" cx="48" cy="232" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="48" y="251" fill="#94a3b8">Z16 Omni</text>
+
+            <circle id="ndot-z17" cx="130" cy="232" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="130" y="251" fill="#94a3b8">Z17 Apex</text>
+
+            <circle id="ndot-z_other" cx="212" cy="232" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="212" y="251" fill="#94a3b8">Specialist</text>
+
+            <circle id="ndot-audit" cx="130" cy="296" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="172" y="299" fill="#94a3b8" text-anchor="start">Fact Audit</text>
+
+            <circle id="ndot-output" cx="130" cy="338" r="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+            <text x="172" y="341" fill="#94a3b8" text-anchor="start">Verified</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </aside>
   </div>
 
   <!-- JAVASCRIPT APPLICATION LOGIC & CINEMATIC 3D GLOBE -->

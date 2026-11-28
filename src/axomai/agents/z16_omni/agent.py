@@ -35,15 +35,35 @@ from axomai.agents.z16_omni.tools.maritime_ais_tracker import maritime_ais_track
 from axomai.agents.z16_omni.tools.thermal_evaporative_stress import thermal_stress_engine
 
 def normalize_markdown(text: str) -> str:
-    """Ensures headings, tables, and lists always have clean double newlines."""
+    """Ensures ChatGPT/Claude-grade Markdown headings, GFM tables, and bullet lists without breaking separators."""
+    # 1. Ensure clean double newlines before headings
     text = re.sub(r'^[ \t]+(#{1,4}\s+)', r'\1', text, flags=re.MULTILINE)
-    text = re.sub(r'\n[ \t]+(#{1,4}\s+)', r'\n\n\1', text)
     text = re.sub(r'([^\n])\s*(#{1,4}\s+)', r'\1\n\n\2', text)
-    text = re.sub(r'^([^|\n]+)[ \t]*(\|.+)$', r'\1\n\n\2', text, flags=re.MULTILINE)
-    text = re.sub(r'\|\s*\|', '|\n|', text)
-    text = re.sub(r'([^\n])\s*(\n?-\s+\*\*)', r'\1\n\n- **', text)
-    text = re.sub(r'([^\n])\s*(\n?-\s+)', r'\1\n- ', text)
-    return text
+
+    # 2. Process line-by-line so table separator rows (| :--- |) and bullet lines are NEVER corrupted
+    raw_lines = text.splitlines()
+    out_lines = []
+    in_table = False
+
+    for line in raw_lines:
+        stripped = line.strip()
+        if stripped.startswith("|") and stripped.endswith("|"):
+            # Split accidentally concatenated rows like "| a | b | | c | d |" -> two rows
+            sub_rows = re.sub(r'\|\s+\|', '|\n|', stripped).splitlines()
+            if not in_table and out_lines and out_lines[-1].strip() != "":
+                out_lines.append("")
+            out_lines.extend(sub_rows)
+            in_table = True
+        else:
+            if in_table and stripped != "":
+                out_lines.append("")
+            in_table = False
+            out_lines.append(line)
+
+    result = "\n".join(out_lines)
+    # Collapse 3+ consecutive newlines into 2
+    result = re.sub(r'\n{3,}', '\n\n', result)
+    return result.strip()
 
 class Z16OmniAgent:
     """Enterprise Chief Remote Sensing Scientist & Global Geospatial Intelligence Officer."""

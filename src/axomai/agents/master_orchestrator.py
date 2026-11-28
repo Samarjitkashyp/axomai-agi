@@ -592,19 +592,24 @@ class MasterOrchestrator:
                 "confidence": 0.98
             }
 
-        # Check for Z16 Omni Intent (Geospatial, Satellite, Remote Sensing, Ports, NDVI, Landsat, SAR, AIS, ESI)
+        # Check for Z16 Omni Intent (Geospatial, Satellite, Flood, Seismic, AQI, Ports, Drone, Carbon, Site Suitability)
         z16_explicit_keywords = [
             "geospatial", "satellite", "remote sensing", "ndvi", "ndwi",
             "maritime port", "port of singapore", "rotterdam", "jebel ali", "chokepoint", "shipping lane",
+            "jnpt", "mundra", "paradip", "chittagong", "pandu", "port congestion", "demurrage",
             "sentinel-1", "sar radar", "synthetic aperture radar", "radar backscatter",
             "container count", "oil tank fill", "shadow trigonometry", "maritime ais", "vessel telemetry",
-            "evaporative stress index", "pre-drought"
+            "evaporative stress", "pre-drought", "drought", "flood risk", "flooding", "river discharge", "glofas",
+            "seismic", "earthquake", "air quality", "air-quality", "pm2.5", "smoke haze",
+            "wave height", "sea state", "berth safety", "carbon credit", "tco2e", "agronomy window",
+            "uav", "drone sortie", "drone survey", "urban heat", "site suitability",
+            "cold-chain spoilage", "parametric insurance", "geojson", "kml", "leaflet", "gis briefing"
         ]
-        if any(k in q for k in z16_explicit_keywords) or bool(re.search(r'\b(esi|sar|ais)\b', q)):
+        if any(k in q for k in z16_explicit_keywords) or bool(re.search(r'\b(esi|sar|ais|aqi|gis|uhi)\b', q)):
             return {
                 "agent": "z16",
                 "name": "Z16 Omni",
-                "reason": "Global geospatial telemetry, Sentinel-1 SAR cloud penetration, marine AIS, or ESI drought detected",
+                "reason": "Global geospatial telemetry, flood/seismic/AQI hazard, marine AIS, drone, or GIS suite detected",
                 "confidence": 0.97
             }
 

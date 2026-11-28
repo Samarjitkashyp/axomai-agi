@@ -26,6 +26,7 @@ from axomai.agents.z16_omni.tools.carbon_and_agronomy_engine import carbon_agron
 from axomai.agents.z16_omni.tools.aviation_drone_corridor import aviation_drone_corridor
 from axomai.agents.z16_omni.tools.urban_heat_and_site_suitability import urban_heat_site_suitability
 from axomai.agents.z16_omni.tools.parametric_insurance_trigger import parametric_insurance_trigger
+from axomai.agents.z16_omni.tools.cold_chain_and_sla_engine import cold_chain_sla_engine
 from axomai.agents.z16_omni.tools.geospatial_engine import geospatial_engine
 from axomai.agents.z16_omni.tools.satellite_analytics import satellite_analytics
 from axomai.agents.z16_omni.tools.sar_radar_analytics import sar_radar_analytics
@@ -177,6 +178,10 @@ class Z16OmniAgent:
             hydro_elev=hydro_elev, thermal_data=thermal_data,
             disaster_feed=disaster_feed, energy_risk=energy_risk,
         )
+        cold_sla = cold_chain_sla_engine.evaluate_cold_chain_and_sla(
+            target_location=target_loc, live_weather=live_weather,
+            sar_flood=sar_flood, impact_res=impact_res,
+        )
 
         meta_event = {
             "type": "meta",
@@ -213,6 +218,7 @@ class Z16OmniAgent:
             "aviation_drone_corridor": drone_corridor,
             "urban_heat_and_site_suitability": site_suit,
             "parametric_insurance_trigger": insurance_trig,
+            "cold_chain_and_sla": cold_sla,
             "tools_used": [
                 "geo_extractor_and_live_apis", "gis_map_export_builder",
                 "change_detection_engine", "geospatial_impact_routing",
@@ -220,7 +226,7 @@ class Z16OmniAgent:
                 "solar_wind_energy_grid", "satellite_orbit_pass", "marine_ocean_state",
                 "geospatial_docx_briefing", "geospatial_html5_dashboard", "geofence_kml_exporter",
                 "carbon_agronomy_engine", "aviation_drone_corridor", "urban_heat_site_suitability",
-                "parametric_insurance_trigger",
+                "parametric_insurance_trigger", "cold_chain_sla_engine",
                 "geospatial_engine", "satellite_analytics", "sar_radar_analytics",
                 "satellite_cv_counter", "maritime_ais_tracker", "thermal_evaporative_stress"
             ]
@@ -263,7 +269,8 @@ class Z16OmniAgent:
             f"- **Atmospheric Aerosol / Smoke:** `PM2.5 {aqi['pm2_5']} µg/m³` | `Dust {aqi['dust']}` (`{aqi['smoke_haze_tier']}` — `{aqi['source']}`)\n"
             f"- **Alternate Freight Route:** `{impact_res['recommended_alternate_route']}`\n"
             f"- **Crop Yield Risk:** `{impact_res['crop_yield_loss_risk_pct']}%` | **Carbon Credits:** `{carbon_agro['estimated_carbon_stock_tco2e_ha']} tCO2e/ha` (`INR {int(carbon_agro['carbon_credit_value_inr_ha']):,}/ha`) | **Agronomy Window:** `{carbon_agro['precision_agronomy_window']}`\n"
-            f"- **UAV Drone Sortie:** `{drone_corridor['flight_status']}` (Max `{drone_corridor['recommended_altitude_agl_m']} m AGL`) | **Site Suitability:** `{site_suit['site_suitability_score']}/100` (`{site_suit['site_suitability_grade']}`) | **Parametric Insurance:** `{insurance_trig['trigger_status']}` (`{insurance_trig['recommended_payout_pct']}%`) | **Demurrage Exposure:** `INR {impact_res['estimated_demurrage_inr_lakhs']} Lakhs` (`${int(impact_res['estimated_demurrage_usd']):,}`)\n"
+            f"- **UAV Drone Sortie:** `{drone_corridor['flight_status']}` (Max `{drone_corridor['recommended_altitude_agl_m']} m AGL`) | **Site Suitability:** `{site_suit['site_suitability_score']}/100` (`{site_suit['site_suitability_grade']}`) | **Parametric Insurance:** `{insurance_trig['trigger_status']}` (`{insurance_trig['recommended_payout_pct']}%`)\n"
+            f"- **Cold-Chain Spoilage Risk:** `{cold_sla['cold_chain_spoilage_risk_pct']}%` | **SLA Buffer:** `+{cold_sla['recommended_dispatch_buffer_hrs']}h` | **Demurrage Exposure:** `INR {impact_res['estimated_demurrage_inr_lakhs']} Lakhs` (`${int(impact_res['estimated_demurrage_usd']):,}`)\n"
             f"{multi_site_md}"
         )
 

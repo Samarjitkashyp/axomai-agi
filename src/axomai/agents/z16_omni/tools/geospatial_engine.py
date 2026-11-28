@@ -86,9 +86,12 @@ class GeospatialEngine:
     def get_port_telemetry(self, query: str = "") -> List[Dict[str, Any]]:
         if not query:
             return GLOBAL_PORT_HUBS
-        q = query.lower()
-        prioritized = [p for p in GLOBAL_PORT_HUBS if any(w in p["port_name"].lower() or w in p["country"].lower() or w in p["strategic_role"].lower() for w in q.split() if len(w) > 3)]
-        return prioritized + [p for p in GLOBAL_PORT_HUBS if p not in prioritized]
+        import re
+        words = [w for w in re.findall(r'[a-z0-9]+', query.lower()) if len(w) >= 4]
+        def _score(p: Dict[str, Any]) -> int:
+            hay = f"{p['port_name']} {p['country']} {p['strategic_role']} {p['key_chokepoint']}".lower()
+            return sum(1 for w in words if w in hay)
+        return sorted(GLOBAL_PORT_HUBS, key=_score, reverse=True)
 
 geospatial_engine = GeospatialEngine()
 

@@ -211,12 +211,12 @@ class GeoExtractorAndLiveAPIs:
 
     def fetch_live_stac_scene(self, lat: float, lng: float) -> Dict[str, Any]:
         """Queries Microsoft Planetary Computer STAC API for latest Sentinel-1/2 scene metadata."""
-        bbox = [round(lng - 0.15, 4), round(lat - 0.15, 4), round(lng + 0.15, 4), round(lat + 0.15, 4)]
+        bbox = [round(lng - 0.3, 4), round(lat - 0.3, 4), round(lng + 0.3, 4), round(lat + 0.3, 4)]
         try:
             resp = requests.post(
                 "https://planetarycomputer.microsoft.com/api/stac/v1/search",
-                json={"collections": ["sentinel-2-l2a", "sentinel-1-grd"], "bbox": bbox, "limit": 2},
-                timeout=4.5,
+                json={"collections": ["sentinel-2-l2a", "sentinel-1-grd"], "bbox": bbox, "limit": 1},
+                timeout=7.5,
             )
             if resp.status_code == 200:
                 feats = resp.json().get("features") or []

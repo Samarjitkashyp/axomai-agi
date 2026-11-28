@@ -34,11 +34,11 @@ class RiverDischargeAndElevation:
         flood_source = "GLOFAS_CALIBRATED_FALLBACK"
         try:
             r_fl = requests.get(
-                "https://flood-api.openmeteo.com/v1/flood",
+                "https://flood-api.open-meteo.com/v1/flood",
                 params={
                     "latitude": lat,
                     "longitude": lng,
-                    "daily": "river_discharge,river_discharge_mean,river_discharge_max",
+                    "daily": "river_discharge",
                     "forecast_days": 7,
                 },
                 timeout=4.5,
